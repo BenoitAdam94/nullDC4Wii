@@ -45,12 +45,14 @@ able to compile, but memory error on dolphin
 NullDC team for the emulator  
 skmp for the archive  
 Joseph Jordan - libiso
+Xale00 (also know as Benoit Adam) - 2026 recompilation
 
 # nullDCe (original README)
 
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
