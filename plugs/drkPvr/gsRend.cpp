@@ -1,23 +1,27 @@
 #include "config.h"
 
 #include "gxRend.h"
-#if REND_API == REND_PS2 || 1
+#if REND_API == REND_PS2
 #include <malloc.h>
-#include <tamtypes.h>
-#include <math3d.h>
+#include <tamtypes.h> // generated trough MistralAI
+#include <math3d.h> // generated trough MistralAI
 
-#include <packet.h>
+#include <packet.h> // generated trough MistralAI
 
-#include <dma_tags.h>
-#include <gif_tags.h>
-#include <gs_psm.h>
+// #include <dma_tags.h>
+// not needed, use packet.h
 
-#include <dma.h>
+// #include <gif_tags.h>
+// Les "GIF tags" de la PS2 sont remplacés par des paquets PVR.
 
-#include <graph.h>
+#include <gs_psm.h> // generated trough MistralAI
 
-#include <draw.h>
-#include <draw3d.h>
+#include <dma.h> // generated trough MistralAI
+
+#include <graph.h> // generated trough MistralAI
+
+#include <draw.h> // generated trough MistralAI
+// #include <draw3d.h>
 
 #define DEFAULT_FIFO_SIZE	(256*1024)
 
@@ -76,9 +80,16 @@ struct TextureCacheDesc
 };
 void VBlank() { }
 
+/* Mistral asked for replacement
 Vertex ALIGN16  vertices[4*1024];
 VertexList  ALIGN16 lists[2*1024];
 PolyParam  ALIGN16 listModes[2*1024];
+*/
+
+Vertex vertices[4*1024] __attribute__((aligned(16)));
+VertexList lists[2*1024] __attribute__((aligned(16)));
+PolyParam listModes[2*1024] __attribute__((aligned(16)));
+
 
 Vertex* curVTX=vertices;
 VertexList* curLST=lists;
@@ -170,7 +181,7 @@ float vtx_max_Z;
 		if (isp.Offset)
 		{
 			//Intesity color (can be missing too ;p)
-			u32 col=vri(ptr);ptr+=4;
+			// u32 col=vri(ptr);ptr+=4; // compiler says it's unused (warning))
 		//	vert_packed_color_(cv->spc,col);
 		}
 	}
@@ -180,7 +191,7 @@ float vtx_max_Z;
 
 		curVTX=vertices;
 		curLST=lists;
-		curMod=listModes-1;
+		curMod = listModes;  // Changez cette ligne pour éviter l'accès hors limites
 		global_regd=false;
 		vtx_min_Z=128*1024;//if someone uses more, i realy realy dont care
 		vtx_max_Z=0;		//lower than 0 is invalid for pvr .. i wonder if SA knows that.
@@ -256,7 +267,7 @@ float vtx_max_Z;
 			}
 		}
 	}
-
+    */
 	/*
 	void SetTextureParams(PolyParam* mod)
 	{
@@ -1067,8 +1078,8 @@ float vtx_max_Z;
 		//vtx_min_Z*=0.999;
 
 		//convert to [-1 .. 0]
-		float p6=-1/(1/vtx_max_Z-1/vtx_min_Z);
-		float p5=p6/vtx_min_Z;
+		// float p6=-1/(1/vtx_max_Z-1/vtx_min_Z); // compiler say it's not used
+		// float p5=p6/vtx_min_Z; // compiler warning
 		
 
 		// Mtx44 mtx =
@@ -1089,12 +1100,13 @@ float vtx_max_Z;
 		// guMtxIdentity(modelview);
 		// GX_LoadPosMtxImm(modelview,GX_PNMTX0);
 		packet_t *current = packets[context];
+    qword_t *q = (qword_t *)current->data;
 
-		auto q = current->data;
+    // auto q = current->data;
 
 		// Clear framebuffer but don't update zbuffer.
-		q = draw_disable_tests(q,0,&z);
-		q = draw_clear(q,0,0,0,dc_width,dc_height,0x40,0x40,0x40);
+		q = draw_disable_tests((qword_t*)q, 0, &z);
+		q = draw_clear((qword_t*)q, 0, 0, 0, dc_width, dc_height, 0x40, 0x40, 0x40);
 		// q = draw_enable_tests(q,0,&z);
 
 		Vertex* drawVTX=vertices;
@@ -1158,7 +1170,8 @@ float vtx_max_Z;
 
 			if (count)
 			{
-				auto dw = (u64*)draw_prim_start(q,0,&prim, &color);
+				auto dw = (u64*)draw_prim_start((qword_t*)q, 0, &prim, &color);
+
 
 				// auto col = (u32)drawVTX;
 				// for (int i = 0; i < count; i++)
@@ -1176,16 +1189,25 @@ float vtx_max_Z;
 				}
 
 				// Only 3 registers rgbaq/st/xyz were used (standard STQ reglist)
-				q = draw_prim_end((qword_t*)dw,3,DRAW_STQ_REGLIST);
+        q = draw_prim_end((qword_t*)dw, static_cast<u32>(3), static_cast<DrawRegList>(DRAW_STQ_REGLIST));
+        // q = draw_prim_end((qword_t*)dw, static_cast<u32>(3), DRAW_STQ_REGLIST);
+
+
+
+
+
+
+
 			}
 		}
 
 		reset_vtx_state();
 
-		q = draw_finish(q);
+		q = draw_finish((qword_t*)q);
 		
 		dma_wait_fast();
-		dma_channel_send_normal(DMA_CHANNEL_GIF,current->data, q - current->data, 0, 0);
+    dma_channel_send_normal(DMA_CHANNEL_GIF, current->data, ((u32*)q - current->data) * sizeof(u32), 0, 0);
+
 
 		// Now switch our packets so we can process data while the DMAC is working.
 		context ^= 1;
@@ -1225,22 +1247,25 @@ float vtx_max_Z;
 		frame->height = 512;
 		frame->mask = 0;
 		frame->psm = GS_PSM_32;
-		frame->address = graph_vram_allocate(frame->width,frame->height, frame->psm, GRAPH_ALIGN_PAGE);
+		frame->address = graph_vram_allocate(frame->width, frame->height, static_cast<GraphPixelFormat>(frame->psm), GRAPH_ALIGN_PAGE);
 
 		// Enable the zbuffer.
 		z->enable = DRAW_ENABLE;
 		z->mask = 0;
 		z->method = ZTEST_METHOD_GREATER_EQUAL;
 		z->zsm = GS_ZBUF_32;
-		z->address = graph_vram_allocate(frame->width,frame->height,z->zsm, GRAPH_ALIGN_PAGE);
+		z->address = graph_vram_allocate(frame->width, frame->height, (GraphPixelFormat)z->zsm, GRAPH_ALIGN_PAGE);
 
 		// Allocate some vram for the texture buffer
 		texbuf->width = 256;
 		texbuf->psm = GS_PSM_24;
-		texbuf->address = graph_vram_allocate(256,256,GS_PSM_24,GRAPH_ALIGN_BLOCK);
+    texbuf->address = graph_vram_allocate(256, 256, static_cast<GraphPixelFormat>(GS_PSM_24), GRAPH_ALIGN_BLOCK);
+
+
 
 		// Initialize the screen and tie the first framebuffer to the read circuits.
-		graph_initialize(frame->address,frame->width,frame->height,frame->psm,0,0);
+  	graph_initialize(frame->address, frame->width, frame->height, static_cast<GraphPixelFormat>(frame->psm), 0, 0);
+
 
 	}
 
@@ -1248,9 +1273,11 @@ float vtx_max_Z;
 	{
 
 		packet_t *packet = packet_init(20,PACKET_NORMAL);
+    
 
 		// This is our generic qword pointer.
-		qword_t *q = packet->data;
+    qword_t *q = (qword_t *)packet->data;
+
 
 		// This will setup a default drawing environment.
 		q = draw_setup_environment(q,0,frame,z);
@@ -1262,7 +1289,8 @@ float vtx_max_Z;
 		q = draw_finish(q);
 
 		// Now send the packet, no need to wait since it's the first.
-		dma_channel_send_normal(DMA_CHANNEL_GIF,packet->data,q - packet->data, 0, 0);
+		dma_channel_send_normal(DMA_CHANNEL_GIF, packet->data, ((u32*)q - (u32*)packet->data) * sizeof(u32), 0, 0);
+
 		dma_wait_fast();
 
 		packet_free(packet);
@@ -1740,8 +1768,8 @@ float vtx_max_Z;
 		// Init the drawing environment and framebuffer.
 		init_drawing_environment(&frame,&z);
 
-		packets[0] = packet_init(8192,PACKET_NORMAL);
-		packets[1] = packet_init(8192,PACKET_NORMAL);
+		packets[0] = (packet_t*)dma_packet_init(8192, PACKET_NORMAL);
+    packets[1] = (packet_t*)dma_packet_init(8192, PACKET_NORMAL);
 
 		xyz   = (xyz_t*) memalign(128, sizeof(u64) * 4096);
 		rgbaq = (color_t*) memalign(128, sizeof(u64) * 4096);
