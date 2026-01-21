@@ -509,7 +509,7 @@ void decode_pvr_vertex(u32 base,u32 ptr,Vertex* cv)
 	}
 
 	//Color
-	u32 col=vri(ptr);ptr+=4;
+	// u32 col=vri(ptr);ptr+=4; MistralAI ask to comment
 	cv->col=ABGR8888(col);
 	if (isp.Offset)
 	{
