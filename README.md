@@ -14,14 +14,14 @@ https://wiibrew.org/wiki/DevkitPPC
 
 ### 3/ Install additional development packages :
 
-pacman -Syu  # updates MSYS2 and package database
+pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
 ### 4/ PATH configuration :
 
 In windows link the folder
 
-DEVKITPPC : C:\devkitPro\devkitPPC
+DEVKITPPC : C:\devkitPro\devkitPPC  
 DEVKITPRO: C:\devkitPro\
 
 ### 5/ launch vs_make.bat in a standard terminal
@@ -42,8 +42,8 @@ able to compile, but memory error on dolphin
 
 ## Credits
 
-NullDC team for the emulator
-skmp for the archive
+NullDC team for the emulator  
+skmp for the archive  
 Joseph Jordan - libiso
 
 # nullDCe (original README)
@@ -51,5 +51,6 @@ Joseph Jordan - libiso
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
