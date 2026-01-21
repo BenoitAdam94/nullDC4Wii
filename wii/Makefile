@@ -32,6 +32,8 @@ INCLUDES	:= ../
 CFLAGS	= -save-temps -g -O2 -Wall $(MACHDEP) $(INCLUDE)  -D _WII -D RELEASE
 CFLAGS += -frename-registers -fno-strict-aliasing -fsingle-precision-constant -fomit-frame-pointer -ffast-math
 CXXFLAGS	=	$(CFLAGS) -fno-exceptions -fno-rtti
+# CXXFLAGS += -D_WII # Set WII as platform
+
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(TARGET).map
 
