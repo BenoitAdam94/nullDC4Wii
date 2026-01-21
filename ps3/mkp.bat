@@ -1,1 +1,0 @@
-make_fself_npdrm.exe emitTest.elf emitTest.self
