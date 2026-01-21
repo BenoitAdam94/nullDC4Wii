@@ -23,7 +23,7 @@ misrepresented as being the original software.
 3.This notice may not be removed or altered from any source distribution.
 
 */
-//#include <di/di.h>
+#include <di/di.h>
 #include <errno.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogcsys.h>
@@ -101,16 +101,6 @@ static bool is_dir(DIR_ENTRY *entry) {
 #define OFFSET_NAMELEN 32
 #define OFFSET_NAME 33
 
-
-dvdcmdblk cmdblk;
-int DI_ReadDVD(u8* dst,u32 sz,u32 sector)
-{
-	*(u32*)dst=0xDEADC0DE;
-	int rv=DVD_ReadPrio (&cmdblk, dst, sz*2048, sector*2048, 2);
-	//printf("DVD READ:%d %d %02X %02X %02X %02X %02X %02X\n",rv,sector,dst[0],dst[1],dst[2],dst[3],dst[4],dst[5]);
-	return rv<0?1:0;
-}
-
 static int _read(void *ptr, u64 offset, size_t len) {
     u32 sector = offset / SECTOR_SIZE;
     u32 end_sector = (offset + len - 1) / SECTOR_SIZE;
@@ -147,7 +137,7 @@ static int read_entry(DIR_ENTRY *entry, u8 *buf) {
         entry->size = size;
         entry->flags = flags;
     } else {
-        DIR_ENTRY* newChildren = (DIR_ENTRY*)realloc(entry->children, sizeof(DIR_ENTRY) * (entry->fileCount + 1));
+        DIR_ENTRY *newChildren = (DIR_ENTRY*)realloc(entry->children, sizeof(DIR_ENTRY) * (entry->fileCount + 1));
         if (!newChildren) return -1;
         bzero(newChildren + entry->fileCount, sizeof(DIR_ENTRY));
         entry->children = newChildren;
@@ -177,7 +167,7 @@ static bool read_directory(DIR_ENTRY *dir_entry, PATH_ENTRY *path_entry) {
     u32 sector_offset = 0;
     
     do {
-        if (_read(cluster_buffer, (u64)sector * SECTOR_SIZE + sector_offset, (SECTOR_SIZE - sector_offset)) != (SECTOR_SIZE - sector_offset)) return false;
+        if (_read(cluster_buffer, (u64)sector * SECTOR_SIZE + sector_offset, (SECTOR_SIZE - sector_offset)) != (int)(SECTOR_SIZE - sector_offset)) return false;
         int offset = read_entry(dir_entry, cluster_buffer);
         if (offset == -1) return false;
         if (!remaining) {
@@ -348,7 +338,7 @@ static int _ISO9660_open_r(struct _reent *r, void *fileStruct, const char *path,
     return (int)file;
 }
 
-static int _ISO9660_close_r(struct _reent *r, int fd) {
+static int _ISO9660_close_r(struct _reent *r, void *fd) {
     FILE_STRUCT *file = (FILE_STRUCT *)fd;
     if (!file->inUse) {
         r->_errno = EBADF;
@@ -358,7 +348,7 @@ static int _ISO9660_close_r(struct _reent *r, int fd) {
     return 0;
 }
 
-static int _ISO9660_read_r(struct _reent *r, int fd, char *ptr, size_t len) {
+static int _ISO9660_read_r(struct _reent *r, void *fd, char *ptr, size_t len) {
     FILE_STRUCT *file = (FILE_STRUCT *)fd;
     if (!file->inUse) {
         r->_errno = EBADF;
@@ -386,7 +376,7 @@ static int _ISO9660_read_r(struct _reent *r, int fd, char *ptr, size_t len) {
     return len;
 }
 
-static off_t _ISO9660_seek_r(struct _reent *r, int fd, off_t pos, int dir) {
+static off_t _ISO9660_seek_r(struct _reent *r, void *fd, off_t pos, int dir) {
     FILE_STRUCT *file = (FILE_STRUCT *)fd;
     if (!file->inUse) {
         r->_errno = EBADF;
@@ -415,7 +405,7 @@ static off_t _ISO9660_seek_r(struct _reent *r, int fd, off_t pos, int dir) {
         return -1;
     }
 
-    if (position < 0 || position > file->entry.size) {
+    if (position < 0 || (u32)position > file->entry.size) {
         r->_errno = EINVAL;
         return -1;
     }
@@ -435,18 +425,15 @@ static void stat_entry(DIR_ENTRY *entry, struct stat *st) {
     st->st_rdev = st->st_dev;
     st->st_size = entry->size;
     st->st_atime = 0;
-    st->st_spare1 = 0;
     st->st_mtime = 0;
-    st->st_spare2 = 0;
     st->st_ctime = 0;
-    st->st_spare3 = 0;
     st->st_blksize = SECTOR_SIZE;
     st->st_blocks = (entry->size + SECTOR_SIZE - 1) / SECTOR_SIZE;
     st->st_spare4[0] = 0;
     st->st_spare4[1] = 0;
 }
 
-static int _ISO9660_fstat_r(struct _reent *r, int fd, struct stat *st) {
+static int _ISO9660_fstat_r(struct _reent *r, void *fd, struct stat *st) {
     FILE_STRUCT *file = (FILE_STRUCT *)fd;
     if (!file->inUse) {
         r->_errno = EBADF;
@@ -516,7 +503,7 @@ static int _ISO9660_dirnext_r(struct _reent *r, DIR_ITER *dirState, char *filena
         return -1;
     }
     DIR_ENTRY *entry = &state->entry.children[state->index++];
-    strncpy(filename, entry->name, ISO_MAXPATHLEN - 1);
+    strncpy(filename, entry->name, ISO_MAXPATHLEN);
     stat_entry(entry, st);
     return 0;
 }
@@ -596,7 +583,7 @@ static PATH_ENTRY *entry_from_index(PATH_ENTRY *entry, u16 index) {
 }
 
 static PATH_ENTRY *add_child_entry(PATH_ENTRY *dir) {
-    PATH_ENTRY* newChildren = (PATH_ENTRY*)realloc(dir->children, (dir->childCount + 1) * sizeof(PATH_ENTRY));
+    PATH_ENTRY *newChildren = (PATH_ENTRY*)realloc(dir->children, (dir->childCount + 1) * sizeof(PATH_ENTRY));
     if (!newChildren) return NULL;
     bzero(newChildren + dir->childCount, sizeof(PATH_ENTRY));
     dir->children = newChildren;
