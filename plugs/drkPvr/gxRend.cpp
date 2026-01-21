@@ -1,7 +1,7 @@
 #include "config.h"
 
 #include "gxRend.h"
-#if REND_API == REND_WII
+#if REND_API == REND_WII || 1
 #include <gccore.h>
 #include <malloc.h>
 
@@ -1655,7 +1655,7 @@ float vtx_max_Z;
                case VI_NTSC: // 480 lines (NTSC 60hz)
                        break;
                case VI_PAL: // 576 lines (PAL 50hz)
-                       rmode = &TVPal574IntDfScale;
+                       rmode = &TVPal576IntDfScale;
                        rmode->xfbHeight = 480;
                        rmode->viYOrigin = (VI_MAX_HEIGHT_PAL - 480)/2;
                        rmode->viHeight = 480;
