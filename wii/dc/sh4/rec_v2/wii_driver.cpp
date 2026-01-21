@@ -40,6 +40,10 @@
 #include "dc\mem\sh4_mem.h"
 #include "emitter\PPCEmit\ppc_emitter.h"
 
+// Définir des valeurs "invalides" pour les registres non mappés
+const ppc_freg ppc_finvalid = (ppc_freg)-1;  // ou une valeur hors plage (ex: 32+)
+const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // ou une valeur hors plage (ex: 32+)
+
 void ppc_li(u32 D,u32 imm)
 {
 	if (is_s16(imm))
