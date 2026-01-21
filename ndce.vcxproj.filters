@@ -1,0 +1,821 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="win-x86">
+      <UniqueIdentifier>{98fb7661-a3eb-49ba-89bd-ee603fba9d3c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\BuildinPlugins">
+      <UniqueIdentifier>{3063fa4d-54e5-4ceb-bbe4-80aaf7935ee8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\BuildinPlugins\pvr">
+      <UniqueIdentifier>{4abaff07-bf57-46bf-a194-c60ba683902b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\dc">
+      <UniqueIdentifier>{f0faf61d-47ad-4167-9475-a5959fece1eb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\dc\sh4">
+      <UniqueIdentifier>{5b2c3a40-8853-470c-a3dc-5376bf5e31cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\dc\sh4\rec_v2">
+      <UniqueIdentifier>{94bb42d6-fe7b-4c85-91db-91915c94795b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\deps">
+      <UniqueIdentifier>{2af43a3a-2b36-45ed-a400-e541cc1d7a4e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="win-x86\gui">
+      <UniqueIdentifier>{1fe930c3-1a00-49b0-b767-cba891b00129}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp">
+      <UniqueIdentifier>{6d6a73fa-781f-48f7-96ae-2f93728dbe49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp\dc">
+      <UniqueIdentifier>{8b8dcfdd-57e9-4bfa-bd3a-79e227e28ccd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp\dc\sh4">
+      <UniqueIdentifier>{39e4947a-1b5f-4b94-ba4a-681abb551253}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp\dc\sh4\rec_v2">
+      <UniqueIdentifier>{309bff96-3d11-4afa-bed3-d83f8bceaa57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp\BuildinPlugins">
+      <UniqueIdentifier>{5badc895-9456-451a-b6b8-a69ab8b991f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="psp\BuildinPlugins\pvr">
+      <UniqueIdentifier>{7bee9f3c-d78f-4485-9fd2-290280e31ae5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic">
+      <UniqueIdentifier>{b522ddc0-ca7a-4103-ab89-07fe60ba15fb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc">
+      <UniqueIdentifier>{89b61ba3-3645-4f31-ab32-0c811a8b6745}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4">
+      <UniqueIdentifier>{fe97723a-2c37-4dce-9a0a-b5930eea1073}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\interface">
+      <UniqueIdentifier>{bd982025-bf8f-414d-b635-ce64ba0a8b52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\interpreter">
+      <UniqueIdentifier>{665e4b84-b512-4e4c-85e4-b2f19b7fbd51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\interpreter\opcodes">
+      <UniqueIdentifier>{57094d34-8ae7-4588-84cb-514d721e660a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\rec_v2">
+      <UniqueIdentifier>{dac23a66-7265-474c-93fb-097ddafb304a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\rec_v2\bm">
+      <UniqueIdentifier>{535874fb-eb15-4eef-adf6-713211d83d09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\rec_v2\dec">
+      <UniqueIdentifier>{45481c50-b6b2-4916-bd88-640ac663b8b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\rec_v2\shil">
+      <UniqueIdentifier>{15ef8574-c1b4-484c-acf1-45e1ef424a3e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules">
+      <UniqueIdentifier>{929a0020-2488-4a40-9a66-48b2b5ad216d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\ubc">
+      <UniqueIdentifier>{747b69c7-a461-45f5-8579-469d6939b3a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\bsc">
+      <UniqueIdentifier>{11130dc6-60ef-4fc7-bd85-d5e79592f547}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\ccn">
+      <UniqueIdentifier>{bdcddafc-d8b9-401a-a8d9-0e3175a6f90f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\cpg">
+      <UniqueIdentifier>{cd65af52-f40b-4473-8833-1052d1b40775}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\dmac">
+      <UniqueIdentifier>{d07d5728-b21c-4558-8b41-764755968822}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\intc">
+      <UniqueIdentifier>{f526f918-8aea-4391-9ae7-3ad302fe456e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\rtc">
+      <UniqueIdentifier>{9d3a90a4-6c15-4f90-af25-8d83fbc024b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\sci">
+      <UniqueIdentifier>{04cf23cc-59bc-4858-a968-9c9f55a1035a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\scif">
+      <UniqueIdentifier>{8c1379a7-c23b-4c33-8b81-cedbc390ba45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\sh4\buildin modules\tmu">
+      <UniqueIdentifier>{0dea7067-318e-4659-8d32-3ee34aeb5b06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\pvr">
+      <UniqueIdentifier>{b196298c-83bc-4825-b80d-413d7d59caad}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\aica">
+      <UniqueIdentifier>{d0879f15-6719-4cf3-adc8-1718234ca555}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem">
+      <UniqueIdentifier>{aaec66be-11ae-4c49-a3a7-829652da13a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem\helper">
+      <UniqueIdentifier>{d935771d-69f8-43ba-b392-82dcc055c585}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem\sh4_mmr">
+      <UniqueIdentifier>{8e44616e-d81e-4b52-82c6-81d694866e58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem\sh4_mmr\area0">
+      <UniqueIdentifier>{18eb38a0-853c-4c72-a135-f1cc3dca3c33}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem\sh4_mmr\area0\sb">
+      <UniqueIdentifier>{9d7728f0-e06b-442e-b8b4-c7c5c5a79e64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\mem\sh4_mmr\internal">
+      <UniqueIdentifier>{8d420b70-b9ef-46da-adda-b46cb7e44536}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\gdrom">
+      <UniqueIdentifier>{a848846f-8266-4ca4-92ca-f5a7bf775ea3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\maple">
+      <UniqueIdentifier>{429dcbe0-7fef-4035-b4b7-c98dd2409297}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\dc\asic">
+      <UniqueIdentifier>{2dac2dfc-61a1-423e-b4fe-368bde291a62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\config">
+      <UniqueIdentifier>{37e707d5-3e97-4cdf-8a77-486f0c774014}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\cl">
+      <UniqueIdentifier>{1ce03516-b245-45f5-9191-0dc874cdbbe5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins">
+      <UniqueIdentifier>{8eb074bb-8f88-482d-96a5-1d9b059b0ee5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\aica">
+      <UniqueIdentifier>{75c6af7b-f83f-4e4b-848f-aecf4ea7094c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\pvr">
+      <UniqueIdentifier>{c4700c7a-0239-4775-a76f-1f4773867891}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\pvr\renderers">
+      <UniqueIdentifier>{048c2ba0-479b-4da0-b583-033c1a0b7b4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\pvr\emu">
+      <UniqueIdentifier>{e0cc5cfe-3e4c-4619-a795-359234e54951}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\pvr\ta">
+      <UniqueIdentifier>{c42e2a6d-ad02-4748-a443-bd57d9b88335}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\gdrom">
+      <UniqueIdentifier>{7bac2bd3-f89b-4376-becc-ca80ba675210}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\maple">
+      <UniqueIdentifier>{12b71857-a30d-40e0-a818-1f37a3f42e03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\BuildinPlugins\extdev">
+      <UniqueIdentifier>{0765af02-3293-42f0-8543-6555f28a2da1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="generic\plugins">
+      <UniqueIdentifier>{481054ae-cd4f-46e3-8abe-063a4cbd89d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="linux">
+      <UniqueIdentifier>{083bdb6b-40e3-4b73-aca4-fd4d9b0bf6f2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii">
+      <UniqueIdentifier>{9e0e9a43-9401-4d54-92ed-3af47d37a8d7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii\BuildinPlugins">
+      <UniqueIdentifier>{3fad0e60-f259-43db-ab1c-353711646d5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii\BuildinPlugins\pvr">
+      <UniqueIdentifier>{3bb6a53d-197b-4567-98b3-361d79506c7f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii\dc">
+      <UniqueIdentifier>{8300d436-4f53-4590-adf3-90b3247f3824}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii\dc\sh4">
+      <UniqueIdentifier>{be49d945-09f7-4ab6-a45d-f20700b0302f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="wii\dc\sh4\rec_v2">
+      <UniqueIdentifier>{ad7f8a8f-41ed-4514-b96c-e1abaee2f969}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ps2">
+      <UniqueIdentifier>{8331f631-729c-4114-a78e-153585ec1c7b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="beagle">
+      <UniqueIdentifier>{595271b4-a1cc-43c8-bf76-5d4af46a1d9f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rec-ARM">
+      <UniqueIdentifier>{b7028a29-916c-4140-ba62-d4ace3447a08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ps3">
+      <UniqueIdentifier>{3c839e85-0939-4138-9c95-876306564521}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ps3\shaders">
+      <UniqueIdentifier>{ebd2b40b-c690-44cc-9b87-7673d2634f89}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="win-x86\winmain.cpp">
+      <Filter>win-x86</Filter>
+    </ClCompile>
+    <ClCompile Include="win-x86\plugs\drkPvr\gu_emu.cpp">
+      <Filter>win-x86\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="win-x86\plugs\drkPvr\gum_emu.cpp">
+      <Filter>win-x86\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="win-x86\dc\sh4\rec_v2\win86_driver.cpp">
+      <Filter>win-x86\dc\sh4\rec_v2</Filter>
+    </ClCompile>
+    <ClCompile Include="psp\main.cpp">
+      <Filter>psp</Filter>
+    </ClCompile>
+    <ClCompile Include="psp\dc\sh4\rec_v2\psp_driver.cpp">
+      <Filter>psp\dc\sh4\rec_v2</Filter>
+    </ClCompile>
+    <ClCompile Include="nullDC.cpp">
+      <Filter>generic</Filter>
+    </ClCompile>
+    <ClCompile Include="stdclass.cpp">
+      <Filter>generic</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\dc.cpp">
+      <Filter>generic\dc</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_registers.cpp">
+      <Filter>generic\dc\sh4</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_if.cpp">
+      <Filter>generic\dc\sh4\interface</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_interpreter.cpp">
+      <Filter>generic\dc\sh4\interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_cpu.cpp">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_fpu.cpp">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sh4_opcode_list.cpp">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\rec_v2\driver.cpp">
+      <Filter>generic\dc\sh4\rec_v2</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\rec_v2\blockmanager.cpp">
+      <Filter>generic\dc\sh4\rec_v2\bm</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\rec_v2\decoder.cpp">
+      <Filter>generic\dc\sh4\rec_v2\dec</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\rec_v2\shil.cpp">
+      <Filter>generic\dc\sh4\rec_v2\shil</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\ubc.cpp">
+      <Filter>generic\dc\sh4\buildin modules\ubc</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\bsc.cpp">
+      <Filter>generic\dc\sh4\buildin modules\bsc</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\ccn.cpp">
+      <Filter>generic\dc\sh4\buildin modules\ccn</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\cpg.cpp">
+      <Filter>generic\dc\sh4\buildin modules\cpg</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\dmac.cpp">
+      <Filter>generic\dc\sh4\buildin modules\dmac</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\intc.cpp">
+      <Filter>generic\dc\sh4\buildin modules\intc</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\rtc.cpp">
+      <Filter>generic\dc\sh4\buildin modules\rtc</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\sci.cpp">
+      <Filter>generic\dc\sh4\buildin modules\sci</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\scif.cpp">
+      <Filter>generic\dc\sh4\buildin modules\scif</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\sh4\tmu.cpp">
+      <Filter>generic\dc\sh4\buildin modules\tmu</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\pvr\pvr_if.cpp">
+      <Filter>generic\dc\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\pvr\pvr_sb_regs.cpp">
+      <Filter>generic\dc\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\pvr\pvrLock.cpp">
+      <Filter>generic\dc\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\aica\aica_if.cpp">
+      <Filter>generic\dc\aica</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\_vmem.cpp">
+      <Filter>generic\dc\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\sh4_mem.cpp">
+      <Filter>generic\dc\mem</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\memutil.cpp">
+      <Filter>generic\dc\mem\helper</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\mmu.cpp">
+      <Filter>generic\dc\mem\sh4_mmr</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\sh4_area0.cpp">
+      <Filter>generic\dc\mem\sh4_mmr\area0</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\sb.cpp">
+      <Filter>generic\dc\mem\sh4_mmr\area0\sb</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\mem\sh4_internal_reg.cpp">
+      <Filter>generic\dc\mem\sh4_mmr\internal</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\gdrom\gdrom_response.cpp">
+      <Filter>generic\dc\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\gdrom\gdromv3.cpp">
+      <Filter>generic\dc\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\maple\maple_cfg.cpp">
+      <Filter>generic\dc\maple</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\maple\maple_devs.cpp">
+      <Filter>generic\dc\maple</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\maple\maple_helper.cpp">
+      <Filter>generic\dc\maple</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\maple\maple_if.cpp">
+      <Filter>generic\dc\maple</Filter>
+    </ClCompile>
+    <ClCompile Include="dc\asic\asic.cpp">
+      <Filter>generic\dc\asic</Filter>
+    </ClCompile>
+    <ClCompile Include="config\config.cpp">
+      <Filter>generic\config</Filter>
+    </ClCompile>
+    <ClCompile Include="cl\cl.cpp">
+      <Filter>generic\cl</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\EmptyAICA\aica_hax.cpp">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\EmptyAICA\aica_hle.cpp">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\EmptyAICA\EmptyAICA.cpp">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\drkPvr.cpp">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\Renderer_if.cpp">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\tex_decode.cpp">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\glesRend.cpp">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\nullRend.cpp">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\softRend.cpp">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\regs.cpp">
+      <Filter>generic\BuildinPlugins\pvr\emu</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\SPG.cpp">
+      <Filter>generic\BuildinPlugins\pvr\emu</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\ta.cpp">
+      <Filter>generic\BuildinPlugins\pvr\ta</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\cdi.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\common.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\ImgReader.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\iso9660.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\local_cache.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\mds.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\mds_reader.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\ImgReader\remote_tcp.cpp">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkMapleDevices\drkMapleDevices.cpp">
+      <Filter>generic\BuildinPlugins\maple</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\nullExtDev\nullExtDev.cpp">
+      <Filter>generic\BuildinPlugins\extdev</Filter>
+    </ClCompile>
+    <ClCompile Include="plugins\plugin_manager.cpp">
+      <Filter>generic\plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="plugins\plugin_types.cpp">
+      <Filter>generic\plugins</Filter>
+    </ClCompile>
+    <ClCompile Include="linux\main.cpp">
+      <Filter>linux</Filter>
+    </ClCompile>
+    <ClCompile Include="linux\types.cpp">
+      <Filter>linux</Filter>
+    </ClCompile>
+    <ClCompile Include="wii\iso.cpp">
+      <Filter>wii</Filter>
+    </ClCompile>
+    <ClCompile Include="wii\main.cpp">
+      <Filter>wii</Filter>
+    </ClCompile>
+    <ClCompile Include="wii\wii_types.cpp">
+      <Filter>wii</Filter>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\gxRend.cpp">
+      <Filter>wii\BuildinPlugins\pvr</Filter>
+    </ClCompile>
+    <ClCompile Include="wii\dc\sh4\rec_v2\wii_driver.cpp">
+      <Filter>wii\dc\sh4\rec_v2</Filter>
+    </ClCompile>
+    <ClCompile Include="ps2\main.cpp">
+      <Filter>ps2</Filter>
+    </ClCompile>
+    <ClCompile Include="rec-ARM\armwreck.cpp">
+      <Filter>rec-ARM</Filter>
+    </ClCompile>
+    <ClCompile Include="ps3\main.cpp">
+      <Filter>ps3</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="gui\resource.h">
+      <Filter>win-x86\gui</Filter>
+    </ClInclude>
+    <ClInclude Include="psp\psp_emit.h">
+      <Filter>psp</Filter>
+    </ClInclude>
+    <ClInclude Include="config.h">
+      <Filter>generic</Filter>
+    </ClInclude>
+    <ClInclude Include="os_base.h">
+      <Filter>generic</Filter>
+    </ClInclude>
+    <ClInclude Include="stdclass.h">
+      <Filter>generic</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>generic</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\dc.h">
+      <Filter>generic\dc</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_registers.h">
+      <Filter>generic\dc\sh4</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\intc_types.h">
+      <Filter>generic\dc\sh4\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_if.h">
+      <Filter>generic\dc\sh4\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_interpreter.h">
+      <Filter>generic\dc\sh4\interpreter</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu_arith.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu_branch.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu_branch_rec.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu_logic.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_cpu_movs.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_fpu.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_fpu_mov.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sh4_opcode_list.h">
+      <Filter>generic\dc\sh4\interpreter\opcodes</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\ngen.h">
+      <Filter>generic\dc\sh4\rec_v2</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\rec_config.h">
+      <Filter>generic\dc\sh4\rec_v2</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\blockmanager.h">
+      <Filter>generic\dc\sh4\rec_v2\bm</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\decoder.h">
+      <Filter>generic\dc\sh4\rec_v2\dec</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\decoder_opcodes.h">
+      <Filter>generic\dc\sh4\rec_v2\dec</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\shil.h">
+      <Filter>generic\dc\sh4\rec_v2\shil</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rec_v2\shil_canonical.h">
+      <Filter>generic\dc\sh4\rec_v2\shil</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\ubc.h">
+      <Filter>generic\dc\sh4\buildin modules\ubc</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\bsc.h">
+      <Filter>generic\dc\sh4\buildin modules\bsc</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\ccn.h">
+      <Filter>generic\dc\sh4\buildin modules\ccn</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\cpg.h">
+      <Filter>generic\dc\sh4\buildin modules\cpg</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\dmac.h">
+      <Filter>generic\dc\sh4\buildin modules\dmac</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\intc.h">
+      <Filter>generic\dc\sh4\buildin modules\intc</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\rtc.h">
+      <Filter>generic\dc\sh4\buildin modules\rtc</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\sci.h">
+      <Filter>generic\dc\sh4\buildin modules\sci</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\scif.h">
+      <Filter>generic\dc\sh4\buildin modules\scif</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\sh4\tmu.h">
+      <Filter>generic\dc\sh4\buildin modules\tmu</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\pvr\pvr_if.h">
+      <Filter>generic\dc\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\pvr\pvr_sb_regs.h">
+      <Filter>generic\dc\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\pvr\pvrLock.h">
+      <Filter>generic\dc\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\aica\aica_if.h">
+      <Filter>generic\dc\aica</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\_vmem.h">
+      <Filter>generic\dc\mem</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\sh4_mem.h">
+      <Filter>generic\dc\mem</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\memutil.h">
+      <Filter>generic\dc\mem\helper</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\mmu.h">
+      <Filter>generic\dc\mem\sh4_mmr</Filter>
+    </ClInclude>
+    <ClInclude Include="sh4_reg_playground.h">
+      <Filter>generic\dc\mem\sh4_mmr</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\sh4_area0.h">
+      <Filter>generic\dc\mem\sh4_mmr\area0</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\sb.h">
+      <Filter>generic\dc\mem\sh4_mmr\area0\sb</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\mem\sh4_internal_reg.h">
+      <Filter>generic\dc\mem\sh4_mmr\internal</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\gdrom\gdrom_if.h">
+      <Filter>generic\dc\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\gdrom\gdromv3.h">
+      <Filter>generic\dc\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\maple\maple_cfg.h">
+      <Filter>generic\dc\maple</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\maple\maple_devs.h">
+      <Filter>generic\dc\maple</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\maple\maple_helper.h">
+      <Filter>generic\dc\maple</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\maple\maple_if.h">
+      <Filter>generic\dc\maple</Filter>
+    </ClInclude>
+    <ClInclude Include="dc\asic\asic.h">
+      <Filter>generic\dc\asic</Filter>
+    </ClInclude>
+    <ClInclude Include="config\config.h">
+      <Filter>generic\config</Filter>
+    </ClInclude>
+    <ClInclude Include="cl\cl.h">
+      <Filter>generic\cl</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\EmptyAICA\aica_hax.h">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\EmptyAICA\aica_hle.h">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\EmptyAICA\EmptyAICA.h">
+      <Filter>generic\BuildinPlugins\aica</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\config.h">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\drkPvr.h">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\Renderer_if.h">
+      <Filter>generic\BuildinPlugins\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\glesRend.h">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\nullRend.h">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\softRend.h">
+      <Filter>generic\BuildinPlugins\pvr\renderers</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\regs.h">
+      <Filter>generic\BuildinPlugins\pvr\emu</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\spg.h">
+      <Filter>generic\BuildinPlugins\pvr\emu</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\ta.h">
+      <Filter>generic\BuildinPlugins\pvr\ta</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\ta_const_df.h">
+      <Filter>generic\BuildinPlugins\pvr\ta</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\ta_structs.h">
+      <Filter>generic\BuildinPlugins\pvr\ta</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\cdi.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\common.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\gd_driver.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\ImgReader.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\iso9660.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\mds.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\ImgReader\mds_reader.h">
+      <Filter>generic\BuildinPlugins\gdrom</Filter>
+    </ClInclude>
+    <ClInclude Include="plugins\plugin_header.h">
+      <Filter>generic\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="plugins\plugin_manager.h">
+      <Filter>generic\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="plugins\plugin_types.h">
+      <Filter>generic\plugins</Filter>
+    </ClInclude>
+    <ClInclude Include="emitter\PPCEmit\ppc_emit.h">
+      <Filter>wii</Filter>
+    </ClInclude>
+    <ClInclude Include="emitter\PPCEmit\ppc_emitter.h">
+      <Filter>wii</Filter>
+    </ClInclude>
+    <ClInclude Include="plugs\drkPvr\gxRend.h">
+      <Filter>wii\BuildinPlugins\pvr</Filter>
+    </ClInclude>
+    <ClInclude Include="rec-ARM\exchandler.h">
+      <Filter>rec-ARM</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="win-x86\deps\emitter_Win32.lib">
+      <Filter>win-x86\deps</Filter>
+    </Library>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="gui\ndc_icon.ico">
+      <Filter>win-x86\gui</Filter>
+    </None>
+    <None Include="psp\icon0.png">
+      <Filter>psp</Filter>
+    </None>
+    <None Include="psp\Makefile">
+      <Filter>psp</Filter>
+    </None>
+    <None Include="psp\vs_clean.bat">
+      <Filter>psp</Filter>
+    </None>
+    <None Include="psp\vs_make.bat">
+      <Filter>psp</Filter>
+    </None>
+    <None Include="psp\vs_rebuild.bat">
+      <Filter>psp</Filter>
+    </None>
+    <None Include="wii\vs_clean.bat">
+      <Filter>wii</Filter>
+    </None>
+    <None Include="wii\vs_make.bat">
+      <Filter>wii</Filter>
+    </None>
+    <None Include="wii\vs_rebuild.bat">
+      <Filter>wii</Filter>
+    </None>
+    <None Include="ps2\Makefile">
+      <Filter>ps2</Filter>
+    </None>
+    <None Include="ps2\vs_clean.bat">
+      <Filter>ps2</Filter>
+    </None>
+    <None Include="ps2\vs_make.bat">
+      <Filter>ps2</Filter>
+    </None>
+    <None Include="ps2\vs_rebuild.bat">
+      <Filter>ps2</Filter>
+    </None>
+    <None Include="beagle\Makefile">
+      <Filter>beagle</Filter>
+    </None>
+    <None Include="beagle\vs_clean.bat">
+      <Filter>beagle</Filter>
+    </None>
+    <None Include="beagle\vs_make.bat">
+      <Filter>beagle</Filter>
+    </None>
+    <None Include="beagle\vs_rebuild.bat">
+      <Filter>beagle</Filter>
+    </None>
+    <None Include="ps3\Makefile">
+      <Filter>ps3</Filter>
+    </None>
+    <None Include="ps3\shaders\pixel.cg">
+      <Filter>ps3\shaders</Filter>
+    </None>
+    <None Include="ps3\shaders\vertex.cg">
+      <Filter>ps3\shaders</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="gui\resource.rc">
+      <Filter>win-x86\gui</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="win-x86\plugs\drkPvr\gu_emu.h">
+      <Filter>win-x86\BuildinPlugins\pvr</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="psp\plugs\drkPvr\pspDveManager.S">
+      <Filter>psp\BuildinPlugins\pvr</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="linux\typedefs.h">
+      <Filter>linux</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="wii\iso.h">
+      <Filter>wii</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="wii\Makefile">
+      <Filter>wii</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="rec-ARM\armwreck.h">
+      <Filter>rec-ARM</Filter>
+    </CustomBuildStep>
+    <CustomBuildStep Include="rec-ARM\ngen_arm.S">
+      <Filter>rec-ARM</Filter>
+    </CustomBuildStep>
+  </ItemGroup>
+</Project>

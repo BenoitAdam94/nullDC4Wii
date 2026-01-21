@@ -1,0 +1,48 @@
+#define pp_UseAlpha 0
+#define pp_Texture 1
+#define pp_IgnoreTexA 1
+#define pp_ShadInstr 2
+#define pp_Offset 0
+
+void main (
+float4                  base      : COLOR0,	// base color
+float4                  offs      : COLOR1,	// offset olor
+float2                  uv        : TEXCOORD0,	// texture uv
+
+uniform sampler2D       texImg,					        // texture sampler
+
+out float4         oColor      : COLOR0          // output color
+)
+{
+  float4 color=base;
+	#if pp_UseAlpha==0
+		color.a=1.0;
+	#endif
+	
+	 #if pp_Texture==1
+		 
+		 float4 texcol=tex2D( texImg,uv).abgr;
+
+		#if pp_IgnoreTexA==1
+			texcol.a=1.0;
+		#endif
+
+		#if pp_ShadInstr==0
+			color.rgb=texcol.rgb;
+			color.a=texcol.a;
+		#elif  pp_ShadInstr==1
+			color.rgb*=texcol.rgb;
+			color.a=texcol.a;
+		#elif  pp_ShadInstr==2
+			color.rgb=lerp(color.rgb,texcol.rgb,texcol.a);
+		#elif  pp_ShadInstr==3
+			color*=texcol;
+		#endif
+
+		#if pp_Offset==1
+			color.rgb+=offs.rgb;
+		#endif
+	#endif
+
+	oColor=color;
+}

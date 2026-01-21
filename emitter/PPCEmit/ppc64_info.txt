@@ -1,0 +1,229 @@
+tdi 0 0 0 0 1 0 TO A SIMM
+twi 0 0 0 0 1 1 TO A SIMM
+mulli 0 0 0 1 1 1 D A SIMM
+subfic 0 0 1 0 0 0 D A SIMM
+cmpli 0 0 1 0 1 0 crfD 0 L A UIMM
+cmpi 0 0 1 0 1 1 crfD 0 L A SIMM
+addic 0 0 1 1 0 0 D A SIMM
+addic. 0 0 1 1 0 1 D A SIMM
+addi 0 0 1 1 1 0 D A SIMM
+addis 0 0 1 1 1 1 D A SIMM
+bcx 0 1 0 0 0 0 BO BI BD AA LK
+sc 0 1 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0
+bx 0 1 0 0 1 0 LI AA LK
+mcrf 0 1 0 0 1 1 crfD 0 0 crfS 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+bclrx 0 1 0 0 1 1 BO BI 0 0 0 BH 0 0 0 0 0 1 0 0 0 0
+rfid 0 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0
+crnor 0 1 0 0 1 1 crbD crbA crbB 0 0 0 0 1 0 0 0 0 1 0
+crandc 0 1 0 0 1 1 crbD crbA crbB 0 0 1 0 0 0 0 0 0 1 0
+isync 0 1 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 1 1 0 0
+crxor 0 1 0 0 1 1 crbD crbA crbB 0 0 1 1 0 0 0 0 0 1 0
+crnand 0 1 0 0 1 1 crbD crbA crbB 0 0 1 1 1 0 0 0 0 1 0
+crand 0 1 0 0 1 1 crbD crbA crbB 0 1 0 0 0 0 0 0 0 1 0
+creqv 0 1 0 0 1 1 crbD crbA crbB 0 1 0 0 1 0 0 0 0 1 0
+crorc 0 1 0 0 1 1 crbD crbA crbB 0 1 1 0 1 0 0 0 0 1 0
+cror 0 1 0 0 1 1 crbD crbA crbB 0 1 1 1 0 0 0 0 0 1 0
+bcctrx 0 1 0 0 1 1 BO BI 0 0 0 BH 1 0 0 0 0 1 0 0 0 0 LK
+rlwimix 0 1 0 1 0 0 S A SH MB ME Rc
+rlwinmx 0 1 0 1 0 1 S A SH MB ME Rc
+rlwnmx 0 1 0 1 1 1 S A B MB ME Rc
+ori 0 1 1 0 0 0 S A UIMM
+oris 0 1 1 0 0 1 S A UIMM
+xori 0 1 1 0 1 0 S A UIMM
+xoris 0 1 1 0 1 1 S A UIMM
+andi. 0 1 1 1 0 0 S A UIMM
+andis. 0 1 1 1 0 1 S A UIMM
+rldiclx 0 1 1 1 1 0 S A sh1 mb 0 0 0 sh2 Rc
+rldicrx 0 1 1 1 1 0 S A sh1 me 0 0 1 sh2 Rc
+rldicx 0 1 1 1 1 0 S A sh1 mb 0 1 0 sh2 Rc
+rldimix 0 1 1 1 1 0 S A sh1 mb 0 1 1 sh2 Rc
+rldclx 0 1 1 1 1 0 S A B mb 0 1 0 0 0 Rc
+rldcrx 0 1 1 1 1 0 S A B me 0 1 0 0 1 Rc
+cmp 0 1 1 1 1 1 crfD 0 L A B 0 0 0 0 0 0 0 0 0 0 0
+tw 0 1 1 1 1 1 TO A B 0 0 0 0 0 0 0 1 0 0 0
+subfcx 0 1 1 1 1 1 D A B OE 0 0 0 0 0 1 0 0 0 Rc
+mulhdux 0 1 1 1 1 1 D A B 0 0 0 0 0 0 1 0 0 1 Rc
+addcx 0 1 1 1 1 1 D A B OE 0 0 0 0 0 1 0 1 0 Rc
+mulhwux 0 1 1 1 1 1 D A B 0 0 0 0 0 0 1 0 1 1 Rc
+mfcr 0 1 1 1 1 1 D 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 0
+lwarx 0 1 1 1 1 1 D A B 0 0 0 0 0 1 0 1 0 0 0
+ldx 0 1 1 1 1 1 D A B 0 0 0 0 0 1 0 1 0 1 0
+lwzx 0 1 1 1 1 1 D A B 0 0 0 0 0 1 0 1 1 1 0
+slwx 0 1 1 1 1 1 S A B 0 0 0 0 0 1 1 0 0 0 Rc
+cntlzwx 0 1 1 1 1 1 S A 0 0 0 0 0 0 0 0 0 0 1 1 0 1 0 Rc
+sldx 0 1 1 1 1 1 S A B 0 0 0 0 0 1 1 0 1 1 Rc
+andx 0 1 1 1 1 1 S A B 0 0 0 0 0 1 1 1 0 0 Rc
+cmpl 0 1 1 1 1 1 crfD 0 L A B 0 0 0 0 1 0 0 0 0 0 0
+subfx 0 1 1 1 1 1 D A B OE 0 0 0 1 0 1 0 0 0 Rc
+ldux 0 1 1 1 1 1 D A B 0 0 0 0 1 1 0 1 0 1 0
+dcbst 0 1 1 1 1 1 0 0 0 0 0 A B 0 0 0 0 1 1 0 1 1 0 0
+lwzux 0 1 1 1 1 1 D A B 0 0 0 0 1 1 0 1 1 1 0
+cntlzdx 0 1 1 1 1 1 S A 0 0 0 0 0 0 0 0 0 1 1 1 0 1 0 Rc
+andcx 0 1 1 1 1 1 S A B 0 0 0 0 1 1 1 1 0 0 Rc
+td 0 1 1 1 1 1 TO A B 0 0 0 1 0 0 0 1 0 0 0
+mulhdx 0 1 1 1 1 1 D A B 0 0 0 1 0 0 1 0 0 1 Rc
+mulhwx 0 1 1 1 1 1 D A B 0 0 0 1 0 0 1 0 1 1 Rc
+mfmsr 0 1 1 1 1 1 D 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0 1 1 0
+ldarx 0 1 1 1 1 1 D A B 0 0 0 1 0 1 0 1 0 0 0
+dcbf 0 1 1 1 1 1 0 0 0 0 0 A B 0 0 0 1 0 1 0 1 1 0 0
+lbzx 0 1 1 1 1 1 D A B 0 0 0 1 0 1 0 1 1 1 0
+negx 0 1 1 1 1 1 D A 0 0 0 0 0 OE 0 0 1 1 0 1 0 0 0 Rc
+lbzux 0 1 1 1 1 1 D A B 0 0 0 1 1 1 0 1 1 1 0
+norx 0 1 1 1 1 1 S A B 0 0 0 1 1 1 1 1 0 0 Rc
+subfex 0 1 1 1 1 1 D A B OE 0 1 0 0 0 1 0 0 0 Rc
+addex 0 1 1 1 1 1 D A B OE 0 1 0 0 0 1 0 1 0 Rc
+mtcrf 0 1 1 1 1 1 S 0 CRM 0 0 0 1 0 0 1 0 0 0 0 0
+mtmsr 0 1 1 1 1 1 S 0 0 0 0 L 0 0 0 0 0 0 0 1 0 0 1 0 0 1 0 0
+stdx 0 1 1 1 1 1 S A B 0 0 1 0 0 1 0 1 0 1 0
+stwcx. 0 1 1 1 1 1 S A B 0 0 1 0 0 1 0 1 1 0 1
+stwx 0 1 1 1 1 1 S A B 0 0 1 0 0 1 0 1 1 1 0
+mtmsrd 0 1 1 1 1 1 S 0 0 0 0 L 0 0 0 0 0 0 0 1 0 1 1 0 0 1 0 0
+stdux 1 0 1 1 1 1 1 S A B 0 0 1 0 1 1 0 1 0 1 0
+stwux 0 1 1 1 1 1 S A B 0 0 1 0 1 1 0 1 1 1 0
+subfzex 0 1 1 1 1 1 D A 0 0 0 0 0 OE 0 1 1 0 0 1 0 0 0 Rc
+addzex 0 1 1 1 1 1 D A 0 0 0 0 0 OE 0 1 1 0 0 1 0 1 0 Rc
+mtsr 0 1 1 1 1 1 S 0 SR 0 0 0 0 0 0 0 1 1 0 1 0 0 1 0 0
+stdcx. 1 0 1 1 1 1 1 S A B 0 0 1 1 0 1 0 1 1 0 1
+stbx 0 1 1 1 1 1 S A B 0 0 1 1 0 1 0 1 1 1 0
+subfmex 0 1 1 1 1 1 D A 0 0 0 0 0 OE 0 1 1 1 0 1 0 0 0 Rc
+mulldx 0 1 1 1 1 1 D A B OE 0 1 1 1 0 1 0 0 1 Rc
+addmex 0 1 1 1 1 1 D A 0 0 0 0 0 OE 0 1 1 1 0 1 0 1 0 Rc
+mullwx 0 1 1 1 1 1 D A B OE 0 1 1 1 0 1 0 1 1 Rc
+mtsrin 0 1 1 1 1 1 S 0 0 0 0 0 B 0 0 1 1 1 1 0 0 1 0 0
+mtocrf 0 1 1 1 1 1 S 1 CRM 0 0 0 1 0 0 1 0 0 0 0 0
+dcbtst 0 1 1 1 1 1 0 0 0 0 0 A B 0 0 1 1 1 1 0 1 1 0 0
+stbux 0 1 1 1 1 1 S A B 0 0 1 1 1 1 0 1 1 1 0
+addx 0 1 1 1 1 1 D A B OE 1 0 0 0 0 1 0 1 0 Rc
+dcbt 0 1 1 1 1 1 0 0 0 0 0 A B 0 1 0 0 0 1 0 1 1 0 0
+lhzx 0 1 1 1 1 1 D A B 0 1 0 0 0 1 0 1 1 1 0
+eqvx 0 1 1 1 1 1 S A B 0 1 0 0 0 1 1 1 0 0 Rc
+tlbiel 0 1 1 1 1 1 0 0 0 0 L 0 0 0 0 0 B 0 1 0 0 01 0 0 1 0 0
+tlbie 0 1 1 1 1 1 0 0 0 0 L 0 0 0 0 0 B 0 1 0 0 1 1 0 0 1 0 0
+eciwx 0 1 1 1 1 1 D A B 0 1 0 0 1 1 0 1 1 0 0
+lhzux 0 1 1 1 1 1 D A B 0 1 0 0 1 1 0 1 1 1 0
+xorx 0 1 1 1 1 1 S A B 0 1 0 0 1 1 1 1 0 0 Rc
+mfspr 0 1 1 1 1 1 D spr 0 1 0 1 0 1 0 0 1 1 0
+lwax 0 1 1 1 1 1 D A B 0 1 0 1 0 1 0 1 0 1 0
+lhax 0 1 1 1 1 1 D A B 0 1 0 1 0 1 0 1 1 1 0
+tlbia 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 1 1 1 0 0 1 0 0
+mftb 0 1 1 1 1 1 D tbr 0 1 0 1 1 1 0 0 1 1 0
+lwaux 0 1 1 1 1 1 D A B 0 1 0 1 1 1 0 1 0 1 0
+lhaux 0 1 1 1 1 1 D A B 0 1 0 1 1 1 0 1 1 1 0
+sthx 0 1 1 1 1 1 S A B 0 1 1 0 0 1 0 1 1 1 0
+orcx 0 1 1 1 1 1 S A B 0 1 1 0 0 1 1 1 0 0 Rc
+sradix 0 1 1 1 1 1 S A sh1 1 1 0 0 1 1 1 0 1 sh2 Rc
+slbie  0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 B 0 1 1 0 1 1 0 0 1 0 0
+ecowx 0 1 1 1 1 1 S A B 0 1 1 0 1 1 0 1 1 0 0
+sthux 0 1 1 1 1 1 S A B 0 1 1 0 1 1 0 1 1 1 0
+orx 0 1 1 1 1 1 S A B 0 1 1 0 1 1 1 1 0 0 Rc
+divdux 0 1 1 1 1 1 D A B OE 1 1 1 0 0 1 0 0 1 Rc
+divwux 0 1 1 1 1 1 D A B OE 1 1 1 0 0 1 0 1 1 Rc
+mtspr 0 1 1 1 1 1 S spr 0 1 1 1 0 1 0 0 1 1 0
+nandx 0 1 1 1 1 1 S A B 0 1 1 1 0 1 1 1 0 0 Rc
+divdx 0 1 1 1 1 1 D A B OE 1 1 1 1 0 1 0 0 1 Rc
+divwx 0 1 1 1 1 1 D A B OE 1 1 1 1 0 1 0 1 1 Rc
+slbia 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 0 0 1 0 0
+lswx 0 1 1 1 1 1 D A B 1 0 0 0 0 1 0 1 0 1 0
+lwbrx 0 1 1 1 1 1 D A B 1 0 0 0 0 1 0 1 1 0 0
+lfsx 0 1 1 1 1 1 D A B 1 0 0 0 0 1 0 1 1 1 0
+srwx 0 1 1 1 1 1 S A B 1 0 0 0 0 1 1 0 0 0 Rc
+srdx 0 1 1 1 1 1 S A B 1 0 0 0 0 1 1 0 1 1 Rc
+tlbsync 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1 1 0 1 1 0 0
+lfsux 0 1 1 1 1 1 D A B 1 0 0 0 1 1 0 1 1 1 0
+mfsr 0 1 1 1 1 1 D 0 SR 0 0 0 0 0 1 0 0 1 0 1 0 0 1 1 0
+lswi 0 1 1 1 1 1 D A NB 1 0 0 1 0 1 0 1 0 1 0
+sync 0 1 1 1 1 1 0 0 0 L 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 1 0 1 1 0 0
+lfdx 0 1 1 1 1 1 D A B 1 0 0 1 0 1 0 1 1 1 0
+lfdux 0 1 1 1 1 1 D A B 1 0 0 1 1 1 0 1 1 1 0
+mfsrin 0 1 1 1 1 1 D 0 0 0 0 0 B 1 0 1 0 0 1 0 0 1 1 0
+slbmfee 0 1 1 1 1 1 D 0 0 0 0 0 B 1 1 1 0 0 1 0 0 1 1 0
+slbmfev 0 1 1 1 1 1 D 0 0 0 0 0 B 1 1 0 1 0 1 0 0 1 1 0
+slbmte 0 1 1 1 1 1 D 0 0 0 0 0 B 0 1 1 0 0 1 0 0 1 0 0
+mfocrf 0 1 1 1 1 1 D 1 CRM 0 0 0 0 0 0 1 0 0 1 1 0
+stswx 0 1 1 1 1 1 S A B 1 0 1 0 0 1 0 1 0 1 0
+stwbrx 0 1 1 1 1 1 S A B 1 0 1 0 0 1 0 1 1 0 0
+stfsx 0 1 1 1 1 1 S A B 1 0 1 0 0 1 0 1 1 1 0
+stfsux 0 1 1 1 1 1 S A B 1 0 1 0 1 1 0 1 1 1 0
+stswi 0 1 1 1 1 1 S A NB 1 0 1 1 0 1 0 1 0 1 0
+stfdx 0 1 1 1 1 1 S A B 1 0 1 1 0 1 0 1 1 1 0
+stfdux 0 1 1 1 1 1 S A B 1 0 1 1 1 1 0 1 1 1 0
+lhbrx 0 1 1 1 1 1 D A B 1 1 0 0 0 1 0 1 1 0 0
+srawx 0 1 1 1 1 1 S A B 1 1 0 0 0 1 1 0 0 0 Rc
+sradx 0 1 1 1 1 1 S A B 1 1 0 0 0 1 1 0 1 0 Rc
+srawix 0 1 1 1 1 1 S A SH 1 1 0 0 1 1 1 0 0 0 Rc
+eieio 0 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 0 1 0 1 0 1 1 0 0
+sthbrx 0 1 1 1 1 1 S A B 1 1 1 0 0 1 0 1 1 0 0
+extshx 0 1 1 1 1 1 S A 0 0 0 0 0 1 1 1 0 0 1 1 0 1 0 Rc
+extsbx 0 1 1 1 1 1 S A 0 0 0 0 0 1 1 1 0 1 1 1 0 1 0 Rc
+icbi 0 1 1 1 1 1 0 0 0 0 0 A B 1 1 1 1 0 1 0 1 1 0 0
+stfiwx 0 1 1 1 1 1 S A B 1 1 1 1 0 1 0 1 1 1 0
+extswx 0 1 1 1 1 1 S A 0 0 0 0 0 1 1 1 1 0 1 1 0 1 0 Rc
+dcbz 0 1 1 1 1 1 0 0 0 0 0 A B 1 1 1 1 1 1 0 1 1 0 0
+lwz 1 0 0 0 0 0 D A d
+lwzu 1 0 0 0 0 1 D A d
+lbz 1 0 0 0 1 0 D A d
+lbzu 1 0 0 0 1 1 D A d
+stw 1 0 0 1 0 0 S A d
+stwu 1 0 0 1 0 1 S A d
+stb 1 0 0 1 1 0 S A d
+stbu 1 0 0 1 1 1 S A d
+lhz 1 0 1 0 0 0 D A d
+lhzu 1 0 1 0 0 1 D A d
+lha 1 0 1 0 1 0 D A d
+lhau 1 0 1 0 1 1 D A d
+sth 1 0 1 1 0 0 S A d
+sthu 1 0 1 1 0 1 S A d
+lmw 1 0 1 1 1 0 D A d
+stmw 1 0 1 1 1 1 S A d
+lfs 1 1 0 0 0 0 D A d
+lfsu 1 1 0 0 0 1 D A d
+lfd 1 1 0 0 1 0 D A d
+lfdu 1 1 0 0 1 1 D A d
+stfs 1 1 0 1 0 0 S A d
+stfsu 1 1 0 1 0 1 S A d
+stfd 1 1 0 1 1 0 S A d
+stfdu 1 1 0 1 1 1 S A d
+ld 1 1 1 0 1 0 D A ds 0 0
+ldu 1 1 1 0 1 0 D A ds 0 1
+lwa 1 1 1 0 1 0 D A ds 1 0
+fdivsx 1 1 1 0 1 1 D A B 0 0 0 0 0 1 0 0 1 0 Rc
+fsubsx 1 1 1 0 1 1 D A B 0 0 0 0 0 1 0 1 0 0 Rc
+faddsx 1 1 1 0 1 1 D A B 0 0 0 0 0 1 0 1 0 1 Rc
+fsqrtsx 1 1 1 0 1 1 D 0 0 0 0 0 B 0 0 0 0 0 1 0 1 1 0 Rc
+fresx 1 1 1 0 1 1 D 0 0 0 0 0 B 0 0 0 0 0 1 1 0 0 0 Rc
+fmulsx 1 1 1 0 1 1 D A 0 0 0 0 0 C 1 1 0 0 1 Rc
+fmsubsx 1 1 1 0 1 1 D A B C 1 1 1 0 0 Rc
+fmaddsx 1 1 1 0 1 1 D A B C 1 1 1 0 1 Rc
+fnmsubsx 1 1 1 0 1 1 D A B C 1 1 1 1 0 Rc
+fnmaddsx 1 1 1 0 1 1 D A B C 1 1 1 1 1 Rc
+std 1 1 1 1 1 0 S A ds 0 0
+stdu 1 1 1 1 1 0 S A ds 0 1
+fcmpu 1 1 1 1 1 1 crfD 0 0 A B 0 0 0 0 0 0 0 0 0 0 0
+frspx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 0 0 1 1 0 0 Rc
+fctiwx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 0 0 1 1 1 0
+fctiwzx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 0 0 1 1 1 1 Rc
+fdivx 1 1 1 1 1 1 D A B 0 0 0 0 0 1 0 0 1 0 Rc
+fsubx 1 1 1 1 1 1 D A B 0 0 0 0 0 1 0 1 0 0 Rc
+faddx 1 1 1 1 1 1 D A B 0 0 0 0 0 1 0 1 0 1 Rc
+fsqrtx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 0 1 0 1 1 0 Rc
+fselx 1 1 1 1 1 1 D A B C 1 0 1 1 1 Rc
+fmulx 1 1 1 1 1 1 D A 0 0 0 0 0 C 1 1 0 0 1 Rc
+frsqrtex 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 0 1 1 0 1 0 Rc
+fmsubx 1 1 1 1 1 1 D A B C 1 1 1 0 0 Rc
+fmaddx 1 1 1 1 1 1 D A B C 1 1 1 0 1 Rc
+fnmsubx 1 1 1 1 1 1 D A B C 1 1 1 1 0 Rc
+fnmaddx 1 1 1 1 1 1 D A B C 1 1 1 1 1 Rc
+fcmpo 1 1 1 1 1 1 crfD 0 0 A B 0 0 0 0 1 0 0 0 0 0 0
+mtfsb1x 1 1 1 1 1 1 crbD 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 1 1 0 Rc
+fnegx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 0 1 0 1 0 0 0 Rc
+mcrfs 1 1 1 1 1 1 crfD 0 0 crfS 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0
+mtfsb0x 1 1 1 1 1 1 crbD 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 1 1 0 Rc
+fmrx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 0 1 0 0 1 0 0 0 Rc
+mtfsfix 1 1 1 1 1 1 crfD 0 0 0 0 0 0 0 IMM 0 0 0 1 0 0 0 0 1 1 0 Rc
+fnabsx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 0 1 0 0 0 1 0 0 0 Rc
+fabsx 1 1 1 1 1 1 D 0 0 0 0 0 B 0 1 0 0 0 0 1 0 0 0 Rc
+mffsx 1 1 1 1 1 1 D 0 0 0 0 0 0 0 0 0 0 1 0 0 1 0 0 0 1 1 1 Rc
+mtfsfx 1 1 1 1 1 1 0 FM 0 B 1 0 1 1 0 0 0 1 1 1 Rc
+fctidx 1 1 1 1 1 1 D 0 0 0 0 0 B 1 1 0 0 1 0 1 1 1 0 Rc
+fctidzx 1 1 1 1 1 1 D 0 0 0 0 0 B 1 1 0 0 1 0 1 1 1 1 Rc
+fcfidx 1 1 1 1 1 1 D 0

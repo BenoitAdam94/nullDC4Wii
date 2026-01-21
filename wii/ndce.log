@@ -1,0 +1,425 @@
+﻿Build started 13-12-10 2:30:25 AM.
+     1>Project "C:\Projects\nulldc_psp_stable\stable\ndce.vcxproj" on node 2 (build target(s)).
+     1>Build:
+         wii/vs_make
+         nullDC.cpp
+         stdclass.cpp
+         cl.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp: In function 'int setconfig(wchar**, int)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp(84): warning : deprecated conversion from string constant to 'wchar*'
+         config.cpp
+         aica_if.cpp
+         asic.cpp
+         dc.cpp
+         gdrom_response.cpp
+         gdromv3.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(10) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp: At global scope:
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(35): warning : non-local variable '<anonymous struct> read_params' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(77): warning : non-local variable '<anonymous struct> packet_cmd' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(85): warning : non-local variable '<anonymous struct> read_buff' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(94): warning : non-local variable '<anonymous struct> pio_buff' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(100): warning : non-local variable '<anonymous struct> ata_cmd' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(116): warning : non-local variable '<anonymous struct> cdda' uses anonymous type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/gdrom/gdromv3.cpp(151): warning : non-local variable '<anonymous union> ByteCount' uses anonymous type
+         maple_cfg.cpp
+         maple_devs.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/maple/maple_devs.cpp: In member function 'virtual u32 maple_sega_vmu::dma(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/maple/maple_devs.cpp(478): warning : unused variable 'wat'
+         maple_helper.cpp
+         maple_if.cpp
+         _vmem.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/_vmem.cpp: In function 'bool _vmem_reserve()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/_vmem.cpp(524): warning : format '%08X' expects type 'unsigned int', but argument 2 has type 'u8*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/_vmem.cpp(524): warning : format '%08X' expects type 'unsigned int', but argument 3 has type 'u8*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/_vmem.cpp(524): warning : format '%08X' expects type 'unsigned int', but argument 2 has type 'u8*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/_vmem.cpp(524): warning : format '%08X' expects type 'unsigned int', but argument 3 has type 'u8*'
+         memutil.cpp
+         mmu.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/mmu.cpp(6) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         sb.cpp
+         sh4_area0.cpp
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_area0.cpp(10): warning : ignoring #pragma warning
+         sh4_internal_reg.cpp
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(21): warning : ignoring #pragma warning
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../types.h(8) ,
+                          from c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(2) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 1u, T = short unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(757) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 1u, T = unsigned char]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 1u, T = unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(759) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 1u, T = unsigned char]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 2u, T = short unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(757) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 2u, T = short unsigned int]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 2u, T = unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(759) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 2u, T = short unsigned int]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 4u, T = short unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(757) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 4u, T = unsigned int]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 4u, T = unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(759) :   instantiated from 'T ReadMem_area7_OCR_T(u32) [with unsigned int sz = 4u, T = unsigned int]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 1u, T = unsigned char]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(782) :   instantiated from 'void WriteMem_area7_OCR_T(u32, T) [with unsigned int sz = 1u, T = unsigned char]'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_internal_reg.cpp(886) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         sh4_mem.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_mem.cpp(10) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_mem.cpp: In function 'void map_area3(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/mem/sh4_mem.cpp(86): warning : unused variable 'map_sz'
+         pvrLock.cpp
+         pvr_if.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/pvr/pvr_if.cpp: In function 'void YUV_data(u32*, u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/pvr/pvr_if.cpp(145): warning : unused variable 'TA_YUV_TEX_BASE'
+         pvr_sb_regs.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/pvr/pvr_sb_regs.cpp: In function 'void do_pvr_dma()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/pvr/pvr_sb_regs.cpp(24): warning : unused variable 'chcr'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/pvr/pvr_sb_regs.cpp(26): warning : unused variable 'dmatcr'
+         bsc.cpp
+         ccn.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/ccn.cpp(10) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         cpg.cpp
+         dmac.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/dmac.cpp: In function 'void DMAC_Ch2St()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/dmac.cpp(21): warning : unused variable 'chcr'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/dmac.cpp(23): warning : unused variable 'dmatcr'
+         intc.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/intc.cpp(9) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         rtc.cpp
+         sci.cpp
+         scif.cpp
+         sh4_cpu.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(595) :2: warning: "/*" within comment
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(15) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp: In function 'void i0000_nnnn_1001_0011(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(96): warning : unused variable 'n'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp: In function 'void i0000_nnnn_1010_0011(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(103): warning : unused variable 'n'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp: In function 'void i0000_nnnn_1011_0011(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(110): warning : unused variable 'n'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp: In function 'void i0011_nnnn_mmmm_1111(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(577): warning : unused variable 'rm'
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp: In function 'void i0011_nnnn_mmmm_1011(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_cpu.cpp(643): warning : unused variable 'rm'
+         sh4_fpu.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_fpu.cpp(8) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         sh4_if.cpp
+         sh4_interpreter.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_interpreter.cpp(10) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../types.h(8) ,
+                          from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_interpreter.cpp(6) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h: In function 'T host_to_le(T) [with unsigned int sz = 4u, T = unsigned int]':
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_interpreter.cpp(135) :   instantiated from here
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : right shift count >= width of type
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugins/plugin_header.h(228): warning : left shift count >= width of type
+         sh4_opcode_list.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_opcode_list.cpp: In function 'void BuildOpcodeTables()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_opcode_list.cpp(443): warning : comparison between signed and unsigned integer expressions
+         sh4_registers.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.cpp(7) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         tmu.cpp
+         ubc.cpp
+         blockmanager.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/blockmanager.cpp(12) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/../sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/../sh4_registers.h(24): warning : no return statement in function returning non-void
+         decoder.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(12) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp: At global scope:
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(95): warning : non-local variable '<anonymous struct> state' uses anonymous type
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp: In function 'DecodedBlock* dec_DecodeBlock(u32, fpscr_type, u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : format '%04X' expects type 'unsigned int', but argument 2 has type 'u64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : format '%s' expects type 'char*', but argument 3 has type 'u32'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : too many arguments for format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : format '%04X' expects type 'unsigned int', but argument 2 has type 'u64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : format '%s' expects type 'char*', but argument 3 has type 'u32'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/decoder.cpp(900): warning : too many arguments for format
+         driver.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/driver.cpp(13) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/../sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/../sh4_registers.h(24): warning : no return statement in function returning non-void
+         shil.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.cpp(101) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil_canonical.h(129) :1: warning: "BIN_OP_I4" redefined
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.h(32) ,
+                          from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.cpp(6) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil_canonical.h(148) :1: warning: this is the location of the previous definition
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.cpp(107) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil_canonical.h(148) :1: warning: "BIN_OP_I4" redefined
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.cpp(101) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil_canonical.h(129) :1: warning: this is the location of the previous definition
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/rec_v2/shil.cpp(98) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc/sh4/sh4_registers.h(24): warning : no return statement in function returning non-void
+         plugin_manager.cpp
+         plugin_types.cpp
+         nullExtDev.cpp
+         drkMapleDevices.cpp
+         EmptyAICA.cpp
+         aica_hax.cpp
+         aica_hle.cpp
+         ImgReader.cpp
+         cdi.cpp
+         common.cpp
+         ioctl.cpp
+         iso9660.cpp
+         local_cache.cpp
+         mds.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds.cpp: In function 'bool mds_init(wchar*)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds.cpp(190): warning : deprecated conversion from string constant to 'char*'
+         mds_reader.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_mds(wchar*, bool)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(167): warning : unused variable 'smth1'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(170): warning : unused variable 'smth2'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(174): warning : unused variable 'smth3'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(176): warning : unused variable 'smth4'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(177): warning : unused variable 'smth5'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(178): warning : unused variable 'smth6'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(179): warning : unused variable 'smth7'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(108): warning : unused variable 'mds_header_size'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(111): warning : unused variable 'mds_footer_size'
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_nrg(wchar*, bool)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(313): warning : format '%x' expects type 'unsigned int', but argument 3 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(313): warning : format '%x' expects type 'unsigned int', but argument 3 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(491): warning : format '%08x' expects type 'unsigned int', but argument 9 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(491): warning : format '%08x' expects type 'unsigned int', but argument 10 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(491): warning : format '%08x' expects type 'unsigned int', but argument 9 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(491): warning : format '%08x' expects type 'unsigned int', but argument 10 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : format '%i' expects type 'int', but argument 3 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : format '%x' expects type 'unsigned int', but argument 4 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : too many arguments for format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : unknown conversion type character 'I' in format
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : format '%i' expects type 'int', but argument 3 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : format '%x' expects type 'unsigned int', but argument 4 has type 's64'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(541): warning : too many arguments for format
+         ui.cpp
+         Renderer_if.cpp
+         SPG.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp: In function 'void CalculateSync()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp(89): warning : unused variable 'interl_mode'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp(66): warning : unused variable 'scale_x'
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp: In function 'void libPvr_UpdatePvr(u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp(115): warning : comparison between signed and unsigned integer expressions
+         drkPvr.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp: In function 'void LSPVR()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(123): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(124): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(125): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(126): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(128): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(129): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(131): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(135): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(136): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(137): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(139): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(140): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(141): warning : deprecated conversion from string constant to 'wchar*'
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp: In function 'void SSPVR()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(147): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(148): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(149): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(150): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(152): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(153): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(155): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(156): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(157): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(158): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(160): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(161): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(162): warning : deprecated conversion from string constant to 'wchar*'
+         glesRend.cpp
+         gxRend.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp: In function 'void decode_pvr_vertex(u32, u32, Vertex*)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp(159): warning : unused variable 'col'
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp: In function 'void SetTextureParams(PolyParam*)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp(282): warning : format '%08X' expects type 'unsigned int', but argument 7 has type 'u32*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp(282): warning : format '%08X' expects type 'unsigned int', but argument 7 has type 'u32*'
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp: In function 'bool InitRenderer()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp(980): warning : unused variable 'background'
+         nullRend.cpp
+         regs.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/regs.cpp: In function 'void libPvr_WriteReg(u32, u32, u32)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/regs.cpp(80): warning : unused variable 'pal'
+         softRend.cpp
+         ta.cpp
+         tex_decode.cpp
+         main.cpp
+         c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp: In function 'int main(int, wchar**)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp(79): warning : deprecated conversion from string constant to 'wchar*'
+         wii_driver.cpp
+         In file included from c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(38) :
+         c:/Projects/nulldc_psp_stable/stable/wii/../dc\sh4\sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../dc\sh4\sh4_registers.h(24): warning : no return statement in function returning non-void
+         c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp: At global scope:
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(134): warning : non-local variable '<anonymous struct> compile_state' uses anonymous type
+         c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp: In function 'void (* ngen_Compile(DecodedBlock*, bool))()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(724): warning : label 'defaulty' defined but not used
+         c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp: In function 'void ngen_mainloop()':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(892): warning : format '%08X' expects type 'unsigned int', but argument 3 has type 'void (*)()'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(892): warning : format '%08X' expects type 'unsigned int', but argument 3 has type 'void (*)()'
+         linking ... boot.elf
+         output ... boot.dol
+         ***********************************************************
+         * d0lLZ 3.0 - Gamecube Executable Compressor.
+         * softdev 2005 - http://www.tehskeen.com
+         ***********************************************************
+         * DOL requires 0x000a3da0 bytes for binary image ... OK
+         * Loading DOL sections ............................. OK
+         ***********************************************************
+         * Compressing 0.00%
+         * Compressing 1.00%
+         * Compressing 1.92%
+         * Compressing 3.03%
+         * Compressing 3.98%
+         * Compressing 5.16%
+         * Compressing 6.50%
+         * Compressing 7.56%
+         * Compressing 8.82%
+         * Compressing 10.43%
+         * Compressing 11.51%
+         * Compressing 12.47%
+         * Compressing 13.64%
+         * Compressing 14.68%
+         * Compressing 15.68%
+         * Compressing 16.60%
+         * Compressing 17.53%
+         * Compressing 18.59%
+         * Compressing 19.60%
+         * Compressing 20.77%
+         * Compressing 22.08%
+         * Compressing 23.27%
+         * Compressing 24.51%
+         * Compressing 25.57%
+         * Compressing 26.73%
+         * Compressing 28.05%
+         * Compressing 29.48%
+         * Compressing 31.85%
+         * Compressing 33.49%
+         * Compressing 35.41%
+         * Compressing 37.20%
+         * Compressing 38.23%
+         * Compressing 39.38%
+         * Compressing 40.38%
+         * Compressing 41.78%
+         * Compressing 43.34%
+         * Compressing 44.64%
+         * Compressing 45.90%
+         * Compressing 46.97%
+         * Compressing 47.98%
+         * Compressing 49.20%
+         * Compressing 50.30%
+         * Compressing 51.63%
+         * Compressing 52.80%
+         * Compressing 53.88%
+         * Compressing 55.22%
+         * Compressing 56.34%
+         * Compressing 57.63%
+         * Compressing 58.79%
+         * Compressing 59.91%
+         * Compressing 61.23%
+         * Compressing 62.60%
+         * Compressing 63.92%
+         * Compressing 65.21%
+         * Compressing 66.50%
+         * Compressing 67.79%
+         * Compressing 69.05%
+         * Compressing 70.22%
+         * Compressing 71.49%
+         * Compressing 72.82%
+         * Compressing 73.97%
+         * Compressing 75.10%
+         * Compressing 76.25%
+         * Compressing 77.45%
+         * Compressing 78.65%
+         * Compressing 79.72%
+         * Compressing 81.43%
+         * Compressing 82.73%
+         * Compressing 83.77%
+         * Compressing 84.77%
+         * Compressing 85.82%
+         * Compressing 87.34%
+         * Compressing 89.27%
+         * Compressing 91.08%
+         * Compressing 92.32%
+         * Compressing 93.73%
+         * Compressing 94.34%
+         * Compressing 94.98%
+         * Compressing 95.67%
+         * Compressing 97.78%
+         * Compressing 99.52%
+         * Compressed 671136 bytes to 329280 bytes (49.06%)
+         ***********************************************************
+         * Generating DOL [VIPER OFF] [MOTOR OFF] ........... OK
+         ***********************************************************
+     1>Done Building Project "C:\Projects\nulldc_psp_stable\stable\ndce.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:01:33.67

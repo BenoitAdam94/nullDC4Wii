@@ -1,0 +1,461 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="BeagleBoard|Win32">
+      <Configuration>BeagleBoard</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PS2|Win32">
+      <Configuration>PS2</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PSP|Win32">
+      <Configuration>PSP</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Wii|Win32">
+      <Configuration>Wii</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Windows|Win32">
+      <Configuration>Windows</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}</ProjectGuid>
+    <RootNamespace>ndce</RootNamespace>
+    <Keyword>MakeFileProj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'" Label="Configuration">
+    <ConfigurationType>Makefile</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">$(SolutionDir)workdir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">psp/vs_make</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">psp/vs_rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">psp/vs_clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">eboot.ebp</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">_PSP;_MIPS;NDEBUG;TARGET_PSP;NOPSPLINK;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(SolutionDir);C:\devkitPro\msys\include;C:\devkitPro\msys\include\c++\4.1.2;C:\devkitPro\msys\psp\sdk\include;C:\devkitPro\msys\psp\sdk\include\libc;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PSP|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">wii/vs_make</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">wii/vs_rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">wii/vs_clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">eboot.ebp</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">_WII;_PPC;HW_RVL;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(SolutionDir);C:\devkitPro\msys\include;C:\devkitPro\msys\include\c++\4.1.2;C:\devkitPro\libogc\include;C:\devkitPro\devkitPPC\powerpc-gekko\include;C:\devkitPro\devkitPPC\lib\gcc\powerpc-gekko\4.2.4\include;C:\devkitPro\devkitPPC\powerpc-gekko\include\c++\4.2.4\backward;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='Wii|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">beagle/vs_make</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">beagle/vs_rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">beagle/vs_clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">eboot.ebp</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">_LINUX;_ARM;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(SolutionDir);C:\devkitPro\msys\include;C:\devkitPro\msys\include\c++\4.1.2;C:\devkitPro\libogc\include;C:\devkitPro\devkitPPC\powerpc-gekko\include;C:\devkitPro\devkitPPC\lib\gcc\powerpc-gekko\4.2.4\include;C:\devkitPro\devkitPPC\powerpc-gekko\include\c++\4.2.4\backward;C:\Program Files (x86)\CodeSourcery\Sourcery G++ Lite\arm-none-linux-gnueabi\libc\usr\include\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='BeagleBoard|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(Configuration)\</IntDir>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">ps2/vs_make</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">ps2/vs_rebuild</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">ps2/vs_clean</NMakeCleanCommandLine>
+    <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">eboot.ebp</NMakeOutput>
+    <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">_PS2;_MIPS;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(SolutionDir);C:\devkitPro\msys\include;C:\devkitPro\msys\include\c++\4.1.2;C:\devkitPro\msys\psp\sdk\include;C:\devkitPro\msys\psp\sdk\include\libc;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeForcedIncludes Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(NMakeForcedIncludes)</NMakeForcedIncludes>
+    <NMakeAssemblySearchPath Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(NMakeAssemblySearchPath)</NMakeAssemblySearchPath>
+    <NMakeForcedUsingAssemblies Condition="'$(Configuration)|$(Platform)'=='PS2|Win32'">$(NMakeForcedUsingAssemblies)</NMakeForcedUsingAssemblies>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)workdir\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">
+    <ClCompile>
+      <Optimization>Full</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <OmitFramePointers>true</OmitFramePointers>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>RELEASE;NDEBUG;_WIN86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <AdditionalIncludeDirectories>./;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>RELEASE;NDEBUG;_WIN86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ShowIncludes>true</ShowIncludes>
+    </ClCompile>
+    <Link>
+      <OutputFile>$(OutDir)$(ProjectName).exe</OutputFile>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <OptimizeReferences>true</OptimizeReferences>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <LinkTimeCodeGeneration>
+      </LinkTimeCodeGeneration>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="ps3\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="win-x86\winmain.cpp" />
+    <ClCompile Include="win-x86\plugs\drkPvr\gu_emu.cpp" />
+    <ClCompile Include="win-x86\plugs\drkPvr\gum_emu.cpp" />
+    <ClCompile Include="win-x86\dc\sh4\rec_v2\win86_driver.cpp">
+      <Optimization Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">Disabled</Optimization>
+    </ClCompile>
+    <ClCompile Include="psp\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="psp\dc\sh4\rec_v2\psp_driver.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="nullDC.cpp" />
+    <ClCompile Include="stdclass.cpp" />
+    <ClCompile Include="dc\dc.cpp" />
+    <ClCompile Include="dc\sh4\sh4_registers.cpp" />
+    <ClCompile Include="dc\sh4\sh4_if.cpp" />
+    <ClCompile Include="dc\sh4\sh4_interpreter.cpp" />
+    <ClCompile Include="dc\sh4\sh4_cpu.cpp" />
+    <ClCompile Include="dc\sh4\sh4_fpu.cpp" />
+    <ClCompile Include="dc\sh4\sh4_opcode_list.cpp" />
+    <ClCompile Include="dc\sh4\rec_v2\driver.cpp" />
+    <ClCompile Include="dc\sh4\rec_v2\blockmanager.cpp" />
+    <ClCompile Include="dc\sh4\rec_v2\decoder.cpp" />
+    <ClCompile Include="dc\sh4\rec_v2\shil.cpp" />
+    <ClCompile Include="dc\sh4\ubc.cpp" />
+    <ClCompile Include="dc\sh4\bsc.cpp" />
+    <ClCompile Include="dc\sh4\ccn.cpp" />
+    <ClCompile Include="dc\sh4\cpg.cpp" />
+    <ClCompile Include="dc\sh4\dmac.cpp" />
+    <ClCompile Include="dc\sh4\intc.cpp" />
+    <ClCompile Include="dc\sh4\rtc.cpp" />
+    <ClCompile Include="dc\sh4\sci.cpp" />
+    <ClCompile Include="dc\sh4\scif.cpp" />
+    <ClCompile Include="dc\sh4\tmu.cpp" />
+    <ClCompile Include="dc\pvr\pvr_if.cpp" />
+    <ClCompile Include="dc\pvr\pvr_sb_regs.cpp" />
+    <ClCompile Include="dc\pvr\pvrLock.cpp" />
+    <ClCompile Include="dc\aica\aica_if.cpp" />
+    <ClCompile Include="dc\mem\_vmem.cpp" />
+    <ClCompile Include="dc\mem\sh4_mem.cpp" />
+    <ClCompile Include="dc\mem\memutil.cpp" />
+    <ClCompile Include="dc\mem\mmu.cpp" />
+    <ClCompile Include="dc\mem\sh4_area0.cpp" />
+    <ClCompile Include="dc\mem\sb.cpp" />
+    <ClCompile Include="dc\mem\sh4_internal_reg.cpp" />
+    <ClCompile Include="dc\gdrom\gdrom_response.cpp" />
+    <ClCompile Include="dc\gdrom\gdromv3.cpp" />
+    <ClCompile Include="dc\maple\maple_cfg.cpp" />
+    <ClCompile Include="dc\maple\maple_devs.cpp" />
+    <ClCompile Include="dc\maple\maple_helper.cpp" />
+    <ClCompile Include="dc\maple\maple_if.cpp" />
+    <ClCompile Include="dc\asic\asic.cpp" />
+    <ClCompile Include="config\config.cpp" />
+    <ClCompile Include="cl\cl.cpp" />
+    <ClCompile Include="plugs\EmptyAICA\aica_hax.cpp" />
+    <ClCompile Include="plugs\EmptyAICA\aica_hle.cpp" />
+    <ClCompile Include="plugs\EmptyAICA\EmptyAICA.cpp" />
+    <ClCompile Include="plugs\drkPvr\drkPvr.cpp" />
+    <ClCompile Include="plugs\drkPvr\Renderer_if.cpp" />
+    <ClCompile Include="plugs\drkPvr\tex_decode.cpp" />
+    <ClCompile Include="plugs\drkPvr\glesRend.cpp" />
+    <ClCompile Include="plugs\drkPvr\nullRend.cpp" />
+    <ClCompile Include="plugs\drkPvr\softRend.cpp" />
+    <ClCompile Include="plugs\drkPvr\regs.cpp" />
+    <ClCompile Include="plugs\drkPvr\SPG.cpp" />
+    <ClCompile Include="plugs\drkPvr\ta.cpp" />
+    <ClCompile Include="plugs\ImgReader\cdi.cpp" />
+    <ClCompile Include="plugs\ImgReader\common.cpp" />
+    <ClCompile Include="plugs\ImgReader\ImgReader.cpp" />
+    <ClCompile Include="plugs\ImgReader\iso9660.cpp" />
+    <ClCompile Include="plugs\ImgReader\local_cache.cpp" />
+    <ClCompile Include="plugs\ImgReader\mds.cpp" />
+    <ClCompile Include="plugs\ImgReader\mds_reader.cpp" />
+    <ClCompile Include="plugs\ImgReader\remote_tcp.cpp" />
+    <ClCompile Include="plugs\drkMapleDevices\drkMapleDevices.cpp" />
+    <ClCompile Include="plugs\nullExtDev\nullExtDev.cpp" />
+    <ClCompile Include="plugins\plugin_manager.cpp" />
+    <ClCompile Include="plugins\plugin_types.cpp" />
+    <ClCompile Include="linux\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="linux\types.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="wii\iso.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="wii\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="wii\wii_types.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="plugs\drkPvr\gxRend.cpp" />
+    <ClCompile Include="wii\dc\sh4\rec_v2\wii_driver.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="ps2\main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="rec-ARM\armwreck.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuildStep Include="win-x86\plugs\drkPvr\gu_emu.h" />
+    <ClInclude Include="gui\resource.h" />
+    <ClInclude Include="psp\psp_emit.h" />
+    <ClInclude Include="config.h" />
+    <ClInclude Include="os_base.h" />
+    <ClInclude Include="stdclass.h" />
+    <ClInclude Include="types.h" />
+    <ClInclude Include="dc\dc.h" />
+    <ClInclude Include="dc\sh4\sh4_registers.h" />
+    <ClInclude Include="dc\sh4\intc_types.h" />
+    <ClInclude Include="dc\sh4\sh4_if.h" />
+    <ClInclude Include="dc\sh4\sh4_interpreter.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu_arith.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu_branch.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu_branch_rec.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu_logic.h" />
+    <ClInclude Include="dc\sh4\sh4_cpu_movs.h" />
+    <ClInclude Include="dc\sh4\sh4_fpu.h" />
+    <ClInclude Include="dc\sh4\sh4_fpu_mov.h" />
+    <ClInclude Include="dc\sh4\sh4_opcode_list.h" />
+    <ClInclude Include="dc\sh4\rec_v2\ngen.h" />
+    <ClInclude Include="dc\sh4\rec_v2\rec_config.h" />
+    <ClInclude Include="dc\sh4\rec_v2\blockmanager.h" />
+    <ClInclude Include="dc\sh4\rec_v2\decoder.h" />
+    <ClInclude Include="dc\sh4\rec_v2\decoder_opcodes.h" />
+    <ClInclude Include="dc\sh4\rec_v2\shil.h" />
+    <ClInclude Include="dc\sh4\rec_v2\shil_canonical.h" />
+    <ClInclude Include="dc\sh4\ubc.h" />
+    <ClInclude Include="dc\sh4\bsc.h" />
+    <ClInclude Include="dc\sh4\ccn.h" />
+    <ClInclude Include="dc\sh4\cpg.h" />
+    <ClInclude Include="dc\sh4\dmac.h" />
+    <ClInclude Include="dc\sh4\intc.h" />
+    <ClInclude Include="dc\sh4\rtc.h" />
+    <ClInclude Include="dc\sh4\sci.h" />
+    <ClInclude Include="dc\sh4\scif.h" />
+    <ClInclude Include="dc\sh4\tmu.h" />
+    <ClInclude Include="dc\pvr\pvr_if.h" />
+    <ClInclude Include="dc\pvr\pvr_sb_regs.h" />
+    <ClInclude Include="dc\pvr\pvrLock.h" />
+    <ClInclude Include="dc\aica\aica_if.h" />
+    <ClInclude Include="dc\mem\_vmem.h" />
+    <ClInclude Include="dc\mem\sh4_mem.h" />
+    <ClInclude Include="dc\mem\memutil.h" />
+    <ClInclude Include="dc\mem\mmu.h" />
+    <ClInclude Include="sh4_reg_playground.h" />
+    <ClInclude Include="dc\mem\sh4_area0.h" />
+    <ClInclude Include="dc\mem\sb.h" />
+    <ClInclude Include="dc\mem\sh4_internal_reg.h" />
+    <ClInclude Include="dc\gdrom\gdrom_if.h" />
+    <ClInclude Include="dc\gdrom\gdromv3.h" />
+    <ClInclude Include="dc\maple\maple_cfg.h" />
+    <ClInclude Include="dc\maple\maple_devs.h" />
+    <ClInclude Include="dc\maple\maple_helper.h" />
+    <ClInclude Include="dc\maple\maple_if.h" />
+    <ClInclude Include="dc\asic\asic.h" />
+    <ClInclude Include="config\config.h" />
+    <ClInclude Include="cl\cl.h" />
+    <ClInclude Include="plugs\EmptyAICA\aica_hax.h" />
+    <ClInclude Include="plugs\EmptyAICA\aica_hle.h" />
+    <ClInclude Include="plugs\EmptyAICA\EmptyAICA.h" />
+    <ClInclude Include="plugs\drkPvr\config.h" />
+    <ClInclude Include="plugs\drkPvr\drkPvr.h" />
+    <ClInclude Include="plugs\drkPvr\Renderer_if.h" />
+    <ClInclude Include="plugs\drkPvr\glesRend.h" />
+    <ClInclude Include="plugs\drkPvr\nullRend.h" />
+    <ClInclude Include="plugs\drkPvr\softRend.h" />
+    <ClInclude Include="plugs\drkPvr\regs.h" />
+    <ClInclude Include="plugs\drkPvr\spg.h" />
+    <ClInclude Include="plugs\drkPvr\ta.h" />
+    <ClInclude Include="plugs\drkPvr\ta_const_df.h" />
+    <ClInclude Include="plugs\drkPvr\ta_structs.h" />
+    <ClInclude Include="plugs\ImgReader\cdi.h" />
+    <ClInclude Include="plugs\ImgReader\common.h" />
+    <ClInclude Include="plugs\ImgReader\gd_driver.h" />
+    <ClInclude Include="plugs\ImgReader\ImgReader.h" />
+    <ClInclude Include="plugs\ImgReader\iso9660.h" />
+    <ClInclude Include="plugs\ImgReader\mds.h" />
+    <ClInclude Include="plugs\ImgReader\mds_reader.h" />
+    <ClInclude Include="plugins\plugin_header.h" />
+    <ClInclude Include="plugins\plugin_manager.h" />
+    <ClInclude Include="plugins\plugin_types.h" />
+    <CustomBuildStep Include="linux\typedefs.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+    <CustomBuildStep Include="wii\iso.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+    <ClInclude Include="emitter\PPCEmit\ppc_emit.h" />
+    <ClInclude Include="emitter\PPCEmit\ppc_emitter.h" />
+    <ClInclude Include="plugs\drkPvr\gxRend.h" />
+    <CustomBuildStep Include="rec-ARM\armwreck.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+    <ClInclude Include="rec-ARM\exchandler.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="win-x86\deps\emitter_Win32.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="gui\ndc_icon.ico" />
+    <None Include="ps3\Makefile" />
+    <None Include="ps3\shaders\pixel.cg" />
+    <None Include="ps3\shaders\vertex.cg" />
+    <None Include="psp\icon0.png" />
+    <None Include="psp\Makefile" />
+    <None Include="psp\vs_clean.bat" />
+    <None Include="psp\vs_make.bat" />
+    <None Include="psp\vs_rebuild.bat" />
+    <CustomBuildStep Include="psp\plugs\drkPvr\pspDveManager.S">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+    <CustomBuildStep Include="wii\Makefile">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+    <None Include="wii\vs_clean.bat" />
+    <None Include="wii\vs_make.bat" />
+    <None Include="wii\vs_rebuild.bat" />
+    <None Include="ps2\Makefile" />
+    <None Include="ps2\vs_clean.bat" />
+    <None Include="ps2\vs_make.bat" />
+    <None Include="ps2\vs_rebuild.bat" />
+    <None Include="beagle\Makefile" />
+    <None Include="beagle\vs_clean.bat" />
+    <None Include="beagle\vs_make.bat" />
+    <None Include="beagle\vs_rebuild.bat" />
+    <CustomBuildStep Include="rec-ARM\ngen_arm.S">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Windows|Win32'">true</ExcludedFromBuild>
+    </CustomBuildStep>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="gui\resource.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

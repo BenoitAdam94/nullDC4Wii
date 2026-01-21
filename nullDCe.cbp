@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="nullDCe" />
+		<Option makefile="Makefile_linux" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="workdir/nullDCe" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="workdir/" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DDEBUG" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="workdir/nullDCe" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="workdir/" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DRELEASE" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="ARM_Linux_Debug">
+				<Option output="workdir/nullDCe_armD" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug" />
+				<Option type="1" />
+				<Option compiler="oe_neon_patched_gnu_arm_gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_ARM" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+			</Target>
+			<Target title="ARM_Linux_Release">
+				<Option output="workdir/nullDCe_arm" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="oe_neon_patched_gnu_arm_gcc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O4" />
+					<Add option="-ffast-math" />
+					<Add option="-D_ARM" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="LinuxX64 Debug">
+				<Option output="workdir/nullDCe_x64D" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="workdir/" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-DSUPPORT_X11" />
+					<Add option="-DDEBUG" />
+					<Add option="-D_X64" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+			</Target>
+			<Target title="LinuxX64 Release">
+				<Option output="workdir/nullDCe_x64" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="workdir/" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+					<Add option="-DSUPPORT_X11" />
+					<Add option="-DRELEASE" />
+					<Add option="-D_X64" />
+					<Add option="-D_LINUX" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+			<Target title="PPC_Linux_Debug">
+				<Option output="workdir/nullDCe_ppcD" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug" />
+				<Option type="1" />
+				<Option compiler="devkitppc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-D_PPC" />
+					<Add option="-D_WII" />
+				</Compiler>
+			</Target>
+			<Target title="PPC_Linux_Release">
+				<Option output="workdir/nullDCe_ppc" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="devkitppc" />
+				<Compiler>
+					<Add option="-fexpensive-optimizations" />
+					<Add option="-O4" />
+					<Add option="-ffast-math" />
+					<Add option="-D_PPC" />
+					<Add option="-D_WII" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+			<Add directory="../nulldc_psp" />
+		</Compiler>
+		<Linker>
+			<Add library="EGL" />
+			<Add library="GLESv2" />
+			<Add library="rt" />
+			<Add library="ncurses" />
+		</Linker>
+		<Unit filename="basic_types.h" />
+		<Unit filename="cl/cl.cpp" />
+		<Unit filename="cl/cl.h" />
+		<Unit filename="config.h" />
+		<Unit filename="config/config.cpp" />
+		<Unit filename="config/config.h" />
+		<Unit filename="dc/aica/aica_if.cpp" />
+		<Unit filename="dc/aica/aica_if.h" />
+		<Unit filename="dc/asic/asic.cpp" />
+		<Unit filename="dc/asic/asic.h" />
+		<Unit filename="dc/dc.cpp" />
+		<Unit filename="dc/dc.h" />
+		<Unit filename="dc/gdrom/gdrom_if.h" />
+		<Unit filename="dc/gdrom/gdrom_response.cpp" />
+		<Unit filename="dc/gdrom/gdromv3.cpp" />
+		<Unit filename="dc/gdrom/gdromv3.h" />
+		<Unit filename="dc/maple/maple_if.cpp" />
+		<Unit filename="dc/maple/maple_if.h" />
+		<Unit filename="dc/mem/_vmem.cpp" />
+		<Unit filename="dc/mem/_vmem.h" />
+		<Unit filename="dc/mem/memutil.cpp" />
+		<Unit filename="dc/mem/memutil.h" />
+		<Unit filename="dc/mem/mmu.cpp" />
+		<Unit filename="dc/mem/mmu.h" />
+		<Unit filename="dc/mem/sb.cpp" />
+		<Unit filename="dc/mem/sb.h" />
+		<Unit filename="dc/mem/sh4_area0.cpp" />
+		<Unit filename="dc/mem/sh4_area0.h" />
+		<Unit filename="dc/mem/sh4_internal_reg.cpp" />
+		<Unit filename="dc/mem/sh4_internal_reg.h" />
+		<Unit filename="dc/mem/sh4_mem.cpp" />
+		<Unit filename="dc/mem/sh4_mem.h" />
+		<Unit filename="dc/pvr/pvrLock.cpp" />
+		<Unit filename="dc/pvr/pvrLock.h" />
+		<Unit filename="dc/pvr/pvr_if.cpp" />
+		<Unit filename="dc/pvr/pvr_if.h" />
+		<Unit filename="dc/pvr/pvr_sb_regs.cpp" />
+		<Unit filename="dc/pvr/pvr_sb_regs.h" />
+		<Unit filename="dc/sh4/bsc.cpp" />
+		<Unit filename="dc/sh4/bsc.h" />
+		<Unit filename="dc/sh4/ccn.cpp" />
+		<Unit filename="dc/sh4/ccn.h" />
+		<Unit filename="dc/sh4/cpg.cpp" />
+		<Unit filename="dc/sh4/cpg.h" />
+		<Unit filename="dc/sh4/dmac.cpp" />
+		<Unit filename="dc/sh4/dmac.h" />
+		<Unit filename="dc/sh4/intc.cpp" />
+		<Unit filename="dc/sh4/intc.h" />
+		<Unit filename="dc/sh4/intc_types.h" />
+		<Unit filename="dc/sh4/rec_v2/blockmanager.cpp" />
+		<Unit filename="dc/sh4/rec_v2/blockmanager.h" />
+		<Unit filename="dc/sh4/rec_v2/decoder.cpp" />
+		<Unit filename="dc/sh4/rec_v2/decoder.h" />
+		<Unit filename="dc/sh4/rec_v2/decoder_opcodes.h" />
+		<Unit filename="dc/sh4/rec_v2/driver.cpp" />
+		<Unit filename="dc/sh4/rec_v2/ngen.h" />
+		<Unit filename="dc/sh4/rec_v2/rec_config.h" />
+		<Unit filename="dc/sh4/rec_v2/shil.cpp" />
+		<Unit filename="dc/sh4/rec_v2/shil.h" />
+		<Unit filename="dc/sh4/rtc.cpp" />
+		<Unit filename="dc/sh4/rtc.h" />
+		<Unit filename="dc/sh4/sci.cpp" />
+		<Unit filename="dc/sh4/sci.h" />
+		<Unit filename="dc/sh4/scif.cpp" />
+		<Unit filename="dc/sh4/scif.h" />
+		<Unit filename="dc/sh4/sh4_cpu.cpp" />
+		<Unit filename="dc/sh4/sh4_cpu.h" />
+		<Unit filename="dc/sh4/sh4_cpu_arith.h" />
+		<Unit filename="dc/sh4/sh4_cpu_branch.h" />
+		<Unit filename="dc/sh4/sh4_cpu_branch_rec.h" />
+		<Unit filename="dc/sh4/sh4_cpu_logic.h" />
+		<Unit filename="dc/sh4/sh4_cpu_movs.h" />
+		<Unit filename="dc/sh4/sh4_fpu.cpp" />
+		<Unit filename="dc/sh4/sh4_fpu.h" />
+		<Unit filename="dc/sh4/sh4_fpu_mov.h" />
+		<Unit filename="dc/sh4/sh4_if.cpp" />
+		<Unit filename="dc/sh4/sh4_if.h" />
+		<Unit filename="dc/sh4/sh4_interpreter.cpp" />
+		<Unit filename="dc/sh4/sh4_interpreter.h" />
+		<Unit filename="dc/sh4/sh4_opcode_list.cpp" />
+		<Unit filename="dc/sh4/sh4_opcode_list.h" />
+		<Unit filename="dc/sh4/sh4_registers.cpp" />
+		<Unit filename="dc/sh4/sh4_registers.h" />
+		<Unit filename="dc/sh4/tmu.cpp" />
+		<Unit filename="dc/sh4/tmu.h" />
+		<Unit filename="dc/sh4/ubc.cpp" />
+		<Unit filename="dc/sh4/ubc.h" />
+		<Unit filename="debug_mem.cpp" />
+		<Unit filename="gui/base.cpp" />
+		<Unit filename="gui/base.h" />
+		<Unit filename="linux/types.cpp" />
+		<Unit filename="linux/types.h" />
+		<Unit filename="nullDC.cpp" />
+		<Unit filename="plugins/gui_plugin_header.h" />
+		<Unit filename="plugins/plugin_header.h" />
+		<Unit filename="plugins/plugin_manager.cpp" />
+		<Unit filename="plugins/plugin_manager.h" />
+		<Unit filename="plugins/plugin_types.h" />
+		<Unit filename="plugs/EmptyAICA/EmptyAICA.cpp" />
+		<Unit filename="plugs/EmptyAICA/EmptyAICA.h" />
+		<Unit filename="plugs/EmptyAICA/aica_hax.cpp" />
+		<Unit filename="plugs/EmptyAICA/aica_hax.h" />
+		<Unit filename="plugs/EmptyAICA/aica_hle.cpp" />
+		<Unit filename="plugs/EmptyAICA/aica_hle.h" />
+		<Unit filename="plugs/ImgReader/ImgReader.cpp" />
+		<Unit filename="plugs/ImgReader/ImgReader.h" />
+		<Unit filename="plugs/ImgReader/SCSIDEFS.H" />
+		<Unit filename="plugs/ImgReader/cdi.cpp" />
+		<Unit filename="plugs/ImgReader/cdi.h" />
+		<Unit filename="plugs/ImgReader/common.cpp" />
+		<Unit filename="plugs/ImgReader/common.h" />
+		<Unit filename="plugs/ImgReader/gd_driver.h" />
+		<Unit filename="plugs/ImgReader/iso9660.cpp" />
+		<Unit filename="plugs/ImgReader/iso9660.h" />
+		<Unit filename="plugs/ImgReader/mds.cpp" />
+		<Unit filename="plugs/ImgReader/mds.h" />
+		<Unit filename="plugs/ImgReader/mds_reader.cpp" />
+		<Unit filename="plugs/ImgReader/mds_reader.h" />
+		<Unit filename="plugs/ImgReader/pfctoc.h" />
+		<Unit filename="plugs/drkMapleDevices/drkMapleDevices.cpp" />
+		<Unit filename="plugs/drkPvr/Renderer_if.cpp" />
+		<Unit filename="plugs/drkPvr/Renderer_if.h" />
+		<Unit filename="plugs/drkPvr/SPG.cpp" />
+		<Unit filename="plugs/drkPvr/config.h" />
+		<Unit filename="plugs/drkPvr/drkPvr.cpp" />
+		<Unit filename="plugs/drkPvr/drkPvr.h" />
+		<Unit filename="plugs/drkPvr/glesRend.cpp" />
+		<Unit filename="plugs/drkPvr/glesRend.h" />
+		<Unit filename="plugs/drkPvr/nullRend.cpp" />
+		<Unit filename="plugs/drkPvr/nullRend.h" />
+		<Unit filename="plugs/drkPvr/regs.cpp" />
+		<Unit filename="plugs/drkPvr/regs.h" />
+		<Unit filename="plugs/drkPvr/spg.h" />
+		<Unit filename="plugs/drkPvr/ta.cpp" />
+		<Unit filename="plugs/drkPvr/ta.h" />
+		<Unit filename="plugs/drkPvr/ta_const_df.h" />
+		<Unit filename="plugs/drkPvr/ta_structs.h" />
+		<Unit filename="plugs/drkPvr/tex_decode.cpp" />
+		<Unit filename="plugs/gui/libgui.cpp" />
+		<Unit filename="plugs/gui/libgui.h" />
+		<Unit filename="plugs/nullExtDev/nullExtDev.cpp" />
+		<Unit filename="plugs/nullExtDev/nullExtDev.h" />
+		<Unit filename="profiler/profiler.cpp" />
+		<Unit filename="profiler/profiler.h" />
+		<Unit filename="rec-ARM/aa_fpu.h" />
+		<Unit filename="rec-ARM/armwreck.cpp">
+			<Option target="ARM_Linux_Debug" />
+			<Option target="ARM_Linux_Release" />
+			<Option target="PPC_Linux_Debug" />
+			<Option target="PPC_Linux_Release" />
+		</Unit>
+		<Unit filename="rec-ARM/armwreck.h">
+			<Option target="ARM_Linux_Debug" />
+			<Option target="ARM_Linux_Release" />
+			<Option target="PPC_Linux_Debug" />
+			<Option target="PPC_Linux_Release" />
+		</Unit>
+		<Unit filename="rec-ARM/exchandler.h" />
+		<Unit filename="rec-ARM/ngen_arm.S">
+			<Option target="ARM_Linux_Debug" />
+			<Option target="ARM_Linux_Release" />
+			<Option target="PPC_Linux_Debug" />
+			<Option target="PPC_Linux_Release" />
+		</Unit>
+		<Unit filename="serial_ipc/serial_ipc_client.cpp" />
+		<Unit filename="serial_ipc/serial_ipc_client.h" />
+		<Unit filename="sh4_reg_playground.h" />
+		<Unit filename="stdclass.cpp" />
+		<Unit filename="stdclass.h" />
+		<Unit filename="types.h" />
+		<Unit filename="win-x86/dc/sh4/rec_v2/win86_driver.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/generated_class_names.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/generated_class_names_string.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/generated_descriptors.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/generated_indexes.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/types.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_emitter.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_emitter.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_matcher.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_op_classes.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_op_encoder.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Unit filename="win-x86/emitter/emitter/x86_op_table.h">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="LinuxX64 Debug" />
+			<Option target="LinuxX64 Release" />
+		</Unit>
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<lib_finder disable_auto="1" />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

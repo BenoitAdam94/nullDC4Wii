@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ndce", "ndce.vcxproj", "{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|BeagleBoard = Release|BeagleBoard
+		Release|PS2 = Release|PS2
+		Release|PSP = Release|PSP
+		Release|Wii = Release|Wii
+		Release|Win32 = Release|Win32
+		Release|Win32Dbg = Release|Win32Dbg
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|BeagleBoard.ActiveCfg = BeagleBoard|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|BeagleBoard.Build.0 = BeagleBoard|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|PS2.ActiveCfg = PS2|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|PS2.Build.0 = PS2|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|PSP.ActiveCfg = PSP|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|PSP.Build.0 = PSP|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Wii.ActiveCfg = Wii|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Wii.Build.0 = Wii|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Win32.ActiveCfg = Debug|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Win32.Build.0 = Debug|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Win32Dbg.ActiveCfg = Debug|Win32
+		{F9EA47C7-FFE4-4D04-8FC1-62CBE6B047D6}.Release|Win32Dbg.Build.0 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
