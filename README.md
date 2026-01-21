@@ -24,7 +24,7 @@ In windows link the folder
 DEVKITPPC : C:\devkitPro\devkitPPC  
 DEVKITPRO: C:\devkitPro\
 
-### 5/ launch vs_make.bat in a standard terminal
+### 5/ launch wii/vs_make.bat in a standard CMD windows terminal
 
 Correct errors if they are some errors
 
@@ -51,6 +51,7 @@ Joseph Jordan - libiso
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
