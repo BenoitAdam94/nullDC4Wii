@@ -1,4 +1,4 @@
-# NullDC4Wii
+# NullDC4Wii - Dreamcast Emulator for Wii
 
 a fork from https://github.com/skmp/nullDCe
 
@@ -51,6 +51,7 @@ Joseph Jordan - libiso
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
