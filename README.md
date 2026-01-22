@@ -31,6 +31,33 @@ DEVKITPRO : C:\devkitPro\
 
 Correct errors if they are some errors
 
+### 6/ Put BIOS file and game file
+
+#### Mandatory BIOS files in SD:/data/
+
+dc_boot.bin 
+dc_flash.bin 
+fsca-table.bin 
+
+#### Optional BIOS files in SD:/data/
+
+dc_flash_wb.bin 
+syscalls.bin 
+IP.bin 
+
+dc_nvmem.bin 
+vmu_default.bin 
+
+#### Game file in SD:/discs
+
+For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :
+
+game.gdi  
+
+It should be specificly MDF/MDS or NRG, see : 
+Invalid data in </discs/game.gdi>. It is not an MDF/MDS file. 
+Invalid data in </discs/game.gdi>. It is not an NRG file. 
+
 
 ## Status (22/01/2026)
 
@@ -57,6 +84,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
