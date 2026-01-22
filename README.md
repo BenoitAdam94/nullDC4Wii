@@ -80,6 +80,8 @@ Modify these system variable
 DEVKITPPC : C:\devkitPro\devkitPPC  
 DEVKITPRO : C:\devkitPro\
 
+**Strongly advise you to completly reboot Windows after that (not just relaunching CMD)**
+
 ![path_fornulldcwii](https://github.com/user-attachments/assets/a08a0396-ec1e-4cbe-85a7-0259da89ace9)
 
 
@@ -107,6 +109,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
