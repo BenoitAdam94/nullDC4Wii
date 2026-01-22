@@ -17,7 +17,7 @@ cmake_minimum_required(VERSION 2.6)
 OPTION(_X86  "Build for CPU:X86 PC" OFF)
 OPTION(_X64  "Build for CPU:X64 PC" OFF)
 OPTION(_ARM  "Build for CPU:ARM" OFF)
-OPTION(_PPC  "Build for CPU:PPC" OFF)
+OPTION(_PPC  "Build for CPU:PPC" ON) # Forced On
 OPTION(_MIPS "Build for CPU:MIPS" OFF)
 
 if(_X86)
@@ -46,7 +46,7 @@ endif(_MIPS)
 OPTION(_LINUX   "Build for OS:Linux" OFF)
 OPTION(_DARWIN  "Build for OS:Darwin" OFF)
 OPTION(_WINDOWS "Build for OS:Windows" OFF)
-OPTION(_WII     "Build for OS:WII (Requires _PPC)" OFF)
+OPTION(_WII     "Build for OS:WII (Requires _PPC)" ON) # Forced ON
 OPTION(_PSP     "Build for OS:PSP (Requires _MIPS)" OFF)
 
 if(_LINUX)
