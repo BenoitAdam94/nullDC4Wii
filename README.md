@@ -15,6 +15,7 @@ a fork from https://github.com/skmp/nullDCe
 - Gamecube gamepad implementation
 - Clean Clean Clean
 - Optimise Optimise Optimise
+- Translate French baguette comment to English
 
 ## Installation
 
@@ -98,6 +99,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
