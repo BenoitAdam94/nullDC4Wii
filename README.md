@@ -9,6 +9,7 @@ a fork from https://github.com/skmp/nullDCe
 - Being Able to launch a game
 - Game list & Game selector
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
+- Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
 - Sound implementation
 - Clean Warning/notes during compilation I guess
@@ -36,7 +37,7 @@ IP.bin
 dc_nvmem.bin  
 vmu_default.bin  
 
-#### Game file in SD:/discs
+#### Game file in SD:/discs/
 
 For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :  
 
@@ -99,6 +100,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
