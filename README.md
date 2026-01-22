@@ -69,12 +69,19 @@ C:\devkitPro\msys2\usr\bin\mintty.exe
 pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
-### 4/ PATH configuration :
+### 4/ PATH & System variable configuration :
 
-In windows link the folder
+In windows variable environnement
+
+Add C:\devkitPro\devkitPPC\bin to Uservariable PATH
+
+Modify these system variable
 
 DEVKITPPC : C:\devkitPro\devkitPPC  
 DEVKITPRO : C:\devkitPro\
+
+![path_fornulldcwii](https://github.com/user-attachments/assets/a08a0396-ec1e-4cbe-85a7-0259da89ace9)
+
 
 ### 5/ launch wii/vs_make.bat in a standard CMD windows terminal
 
@@ -86,7 +93,7 @@ Correct errors if they are some errors
 
 dollz3 is a compress tool for *.dol files, and it is in the original "make" file, but it seems not to work
 
-https://wiibrew.org/wiki/Dollz
+~~https://wiibrew.org/wiki/Dollz~~
 
 ## Credits
 
@@ -100,6 +107,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
