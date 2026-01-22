@@ -34,6 +34,8 @@ CFLAGS += -frename-registers -fno-strict-aliasing -fsingle-precision-constant -f
 CXXFLAGS	=	$(CFLAGS) -fno-exceptions -fno-rtti
 # CXXFLAGS += -D_WII # Set WII as platform
 
+CXXFLAGS += -g -O0 # for debugging on dolphin using addr2line
+
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(TARGET).map
 
