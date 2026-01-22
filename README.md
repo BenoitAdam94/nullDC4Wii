@@ -41,11 +41,6 @@ For now, nothing to select specific image is implemented, you can only load 1 ga
 
 game.gdi  
 
-It should be specificly MDF/MDS or NRG, see :  
-Invalid data in </discs/game.gdi>. It is not an MDF/MDS file.  
-Invalid data in </discs/game.gdi>. It is not an NRG file.  
-
-
 
 ## Status (22/01/2026)
 
@@ -103,6 +98,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
