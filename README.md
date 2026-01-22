@@ -2,7 +2,59 @@
 
 a fork from https://github.com/skmp/nullDCe
 
+## TODO (Maybe you can help !)
+
+- Correct files (XML) for Homebrew Channel (i dunno why it doesn't work)
+- Fowarder for Wii Menu
+- Being Able to launch a game
+- Game list & Game selector
+- Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
+- Full Dynarec implementation
+- Sound implementation
+- Clean Warning/notes during compilation I guess
+- Gamecube gamepad implementation
+- Clean Clean Clean
+- Optimise Optimise Optimise
+
 ## Installation
+
+### Put BIOS file and game file
+
+#### Mandatory BIOS files in SD:/data/
+
+dc_boot.bin  
+dc_flash.bin  
+fsca-table.bin  
+
+#### Optional BIOS files in SD:/data/
+
+dc_flash_wb.bin  
+syscalls.bin  
+IP.bin  
+
+dc_nvmem.bin  
+vmu_default.bin  
+
+#### Game file in SD:/discs
+
+For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :  
+
+game.gdi  
+
+It should be specificly MDF/MDS or NRG, see :  
+Invalid data in </discs/game.gdi>. It is not an MDF/MDS file.  
+Invalid data in </discs/game.gdi>. It is not an NRG file.  
+
+
+
+## Status (22/01/2026)
+
+able to compile  
+launch on dolphin an real Wii with few FPS  
+can't open games
+
+
+## Compilation Process (Makefile)
 
 ### 0/ Download/clone source code
 
@@ -31,39 +83,6 @@ DEVKITPRO : C:\devkitPro\
 
 Correct errors if they are some errors
 
-### 6/ Put BIOS file and game file
-
-#### Mandatory BIOS files in SD:/data/
-
-dc_boot.bin  
-dc_flash.bin  
-fsca-table.bin  
-
-#### Optional BIOS files in SD:/data/
-
-dc_flash_wb.bin  
-syscalls.bin  
-IP.bin  
-
-dc_nvmem.bin  
-vmu_default.bin  
-
-#### Game file in SD:/discs
-
-For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :  
-
-game.gdi  
-
-It should be specificly MDF/MDS or NRG, see :  
-Invalid data in </discs/game.gdi>. It is not an MDF/MDS file.  
-Invalid data in </discs/game.gdi>. It is not an NRG file.  
-
-
-## Status (22/01/2026)
-
-able to compile  
-launch on dolphin with few FPS  
-can't open games
 
 
 ### ~~Use dollz3~~
@@ -84,6 +103,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
