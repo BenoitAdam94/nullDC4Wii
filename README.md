@@ -31,17 +31,19 @@ DEVKITPRO : C:\devkitPro\
 
 Correct errors if they are some errors
 
-### 6/ Use dollz3
 
-You'll need to download dollz3 to do the conversion of the dol file
+## Status (22/01/2026)
+
+able to compile  
+launch on dolphin with few FPS  
+can't open games
+
+
+### ~~Use dollz3~~
+
+dollz3 is a compress tool for *.dol files, and it is in the original "make" file, but it seems not to work
 
 https://wiibrew.org/wiki/Dollz
-
-
-## Status (21/01/2026)
-
-able to compile, but memory error on dolphin
-
 
 ## Credits
 
