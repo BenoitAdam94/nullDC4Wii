@@ -141,8 +141,8 @@ int displayMenuAndSelectFile() {
             return -1; // Retour au menu principal
         }
 
-        usleep(16667); // Wait a bit so GPU isn't overloaded (16667 = 1 frame @ 60 FPS)
-        VIDEO_WaitVSync(); // Synchronization to avoid flickering
+        usleep(20000); // Wait a bit so GPU isn't overloaded (16667 = 1 frame @ 60 FPS)
+        VIDEO_WaitVSync(); // Synchronization to avoid flickering (Wait for the next frame)
     }
 
     return selectedIndex;
