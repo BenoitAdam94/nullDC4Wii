@@ -57,12 +57,6 @@ void listFilesInDirectory(const char* dirPath) {
     if ((dir = opendir(dirPath)) != NULL) {
         fileCount = 0;
 
-        // Add "No disc (BIOS)" option in first position
-        strcpy(fileList[fileCount].name, "[No disc - Boot to BIOS]");
-        strcpy(fileList[fileCount].fullPath, "");
-        fileList[fileCount].isDirectory = false;
-        fileCount++;
-
         // Add ".." (parent directory) if not in root
         if (strcmp(dirPath, "sd:/discs/") != 0 && strcmp(dirPath, "sd:/discs") != 0) {
             strcpy(fileList[fileCount].name, "..");
@@ -122,11 +116,14 @@ int displayMenuAndSelectFile() {
             }
         }
 
-        printf("\nUP/DOWN: navigate | A: select | B: go back | HOME: exit\n");
+        printf("\nUP/DOWN: navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
 
         WPAD_ScanPads();
         u32 pressed = WPAD_ButtonsDown(0);
 
+        if (pressed & WPAD_BUTTON_1) {
+          return -2; // Boot to BIOS
+        }
         if (pressed & WPAD_BUTTON_UP) {
             if (selectedIndex > 0) selectedIndex--;
         } else if (pressed & WPAD_BUTTON_DOWN) {
@@ -244,16 +241,16 @@ int main(int argc, wchar* argv[])
     if (fileCount > 0) {
         int selectedIndex = displayMenuAndSelectFile();
         
-        if (selectedIndex == 0) {
-            // If "No Disc Option" is selected
-            printf("\x1b[2J\x1b[H");
+        if (selectedIndex == -2) {
+            // Boot to BIOS (button 1 pressed)
+            printf("\x1b[2J\x1b[H"); // Clear Screen
             printf("Booting to BIOS (no disc)...\n");
             strcpy(selectedFilePath, ""); // No File
         }
-        else if (selectedIndex > 0) {
+        else if (selectedIndex >= 0) {
             // A file has been selected
             strcpy(selectedFilePath, fileList[selectedIndex].fullPath);
-            printf("\x1b[2J\x1b[H");
+            printf("\x1b[2J\x1b[H"); // Clear Screen
             printf("Selected file: %s\n", selectedFilePath);
         }
         else {
@@ -262,8 +259,8 @@ int main(int argc, wchar* argv[])
             return 0;
         }
     } else {
-        // This part is never called because I added defaut bios boot option
-        printf("No valid disc files found.\n");
+        // If no valid disc file found
+        printf("No valid disc files found. Booting to BIOS\n");
         usleep(100000); // Wait time to let user see message before booting to BIOS
         printf("Booting to BIOS...\n");
     }
