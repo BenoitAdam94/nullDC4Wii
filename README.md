@@ -7,7 +7,7 @@ a fork from https://github.com/skmp/nullDCe
 - Correct files (XML) for Homebrew Channel (i dunno why it doesn't work)
 - Fowarder for Wii Menu
 - Being Able to launch a game
-- Game list & Game selector
+- Game list & Game selector (In next version alpha 0.03 ! But list is limited to 18 elements for now)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
@@ -110,6 +110,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
