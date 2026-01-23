@@ -44,11 +44,12 @@ For now, nothing to select specific image is implemented, you can only load 1 ga
 game.gdi  
 
 
-## Status (22/01/2026)
+## Status (23/01/2026)
 
 able to compile  
 launch on dolphin an real Wii with few FPS  
-can't open games
+game selector implemented and releasing in next version
+can load Sega Tetris
 
 
 ## Compilation Process (Makefile)
@@ -109,6 +110,7 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
 
 
 
