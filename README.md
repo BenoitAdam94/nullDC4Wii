@@ -9,6 +9,7 @@ a fork from https://github.com/skmp/nullDCe
 - Being Able to launch a game
 - Game list & Game selector
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
+- Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
 - Sound implementation
 - Clean Warning/notes during compilation I guess
@@ -36,18 +37,19 @@ IP.bin
 dc_nvmem.bin  
 vmu_default.bin  
 
-#### Game file in SD:/discs
+#### Game file in SD:/discs/
 
 For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :  
 
 game.gdi  
 
 
-## Status (22/01/2026)
+## Status (23/01/2026)
 
 able to compile  
 launch on dolphin an real Wii with few FPS  
-can't open games
+game selector implemented and releasing in next version
+can load Sega Tetris
 
 
 ## Compilation Process (Makefile)
@@ -68,12 +70,21 @@ C:\devkitPro\msys2\usr\bin\mintty.exe
 pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
-### 4/ PATH configuration :
+### 4/ PATH & System variable configuration :
 
-In windows link the folder
+In windows variable environnement
+
+Add C:\devkitPro\devkitPPC\bin to Uservariable PATH
+
+Modify these system variable
 
 DEVKITPPC : C:\devkitPro\devkitPPC  
 DEVKITPRO : C:\devkitPro\
+
+**Strongly advise you to completly reboot Windows after that (not just relaunching CMD)**
+
+![path_fornulldcwii](https://github.com/user-attachments/assets/a08a0396-ec1e-4cbe-85a7-0259da89ace9)
+
 
 ### 5/ launch wii/vs_make.bat in a standard CMD windows terminal
 
@@ -85,7 +96,7 @@ Correct errors if they are some errors
 
 dollz3 is a compress tool for *.dol files, and it is in the original "make" file, but it seems not to work
 
-https://wiibrew.org/wiki/Dollz
+~~https://wiibrew.org/wiki/Dollz~~
 
 ## Credits
 
@@ -99,6 +110,10 @@ Xale00 (also know as Benoit Adam) - 2026 recompilation
 A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
 
 This is here for archival reasons. Project eventually morphed to reicast
+
+
+
+
 
 
 
