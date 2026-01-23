@@ -65,8 +65,8 @@ void dirlist(char* path)
 
 
 
-// Function to check if file is a .gdi or .cdi
-// To be added : BIN/Cue / NRG / MDS / ELF
+// Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
+// Only GDI, NRG and MDS should be supported for now
 bool hasValidExtension(const char* filename) {
     size_t len = strlen(filename);
     if (len < 4) return false;
@@ -80,7 +80,15 @@ bool hasValidExtension(const char* filename) {
     }
     extLower[4] = '\0';
     
-    return (strcmp(extLower, ".gdi") == 0 || strcmp(extLower, ".cdi") == 0);
+    // Check for valid extensions
+    return (strcmp(extLower, ".gdi") == 0 || 
+            strcmp(extLower, ".cdi") == 0 ||
+            strcmp(extLower, ".bin") == 0 ||
+            strcmp(extLower, ".cue") == 0 ||
+            strcmp(extLower, ".nrg") == 0 ||
+            strcmp(extLower, ".mds") == 0 ||
+            strcmp(extLower, ".elf") == 0 ||
+            strcmp(extLower, ".chd") == 0);
 }
 
 // Function to list file in a folder
