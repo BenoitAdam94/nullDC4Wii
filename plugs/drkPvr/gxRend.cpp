@@ -1646,8 +1646,11 @@ float vtx_max_Z;
 	{
         GXColor background = {0, 0, 0, 0xff};
 
+    // Initialise the video system (devkit wii-example)
 		VIDEO_Init();
 
+    // Obtain the preferred video mode from the system
+	  // This will correspond to the settings in the Wii menu
 		rmode = VIDEO_GetPreferredMode(NULL);
 		
         switch (rmode->viTVMode >> 2)
@@ -1664,21 +1667,29 @@ float vtx_max_Z;
                        break;
         }
 
+        // Set up the video registers with the chosen mode (devkit wii example)
         VIDEO_Configure(rmode);
 
 		int fb = 0;
 
+    // Allocate memory for the display in the uncached region (devkit wii example)
 		// allocate 2 framebuffers for double buffering
 		frameBuffer[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 		frameBuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
 
+    // Set up the video registers with the chosen mode (devkit wii example)
 		VIDEO_Configure(rmode);
+    // Tell the video hardware where our display memory is (devkit wii example)
 		VIDEO_SetNextFramebuffer(frameBuffer[fb]);
-		VIDEO_SetBlack(TRUE);
+    // Make the display visible or invisible (devkit wii example)
+		VIDEO_SetBlack(TRUE); // FALSE doesn't seems to change anything here
+    // Flush the video register changes to the hardware (devkit wii example)
 		VIDEO_Flush();
+    // Wait for Video setup to complete
 		VIDEO_WaitVSync();
 		if(rmode->viTVMode&VI_NON_INTERLACE) VIDEO_WaitVSync();
 
+    // fb = fb ^ 1; (invert value)
 		fb ^= 1;
 		
 		// setup the fifo and then init the flipper
