@@ -10,60 +10,17 @@
 #include <sys/stat.h>
 #include <time.h>
 
-// Global variable
-char* fileList[256]; // List of file
-int fileCount = 0;   // Number of file
-char selectedFilePath[260] = "";
+// Global variables
+struct FileEntry {
+    char name[256];
+    char fullPath[512];
+    bool isDirectory;
+};
 
-
-// DIR List
-void dirlist(char* path)
-{
-    DIR* pdir = opendir(path);
-
-    if (pdir != NULL)
-    {
-        u32 sentinel = 0;
-
-        while(true)
-        {
-            struct dirent* pent = readdir(pdir);
-            if(pent == NULL) break;
-
-            if(strcmp(".", pent->d_name) != 0 && strcmp("..", pent->d_name) != 0)
-            {
-                char dnbuf[260];
-                sprintf(dnbuf, "%s/%s", path, pent->d_name);
-
-                struct stat statbuf;
-                stat(dnbuf, &statbuf);
-
-                if(S_ISDIR(statbuf.st_mode))
-                {
-                    printf("%s <DIR>\n", dnbuf);
-                    dirlist(dnbuf);
-                }
-                else
-                {
-                    printf("%s (%d)\n", dnbuf, (int)statbuf.st_size);
-                }
-                sentinel++;
-            }
-        }
-
-        if (sentinel == 0)
-            printf("empty\n");
-
-        closedir(pdir);
-        printf("\n");
-    }
-    else
-    {
-        printf("opendir() failure.\n");
-    }
-}
-
-
+FileEntry fileList[256];
+int fileCount = 0;
+char selectedFilePath[512] = "";
+char currentPath[512] = "sd:/discs/";
 
 // Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
 // Only GDI, NRG and MDS should be supported for now
@@ -91,22 +48,53 @@ bool hasValidExtension(const char* filename) {
             strcmp(extLower, ".chd") == 0);
 }
 
-// Function to list file in a folder
+// Function to list files and directories in a folder
 void listFilesInDirectory(const char* dirPath) {
     DIR *dir;
     struct dirent *entry;
+    struct stat statbuf;
 
     if ((dir = opendir(dirPath)) != NULL) {
         fileCount = 0;
 
-        // "No disc (BIOS)" in first position
-        fileList[fileCount] = strdup("[No disc - Boot to BIOS]");
+        // Add "No disc (BIOS)" option in first position
+        strcpy(fileList[fileCount].name, "[No disc - Boot to BIOS]");
+        strcpy(fileList[fileCount].fullPath, "");
+        fileList[fileCount].isDirectory = false;
         fileCount++;
 
-        while ((entry = readdir(dir)) != NULL) {
-            if (entry->d_type == DT_REG) { // If it's a regular file
-                if (hasValidExtension(entry->d_name)) {
-                    fileList[fileCount] = strdup(entry->d_name);
+        // Add ".." (parent directory) if not in root
+        if (strcmp(dirPath, "sd:/discs/") != 0 && strcmp(dirPath, "sd:/discs") != 0) {
+            strcpy(fileList[fileCount].name, "..");
+            strcpy(fileList[fileCount].fullPath, "..");
+            fileList[fileCount].isDirectory = true;
+            fileCount++;
+        }
+
+        // Read all entries in directory
+        while ((entry = readdir(dir)) != NULL && fileCount < 256) {
+            // Skip "." and ".."
+            if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+                continue;
+            }
+
+            // Build full path
+            char fullPath[512];
+            snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+
+            // Get file stats
+            if (stat(fullPath, &statbuf) == 0) {
+                if (S_ISDIR(statbuf.st_mode)) {
+                    // It's a directory, add it
+                    snprintf(fileList[fileCount].name, sizeof(fileList[fileCount].name), "[%s]", entry->d_name);
+                    strcpy(fileList[fileCount].fullPath, fullPath);
+                    fileList[fileCount].isDirectory = true;
+                    fileCount++;
+                } else if (hasValidExtension(entry->d_name)) {
+                    // It's a valid file, add it
+                    strcpy(fileList[fileCount].name, entry->d_name);
+                    strcpy(fileList[fileCount].fullPath, fullPath);
+                    fileList[fileCount].isDirectory = false;
                     fileCount++;
                 }
             }
@@ -117,24 +105,24 @@ void listFilesInDirectory(const char* dirPath) {
     }
 }
 
-// Function to display menu & allow selection with Wiimote
+// Function to display menu and allow selection with Wiimote
 int displayMenuAndSelectFile() {
     int selectedIndex = 0;
-    bool exitMenu = false;
 
-    while (!exitMenu) {
+    while (true) {
         printf("\033[2J\033[H"); // Clear Screen
-        printf("Select a game file: (GDI Work, CDI shouldn't work)\n");
+        printf("Current directory: %s\n", currentPath);
+        printf("Select a game file: (Only GDI/NRG/MDS Works)\n");
 
         for (int i = 0; i < fileCount; i++) {
             if (i == selectedIndex) {
-                printf("> %s\n", fileList[i]);
+                printf("> %s\n", fileList[i].name);
             } else {
-                printf("  %s\n", fileList[i]);
+                printf("  %s\n", fileList[i].name);
             }
         }
 
-        printf("\nUse UP/DOWN on the D-Pad to navigate, A to select, HOME to exit\n");
+        printf("\nUP/DOWN: navigate | A: select | B: go back | HOME: exit\n");
 
         WPAD_ScanPads();
         u32 pressed = WPAD_ButtonsDown(0);
@@ -144,9 +132,36 @@ int displayMenuAndSelectFile() {
         } else if (pressed & WPAD_BUTTON_DOWN) {
             if (selectedIndex < fileCount - 1) selectedIndex++;
         } else if (pressed & WPAD_BUTTON_A) {
-            exitMenu = true;
+            // Check if it's a directory
+            if (fileList[selectedIndex].isDirectory) {
+                if (strcmp(fileList[selectedIndex].fullPath, "..") == 0) {
+                    // Go to parent directory
+                    char* lastSlash = strrchr(currentPath, '/');
+                    if (lastSlash != NULL && lastSlash != currentPath) {
+                        *lastSlash = '\0';
+                    }
+                } else {
+                    // Enter directory
+                    strcpy(currentPath, fileList[selectedIndex].fullPath);
+                }
+                listFilesInDirectory(currentPath);
+                selectedIndex = 0;
+            } else {
+                // It's a file or "No disc" option
+                return selectedIndex;
+            }
+        } else if (pressed & WPAD_BUTTON_B) {
+            // Go back to parent directory
+            if (strcmp(currentPath, "sd:/discs/") != 0 && strcmp(currentPath, "sd:/discs") != 0) {
+                char* lastSlash = strrchr(currentPath, '/');
+                if (lastSlash != NULL && lastSlash != currentPath) {
+                    *lastSlash = '\0';
+                }
+                listFilesInDirectory(currentPath);
+                selectedIndex = 0;
+            }
         } else if (pressed & WPAD_BUTTON_HOME) {
-            return -1; // Retour au menu principal
+            return -1; // Exit to main menu
         }
 
         usleep(20000); // Wait a bit so GPU isn't overloaded (16667 = 1 frame @ 60 FPS)
@@ -164,8 +179,8 @@ int main(int argc, wchar* argv[])
     // Initialize the video system 
     // (yes, right now before gxrend, otherwise no game selector)
     VIDEO_Init();
-    /* // Claude AI */
-    
+    /* // Claude AI */    
+
     // This function initialises the attached controllers (devkit wii-example)
     PAD_Init();
     WPAD_Init();
@@ -222,10 +237,8 @@ int main(int argc, wchar* argv[])
 
     void SetApplicationPath(const wchar* path);
 
-    // Call function to choose a file
-    const char* dirPath = "sd:/discs/";
-    printf(dirPath);
-    listFilesInDirectory(dirPath);
+    // List files in initial directory
+    listFilesInDirectory(currentPath);
 
     // If there is file (there always will be with the option "No Disc boot to BIOS")
     if (fileCount > 0) {
@@ -235,35 +248,27 @@ int main(int argc, wchar* argv[])
             // If "No Disc Option" is selected
             printf("\x1b[2J\x1b[H");
             printf("Booting to BIOS (no disc)...\n");
-            strcpy(selectedFilePath, ""); // Pas de fichier
+            strcpy(selectedFilePath, ""); // No File
         }
         else if (selectedIndex > 0) {
             // A file has been selected
-            sprintf(selectedFilePath, "%s%s", dirPath, fileList[selectedIndex]);
+            strcpy(selectedFilePath, fileList[selectedIndex].fullPath);
             printf("\x1b[2J\x1b[H");
             printf("Selected file: %s\n", selectedFilePath);
         }
         else {
             // HOME pressed
             printf("Exiting...\n");
-            for (int i = 0; i < fileCount; i++) {
-                free(fileList[i]);
-            }
             return 0;
         }
     } else {
         // This part is never called because I added defaut bios boot option
-        printf("No .gdi or .cdi files found in the discs directory.\n");
+        printf("No valid disc files found.\n");
         usleep(100000); // Wait time to let user see message before booting to BIOS
         printf("Booting to BIOS...\n");
     }
 
     int rv = EmuMain(argc, argv);
-
-    // Free memory for filename
-    for (int i = 0; i < fileCount; i++) {
-        free(fileList[i]);
-    }
 
     return rv;
 }
