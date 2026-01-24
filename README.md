@@ -7,7 +7,7 @@ a fork from https://github.com/skmp/nullDCe
 - Correct files (XML) for Homebrew Channel (i dunno why it doesn't work)
 - Fowarder for Wii Menu
 - Being Able to launch a game (Update, It Launch ! Try Sega tetris or Castlevania E3 Demo)
-- Game list & Game selector (In next version alpha 0.03 ! But list is limited to ~15 files/folders for now)
+- Game list & Game selector (In next version alpha 0.03 !)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
@@ -139,6 +139,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
