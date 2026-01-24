@@ -22,6 +22,8 @@ FileEntry fileList[256];
 int fileCount = 0;
 char selectedFilePath[512] = "";
 char currentPath[512] = "sd:/discs/";
+const int ITEMS_PER_PAGE = 10; // Can be up to 20 but bad UX unless lots of roms
+int currentPage = 0;
 
 // Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
 // Only GDI is supported, maybe NRG and MDS and BIN/CUE and ELF
@@ -103,13 +105,22 @@ void listFilesInDirectory(const char* dirPath) {
 // Function to display menu and allow selection with Wiimote
 int displayMenuAndSelectFile() {
     int selectedIndex = 0;
+    currentPage = 0;
 
     while (true) {
         printf("\033[2J\033[H"); // Clear Screen
         printf("Current directory: %s\n", currentPath);
-        printf("Select a game file: (Only GDI Works, Maybe NRG/MDS. (Try Bin/CUE and ELF)\n");
+        printf("Select a game file: (Only GDI Works, Maybe NRG/MDS. (Try Bin/CUE and ELF)\n\n");
 
-        for (int i = 0; i < fileCount; i++) {
+        // Calculate pagination
+        int totalPages = (fileCount + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
+        if (totalPages < 1) totalPages = 1;
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+        int endIndex = startIndex + ITEMS_PER_PAGE;
+        if (endIndex > fileCount) endIndex = fileCount;
+
+        // Display files for current page
+        for (int i = startIndex; i < endIndex; i++) {
             if (i == selectedIndex) {
                 printf("> %s\n", fileList[i].name);
             } else {
@@ -117,7 +128,9 @@ int displayMenuAndSelectFile() {
             }
         }
 
-        printf("\nUP/DOWN: navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
+        // Display page info
+        printf("\n--- Page %02d/%02d ---\n", currentPage + 1, totalPages);
+        printf("UP/DOWN/LEFT/RIGHT: Navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
 
         WPAD_ScanPads();
         u32 pressed = WPAD_ButtonsDown(0);
@@ -126,9 +139,33 @@ int displayMenuAndSelectFile() {
           return -2; // Boot to BIOS
         }
         if (pressed & WPAD_BUTTON_UP) {
-            if (selectedIndex > 0) selectedIndex--;
+            if (selectedIndex > 0) {
+                selectedIndex--;
+                // Change page if necessary
+                if (selectedIndex < startIndex) {
+                    currentPage--;
+                }
+            }
         } else if (pressed & WPAD_BUTTON_DOWN) {
-            if (selectedIndex < fileCount - 1) selectedIndex++;
+            if (selectedIndex < fileCount - 1) {
+                selectedIndex++;
+                // Change page if necessary
+                if (selectedIndex >= endIndex) {
+                    currentPage++;
+                }
+            }
+        } else if (pressed & WPAD_BUTTON_LEFT) {
+            // Previous page
+            if (currentPage > 0) {
+                currentPage--;
+                selectedIndex = currentPage * ITEMS_PER_PAGE;
+            }
+        } else if (pressed & WPAD_BUTTON_RIGHT) {
+            // Next page
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                selectedIndex = currentPage * ITEMS_PER_PAGE;
+            }
         } else if (pressed & WPAD_BUTTON_A) {
             // Check if it's a directory
             if (fileList[selectedIndex].isDirectory) {
@@ -144,6 +181,7 @@ int displayMenuAndSelectFile() {
                 }
                 listFilesInDirectory(currentPath);
                 selectedIndex = 0;
+                currentPage = 0;
             } else {
                 // It's a file or "No disc" option
                 return selectedIndex;
@@ -157,6 +195,7 @@ int displayMenuAndSelectFile() {
                 }
                 listFilesInDirectory(currentPath);
                 selectedIndex = 0;
+                currentPage = 0;
             }
         } else if (pressed & WPAD_BUTTON_HOME) {
             return -1; // Exit to main menu
