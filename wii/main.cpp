@@ -9,6 +9,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <gccore.h> // needed, or VScode will show errors
 
 // Global variables
 struct FileEntry {
@@ -23,7 +24,7 @@ char selectedFilePath[512] = "";
 char currentPath[512] = "sd:/discs/";
 
 // Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
-// Only GDI, NRG and MDS should be supported for now
+// Only GDI is supported, maybe NRG and MDS and BIN/CUE and ELF
 bool hasValidExtension(const char* filename) {
     size_t len = strlen(filename);
     if (len < 4) return false;
@@ -106,7 +107,7 @@ int displayMenuAndSelectFile() {
     while (true) {
         printf("\033[2J\033[H"); // Clear Screen
         printf("Current directory: %s\n", currentPath);
-        printf("Select a game file: (Only GDI/NRG/MDS Works)\n");
+        printf("Select a game file: (Only GDI Works, Maybe NRG/MDS. (Try Bin/CUE and ELF)\n");
 
         for (int i = 0; i < fileCount; i++) {
             if (i == selectedIndex) {
@@ -228,6 +229,7 @@ int main(int argc, wchar* argv[])
         while(1) {
             WPAD_ScanPads();
             if(WPAD_ButtonsDown(0) & WPAD_BUTTON_HOME) exit(0);
+            usleep(100000); // Wait time to save GPU
             VIDEO_WaitVSync();
         }
     }
