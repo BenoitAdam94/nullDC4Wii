@@ -51,26 +51,31 @@ launch on dolphin an real Wii with few FPS
 game selector implemented and releasing in next version
 can load Sega Tetris
 
+## Compatibility
 
-## Compilation Process (Makefile)
+https://wiibrew.org/wiki/NullDC4Wii/Compatibility
 
-### 0/ Download/clone source code
+## For Developpers :
 
-### 1/ Install devkitpro/devkitPPC
+### Compilation Process (Makefile)
+
+#### 0/ Download/clone source code
+
+#### 1/ Install devkitpro/devkitPPC
 
 https://wiibrew.org/wiki/DevkitPPC
 
-### 2/ Launch MSys2 terminal
+#### 2/ Launch MSys2 terminal
 
 Devkitpro has it's own UNIX terminal, by defautl it's located here :  
 C:\devkitPro\msys2\usr\bin\mintty.exe
 
-### 3/ Install additional development packages :
+#### 3/ Install additional development packages :
 
 pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
-### 4/ PATH & System variable configuration :
+#### 4/ PATH & System variable configuration :
 
 In windows variable environnement
 
@@ -86,17 +91,47 @@ DEVKITPRO : C:\devkitPro\
 ![path_fornulldcwii](https://github.com/user-attachments/assets/a08a0396-ec1e-4cbe-85a7-0259da89ace9)
 
 
-### 5/ launch wii/vs_make.bat in a standard CMD windows terminal
+#### 5/ launch wii/vs_make.bat in a standard CMD windows terminal
 
 Correct errors if they are some errors
 
 
 
-### ~~Use dollz3~~
+#### ~~Use dollz3~~
 
 dollz3 is a compress tool for *.dol files, and it is in the original "make" file, but it seems not to work
 
 ~~https://wiibrew.org/wiki/Dollz~~
+
+## Ressources
+
+### Dreamcast Emulators 
+
+NullDC https://code.google.com/archive/p/nulldc/source/default/source
+NullDC for PSP : https://github.com/PSP-Archive/nulldce-psp
+Reicast : https://github.com/skmp/reicast-emulator
+Flycast : https://github.com/flyinghead/flycast
+
+### Devkitpro
+ 
+Main website : https://devkitpro.org  
+​GitHub : https://github.com/devkitPro  
+Installer (releases) : https://github.com/devkitPro/installer/releases  
+Wii ​Examples : https://github.com/devkitPro/wii-examples
+
+### libOGC
+
+GitHub (Wii/GameCube system librairy) : https://github.com/devkitPro/libogc
+
+### Emulators​
+
+Dolphin Official Website : https://dolphin-emu.org  
+GitHub (for timings Gekko/CPU) : https://github.com/dolphin-emu/dolphin
+
+### Wiibrew Wiki
+
+Emulation Page : https://wiibrew.org/wiki/Emulation
+Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 
 ## Credits
 
@@ -104,12 +139,6 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
-
-# nullDCe (original README)
-
-A fork from the nullDC-mainline somewhere in late 2008, with hackports to psp, wii, ps3, etc. 
-
-This is here for archival reasons. Project eventually morphed to reicast
 
 
 
