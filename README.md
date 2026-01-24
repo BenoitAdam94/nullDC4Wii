@@ -107,10 +107,10 @@ dollz3 is a compress tool for *.dol files, and it is in the original "make" file
 
 ### Dreamcast Emulators 
 
-NullDC https://code.google.com/archive/p/nulldc/source/default/source
-NullDC for PSP : https://github.com/PSP-Archive/nulldce-psp
-Reicast : https://github.com/skmp/reicast-emulator
-Flycast : https://github.com/flyinghead/flycast
+NullDC https://code.google.com/archive/p/nulldc/source/default/source  
+NullDC for PSP : https://github.com/PSP-Archive/nulldce-psp  
+Reicast : https://github.com/skmp/reicast-emulator  
+Flycast : https://github.com/flyinghead/flycast  
 
 ### Devkitpro
  
@@ -130,7 +130,7 @@ GitHub (for timings Gekko/CPU) : https://github.com/dolphin-emu/dolphin
 
 ### Wiibrew Wiki
 
-Emulation Page : https://wiibrew.org/wiki/Emulation
+Emulation Page : https://wiibrew.org/wiki/Emulation  
 Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 
 ## Credits
@@ -139,6 +139,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
