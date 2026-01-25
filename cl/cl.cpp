@@ -1,3 +1,7 @@
+/* Command Line */
+/* Probably for Windows Only */
+/* Example : nulldc.exe -config video:fullscreen=true */
+
 //#include <windows.h>
 #include <stdio.h>
 #include <string.h>
