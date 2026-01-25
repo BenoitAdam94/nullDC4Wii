@@ -43,12 +43,13 @@ Put your folders with GDI in this directory
 
 Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
-## Status (23/01/2026)
+## Status (25/01/2026)
 
-able to compile  
 launch on dolphin an real Wii with few FPS  
-game selector implemented and releasing in next version
-can load Sega Tetris
+game selector implemented
+Few games are runnable :
+- Castlevania (Demo)
+- Sega Tetris
 
 ## Compatibility
 
@@ -138,6 +139,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
