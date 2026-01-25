@@ -39,10 +39,9 @@ vmu_default.bin
 
 #### Game file in SD:/discs/
 
-For now, nothing to select specific image is implemented, you can only load 1 game with this specific name :  
+For your folders with GDI in this directory
 
-game.gdi  
-
+Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
 ## Status (23/01/2026)
 
@@ -139,6 +138,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
