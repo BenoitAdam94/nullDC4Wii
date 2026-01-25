@@ -39,7 +39,7 @@ vmu_default.bin
 
 #### Game file in SD:/discs/
 
-For your folders with GDI in this directory
+Put your folders with GDI in this directory
 
 Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
@@ -138,6 +138,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
