@@ -1,4 +1,5 @@
 #include "iso9660.h"
+#include <unistd.h> // For usleep
 
 bool inbios=true;
 FILE* f_1=0;
@@ -152,6 +153,8 @@ bool load_gdi(wchar* file_)
 		return false;
 
 	printf("\nGDI : %d tracks\n",iso_tc);
+  printf("-- Waiting 2 seconds -- (this will be removed in beta version");
+  usleep(2000000); // Wait a bit 2 seconds (or 2000 milliseconds)
 
 	char temp[512];
 	char path[512];
