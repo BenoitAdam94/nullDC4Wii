@@ -172,6 +172,11 @@ int displayMenuAndSelectFile()
 
     // Display page info
     printf("\n--- Page %02d/%02d ---\n", currentPage + 1, totalPages);
+    printf("HELP ME BUILD THIS PROJECT !! ANY HELP IS WELCOME !!\n");
+    printf("https://github.com/BenoitAdam94/nullDC4Wii\n");
+    printf("Contact & bug report : xalegamingchannel@gmail.com\n");
+    printf("HELP ME ON THE COMPATIBILITY LIST !!\n");
+    printf("Compatibility WIKI : https://wiibrew.org/wiki/NullDC4Wii/Compatibility\n");
     printf("UP/DOWN/LEFT/RIGHT: Navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
 
     WPAD_ScanPads();
