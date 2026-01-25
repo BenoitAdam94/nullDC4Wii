@@ -23,11 +23,11 @@ FileEntry fileList[256];
 int fileCount = 0;
 char selectedFilePath[512] = "";
 char currentPath[512] = "sd:/discs/";
-const int ITEMS_PER_PAGE = 10; // Can be up to 20 but bad UX unless lots of roms
+const int ITEMS_PER_PAGE = 10; // 10 for now is ok
 int currentPage = 0;
 
 // Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
-// Only GDI is supported, maybe NRG and MDS and BIN/CUE and ELF
+// Currently supported: GDI (fully), maybe NRG/MDS/BIN/CUE/ELF (experimental)
 bool hasValidExtension(const char *filename)
 {
   size_t len = strlen(filename);
@@ -77,7 +77,14 @@ void listFilesInDirectory(const char *dirPath)
 
       // Build full path
       char fullPath[512];
-      snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+      int pathLen = snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
+
+      // Check if path isn't trunkacted
+      if (pathLen >= sizeof(fullPath))
+      {
+        printf("Warning: Path too long, skipping: %s/%s\n", dirPath, entry->d_name);
+        continue;
+      }
 
       // Get file stats
       if (stat(fullPath, &statbuf) == 0)
@@ -100,6 +107,9 @@ void listFilesInDirectory(const char *dirPath)
         }
       }
     }
+    
+    closedir(dir); // Close directory
+    
     // Sorting : Folder first, then file (alphabeticaly)
     for (int i = 0; i < fileCount - 1; i++)
     {
@@ -132,7 +142,9 @@ void listFilesInDirectory(const char *dirPath)
   }
   else
   {
+    // Error
     perror("Could not open directory");
+    printf("Could not open directory: %s\n", dirPath);
   }
 }
 
@@ -145,8 +157,9 @@ int displayMenuAndSelectFile()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
+    printf("NullDC4Wii - Alpha 0.03\n");
     printf("Current directory: %s\n", currentPath);
-    printf("Select a game file: (Only GDI Works, Maybe NRG/MDS. (Try Bin/CUE and ELF)\n\n");
+    printf("Select a game file: (GDI Works, maybe NRG/MDS/BIN/CUE/ELF (experimental)\n\n");
 
     // Calculate pagination
     int totalPages = (fileCount + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
@@ -171,12 +184,12 @@ int displayMenuAndSelectFile()
     }
 
     // Display page info
-    printf("\n--- Page %02d/%02d ---\n", currentPage + 1, totalPages);
+    printf("\n--- Page %02d/%02d ---\n\n", currentPage + 1, totalPages);
     printf("HELP ME BUILD THIS PROJECT !! ANY HELP IS WELCOME !!\n");
     printf("https://github.com/BenoitAdam94/nullDC4Wii\n");
     printf("Contact & bug report : xalegamingchannel@gmail.com\n");
     printf("HELP ME ON THE COMPATIBILITY LIST !!\n");
-    printf("Compatibility WIKI : https://wiibrew.org/wiki/NullDC4Wii/Compatibility\n");
+    printf("Compatibility WIKI : https://wiibrew.org/wiki/NullDC4Wii/Compatibility\n\n");
     printf("UP/DOWN/LEFT/RIGHT: Navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
 
     WPAD_ScanPads();
@@ -373,8 +386,8 @@ int main(int argc, wchar *argv[])
   else
   {
     // If no valid disc file found
-    printf("No valid disc files found. Booting to BIOS\n");
-    usleep(100000); // Wait time to let user see message before booting to BIOS
+    printf("No valid disc files found in sd:/discs/. Booting to BIOS...\n");
+    usleep(2000000); // Wait time (2 sec) to let user see message before booting to BIOS
     printf("Booting to BIOS...\n");
   }
 
