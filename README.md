@@ -7,7 +7,6 @@ a fork from https://github.com/skmp/nullDCe
 ### Simple
 
 - Test current state with every game and report compatibility (see "compatibility" below)
-- Correct files (XML) for Homebrew Channel (i dunno why it doesn't work)
 - Fowarder for Wii Menu
 
 ### Developer (Easy)
@@ -146,6 +145,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
