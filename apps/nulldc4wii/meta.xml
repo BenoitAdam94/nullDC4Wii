@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <app version="1">
-	<name>NullDC4Wii</name>
-	<version>0.02</version>
-	<release_date>202601221249</release_date>
-	<coder>Xale00, Skmp, NulldcTeam, Joseph Jordan</coder>
-	<short_description>Dreamcast Emulator</short_description>
-	<long_description>
-NullDC4Wii is an attempt to port NullDC for Wii. It has been compiled years ago but never released.
-
-Wii port by Xale00 & skmpd
-	</long_description>
+  <name>NullDC4Wii</name>
+  <coder>Xale00, Skmp, NulldcTeam, Joseph Jordan</coder>
+  <version>Alpha 0.03</version>
+  <release_date>20260125</release_date>
+  <short_description>Dreamcast Emulator</short_description> 
+  <long_description>NullDC4Wii is an attempt to port NullDC for Wii. It has been compiled years ago but never released.
+   
+Wii port by Xale00 and skmpd</long_description> 
 </app>
