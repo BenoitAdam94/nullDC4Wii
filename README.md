@@ -4,12 +4,13 @@ a fork from https://github.com/skmp/nullDCe
 
 ## TODO (Maybe you can help !)
 
-## Simple
+### Simple
 
 - Correct files (XML) for Homebrew Channel (i dunno why it doesn't work)
 - Fowarder for Wii Menu
+- Test current state with every game and report compatibility (see "compatibility" below)
 
-## Developer (Easy)
+### Developer (Easy)
 
 - Clean Warning/notes during compilation I guess
 - Gamecube gamepad implementation
@@ -17,7 +18,7 @@ a fork from https://github.com/skmp/nullDCe
 - Optimize Optimize Optimize
 - Translate French baguette comments to English
 
-## Developer (Hard)
+### Developer (Hard)
 
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
@@ -145,6 +146,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
