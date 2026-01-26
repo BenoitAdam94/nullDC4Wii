@@ -1,3 +1,12 @@
+/*
+
+This file implements the Dreamcast SH4 CPU ASIC interrupt controller (the "Holly" block) in the emulator.
+
+This file bridges the gap between the Dreamcast's emulated hardware interrupts and the SH4 CPU, replicating the behavior of the actual ASIC controller.
+
+*/
+
+
 #include "types.h"
 #include "asic.h"
 
