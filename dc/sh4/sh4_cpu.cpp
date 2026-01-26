@@ -592,6 +592,8 @@ sh4op(i0011_nnnn_mmmm_1111)
 		sr.T=1;
 	else
 		sr.T=0;
+    */
+   
 	/*if (br>>32)
 		sr.T=1;
 	else
