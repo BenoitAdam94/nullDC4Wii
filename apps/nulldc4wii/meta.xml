@@ -4,8 +4,12 @@
   <coder>Xale00, Skmp, NulldcTeam, Joseph Jordan</coder>
   <version>Alpha 0.03</version>
   <release_date>20260125</release_date>
-  <short_description>Dreamcast Emulator</short_description> 
-  <long_description>NullDC4Wii is an attempt to port NullDC for Wii. It has been compiled years ago but never released.
-   
-Wii port by Xale00 and skmpd</long_description> 
+  <short_description>Dreamcast Emulator (Experimental)</short_description> 
+  <long_description>NullDC4Wii is an attempt to port NullDC for Wii.
+  
+  It has been compiled years ago but never released.
+
+  Put bios in sd:/apps/nulldc4wii/data/
+  Put games in sd:/discs/
+   </long_description> 
 </app>
