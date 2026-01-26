@@ -1,3 +1,19 @@
+/*
+
+config.cpp implements the configuration system of the emulator (nullDC.cfg)
+It manages loading, storing, overriding, and saving configuration values from an INI-style config file (nullDC.cfg), command-line parameters, and internal defaults.
+
+The file supports:
+
+- sections and key/value entries
+- virtual (command-line) values that override file values without being saved
+- read-only internal values (paths, emulator info)
+- automatic creation and saving of the config file
+
+It provides an API to load and save string and integer settings and ensures consistent configuration handling across the emulator.
+
+*/
+
 #define _CRT_SECURE_NO_DEPRECATE (1)
 //#include <windows.h>
 #include "config.h"
