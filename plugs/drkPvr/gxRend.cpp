@@ -244,7 +244,7 @@ float vtx_max_Z;
 			}
 		}
 	}
-
+  */
 	/*
 	void SetTextureParams(PolyParam* mod)
 	{
