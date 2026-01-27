@@ -49,6 +49,21 @@ Put your folders with GDI in this directory
 
 Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
+## Configuration
+
+### General configuration
+
+Check nullDC.cfg at root
+
+### VMU (Memory card)
+
+I don't know if it's supported now.  
+
+Files appears at root :  
+vmu_save_A1.bin  
+vmu_save_A2.bin
+
+
 ## Status (25/01/2026)
 
 launch on dolphin an real Wii with few FPS  
@@ -145,6 +160,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
