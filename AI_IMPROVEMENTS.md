@@ -33,7 +33,7 @@
 | sh4_cpu.cpp | SH4 CPU core implementation | | |
 | sh4_interpreter.cpp | SH4 instruction interpreter | | |
 | sh4_fpu.cpp | SH4 floating point unit | | |
-| sh4_if.cpp | SH4 interface layer | | |
+| sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
 | sh4_opcode_list.cpp | SH4 opcode definitions | | |
 | sh4_registers.cpp | SH4 register definitions | | |
 | sh4_internal_reg.cpp | SH4 internal registers | | |
