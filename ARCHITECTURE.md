@@ -101,10 +101,10 @@
 | File | Function | Emulation Level | Accuracy Level | Danger Zone | Notes |
 |------|----------|-----------------|----------------|-------------|-------|
 | Renderer_if.cpp | Renderer interface | N/A | N/A | No |  |
-| nullRend.cpp | Null renderer | N/A | N/A | No |  |
+| nullRend.cpp | Null renderer (PSP) | N/A | N/A | No |  |
 | softRend.cpp | Software renderer | HLE | Approximate | No | Reference |
 | glesRend.cpp | OpenGL ES renderer | HLE | Approximate | Yes | Driver-dependent |
-| gsRend.cpp | GS renderer | HLE | Approximate | Yes | Platform quirks |
+| gsRend.cpp | GS renderer (PS2) | HLE | Approximate | Yes | Platform quirks |
 | gxRend.cpp | GX renderer (Wii) | HLE | Approximate | Yes | Fixed-function |
 | regs.cpp | Graphics registers | LLE | Cycle-accurate | No |  |
 
