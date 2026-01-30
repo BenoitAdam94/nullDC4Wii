@@ -70,7 +70,7 @@ D-LEFT = D-LEFT
 D-RIGHT = D-RIGHT  
 HOME = Exit  
 
-Gamepad (untested for now) :
+Gamecube controller :
 
 A = A  
 B = B  
@@ -190,6 +190,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
