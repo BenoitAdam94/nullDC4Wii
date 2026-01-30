@@ -59,29 +59,29 @@ Check nullDC.cfg at root
 
 Wiimote :
 
-A = A
-B = B
-Y = 1
-X = 2
-START = +
-D-UP = D-UP
-D-DOWN = D-DOWN
-D-LEFT = D-LEFT
-D-RIGHT = D-RIGHT
-HOME = Exit
+A = A  
+B = B  
+Y = 1  
+X = 2  
+START = +  
+D-UP = D-UP  
+D-DOWN = D-DOWN  
+D-LEFT = D-LEFT  
+D-RIGHT = D-RIGHT  
+HOME = Exit  
 
 Gamepad (untested for now) :
 
-A = A
-B = B
-Y = Y
-X = X
-START = START
-D-UP = STICK UP
-D-DOWN = STICK DOWN
-D-LEFT = STICK-LEFT
-D-RIGHT = STICK-RIGHT
-R + L + Z = Exit
+A = A  
+B = B  
+Y = Y  
+X = X  
+START = START  
+D-UP = STICK UP  
+D-DOWN = STICK DOWN  
+D-LEFT = STICK-LEFT  
+D-RIGHT = STICK-RIGHT  
+R + L + Z = Exit  
 
 
 
@@ -190,6 +190,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
