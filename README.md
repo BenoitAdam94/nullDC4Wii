@@ -63,12 +63,14 @@ A = A
 B = B  
 Y = 1  
 X = 2  
-START = +  
+START = + (Home in 0.04)  
 D-UP = D-UP  
 D-DOWN = D-DOWN  
 D-LEFT = D-LEFT  
 D-RIGHT = D-RIGHT  
-HOME = Exit  
+HOME = Exit (Start in 0.04)  
+L = - (in 0.04)  
+R = + (in 0.04)  
 
 Gamecube controller :
 
@@ -190,6 +192,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
