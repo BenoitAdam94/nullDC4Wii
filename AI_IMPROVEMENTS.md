@@ -83,8 +83,8 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | glesRend.cpp | OpenGL ES renderer | | |
-| gsRend.cpp | Generic graphics renderer | | |
-| gxRend.cpp | GX renderer (Wii / GameCube) | | |
+| gsRend.cpp | Generic graphics renderer (PS2) | | |
+| gxRend.cpp | GX renderer (Wii / GameCube) | | Improvement failed for now (Blackscreen with white flashes) |
 | softRend.cpp | Software renderer | | |
 | nullRend.cpp | Null renderer (no rendering output) | | |
 
