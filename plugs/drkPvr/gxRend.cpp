@@ -1646,9 +1646,6 @@ float vtx_max_Z;
 	{
         GXColor background = {0, 0, 0, 0xff};
 
-    // Initialise the video system (devkit wii-example)
-		VIDEO_Init();
-
     // Obtain the preferred video mode from the system
 	  // This will correspond to the settings in the Wii menu
 		rmode = VIDEO_GetPreferredMode(NULL);
