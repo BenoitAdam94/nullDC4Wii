@@ -55,6 +55,36 @@ Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
 Check nullDC.cfg at root
 
+### Controls
+
+Wiimote :
+
+A = A  
+B = B  
+Y = 1  
+X = 2  
+START = +  
+D-UP = D-UP  
+D-DOWN = D-DOWN  
+D-LEFT = D-LEFT  
+D-RIGHT = D-RIGHT  
+HOME = Exit  
+
+Gamecube controller :
+
+A = A  
+B = B  
+Y = Y  
+X = X  
+START = START  
+D-UP = STICK UP  
+D-DOWN = STICK DOWN  
+D-LEFT = STICK-LEFT  
+D-RIGHT = STICK-RIGHT  
+R + L + Z = Exit  
+
+
+
 ### VMU (Memory card)
 
 I don't know if it's supported now.  
@@ -160,6 +190,9 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
+
+
 
 
 
