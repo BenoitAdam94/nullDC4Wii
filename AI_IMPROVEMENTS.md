@@ -12,7 +12,7 @@
 | nullDC.cpp | Main emulator implementation and loop | | |
 | common.cpp | Shared utilities and helpers | | |
 | config.cpp | Configuration handling | | |
-| driver.cpp | Platform-specific driver glue | | |
+| driver.cpp | Platform-specific driver glue | 0.04 | Improved by ClaudeAI (no notable change) |
 | ui.cpp | User interface layer | | |
 
 ## Memory Management
