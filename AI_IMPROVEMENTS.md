@@ -69,7 +69,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | pvr_if.cpp | PVR interface layer | 0.04 | Improved by ClaudeAI (no notable change) |
-| pvr_sb_regs.cpp | PVR system bus registers | | |
+| pvr_sb_regs.cpp | PVR system bus registers | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvrLock.cpp | PVR synchronization mechanisms | | |
 | drkPvr.cpp | PVR renderer backend | | |
 | Renderer_if.cpp | Renderer abstraction interface | | |
