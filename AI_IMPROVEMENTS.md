@@ -68,7 +68,7 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| pvr_if.cpp | PVR interface layer | | |
+| pvr_if.cpp | PVR interface layer | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvr_sb_regs.cpp | PVR system bus registers | | |
 | pvrLock.cpp | PVR synchronization mechanisms | | |
 | drkPvr.cpp | PVR renderer backend | | |
@@ -126,7 +126,7 @@
 |------|----------|---------|----------------|
 | plugin_manager.cpp | Plugin management system | | |
 | plugin_types.cpp | Plugin type definitions | | |
-| blockmanager.cpp | RAM Buffer - Memory and block manager | 0.04 | Claude AI improvement |
+| blockmanager.cpp | RAM Buffer - Memory and block manager | 0.04 | Claude AI improvement (no notable change) |
 
 ## Networking
 
