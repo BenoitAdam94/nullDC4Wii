@@ -26,8 +26,8 @@ char currentPath[512] = "sd:/discs/";
 const int ITEMS_PER_PAGE = 10; // 10 for now is ok
 int currentPage = 0;
 
-// Function to check if file is a GDI / CDI / BIN / CUE / NRG / MDS / ELF / CHD
-// Currently supported: GDI (fully), maybe NRG/MDS/BIN/CUE/ELF (experimental)
+// Function to check if file is a GDI / CDI / ISO / BIN / CUE / NRG / MDS / ELF / CHD
+// Currently supported: GDI (fully), maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF (experimental)
 bool hasValidExtension(const char *filename)
 {
   size_t len = strlen(filename);
@@ -47,6 +47,7 @@ bool hasValidExtension(const char *filename)
   // Check for valid extensions
   return (strcmp(extLower, ".gdi") == 0 ||
           strcmp(extLower, ".cdi") == 0 ||
+          strcmp(extLower, ".iso") == 0 ||
           strcmp(extLower, ".bin") == 0 ||
           strcmp(extLower, ".cue") == 0 ||
           strcmp(extLower, ".nrg") == 0 ||
@@ -157,9 +158,9 @@ int displayMenuAndSelectFile()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
-    printf("NullDC4Wii - Alpha 0.03\n");
+    printf("\nNullDC4Wii - Alpha 0.04\n");
     printf("Current directory: %s\n", currentPath);
-    printf("Select a game file: (GDI Works, maybe NRG/MDS/BIN/CUE/ELF (experimental)\n\n");
+    printf("Select a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n\n");
 
     // Calculate pagination
     int totalPages = (fileCount + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
@@ -191,6 +192,7 @@ int displayMenuAndSelectFile()
     printf("HELP ME ON THE COMPATIBILITY LIST !!\n");
     printf("Compatibility WIKI : https://wiibrew.org/wiki/NullDC4Wii/Compatibility\n\n");
     printf("UP/DOWN/LEFT/RIGHT: Navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
+    printf("INGAME : Press (-) and (+) simultaneously to Exit \n");
 
     WPAD_ScanPads();
     u32 pressed = WPAD_ButtonsDown(0);
