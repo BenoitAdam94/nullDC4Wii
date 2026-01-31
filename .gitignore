@@ -4,6 +4,8 @@ wii/bootu.dol
 wii/boot.elf
 wii/boot_dol/
 repomix/
-apps/nulldc4wii/boot.dol
-apps/boot.elf
+apps/
 wii/boot_dol.7z
+listfile.bat
+file_list.txt
+tmp
