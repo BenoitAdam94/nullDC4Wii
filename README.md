@@ -57,7 +57,7 @@ Check nullDC.cfg at root
 
 ### Controls
 
-Wiimote :
+#### Wiimote :
 
 A = A  
 B = B  
@@ -72,7 +72,9 @@ HOME = Exit (Start in 0.04)
 L = - (in 0.04)  
 R = + (in 0.04)  
 
-Gamecube controller :
+To Exit : - and + (in a0.04 and after), or HOME (a0.03 and before) 
+
+#### Gamecube controller :
 
 A = A  
 B = B  
@@ -83,7 +85,8 @@ D-UP = STICK UP
 D-DOWN = STICK DOWN  
 D-LEFT = STICK-LEFT  
 D-RIGHT = STICK-RIGHT  
-R + L + Z = Exit  
+
+To exit : R + L + Z  
 
 
 
@@ -192,6 +195,8 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
+
 
 
 
