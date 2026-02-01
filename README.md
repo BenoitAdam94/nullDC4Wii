@@ -88,7 +88,7 @@ STICK UP = STICK UP
 STICK DOWN = STICK DOWN  
 STICK-LEFT = STICK-LEFT  
 STICK-RIGHT = STICK-RIGHT  
-L = L
+L = L  
 R = R
 
 
@@ -201,6 +201,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
