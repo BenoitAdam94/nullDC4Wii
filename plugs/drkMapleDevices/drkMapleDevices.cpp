@@ -9,6 +9,8 @@
 // - Cleaner button mapping logic
 // - Fixed inverted Y-axis for GameCube controller
 // - Added GameCube D-Pad support
+// - Added Wii Nunchuck analog stick support
+// - Added Wii Nunchuck Z button as Dreamcast L trigger
 
 #include "plugins/plugin_header.h"
 #include <string.h>
@@ -73,8 +75,9 @@ static inline s8 ClampAnalogValue(s32 value, s32 deadzone)
  * @param port Controller port (0-3)
  * @param wiiButtons Wii Remote button state
  * @param gcButtons GameCube controller button state
+ * @param nunchuckButtons Nunchuck button state
  */
-static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons)
+static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons, u32 nunchuckButtons)
 {
     // Initialize to all buttons released (bits set = released in Dreamcast format)
     kcode[port] = 0xFFFF;
@@ -96,8 +99,8 @@ static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons)
     if (wiiButtons & WPAD_BUTTON_HOME || gcButtons & PAD_BUTTON_START)
         kcode[port] &= ~key_CONT_START;
     
-    // Shoulder buttons - MINUS=L, PLUS=R on Wiimote; L/R on GameCube
-    if (wiiButtons & WPAD_BUTTON_MINUS || gcButtons & PAD_TRIGGER_L)
+    // Shoulder buttons - MINUS=L, PLUS=R on Wiimote; L/R on GameCube; Nunchuck Z=L
+    if (wiiButtons & WPAD_BUTTON_MINUS || gcButtons & PAD_TRIGGER_L || nunchuckButtons & WPAD_NUNCHUK_BUTTON_Z)
         kcode[port] &= ~key_CONT_D;  // Left trigger
     
     if (wiiButtons & WPAD_BUTTON_PLUS || gcButtons & PAD_TRIGGER_R)
@@ -135,26 +138,39 @@ static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons)
  * @param port Controller port (0-3)
  * @param stickX X-axis value
  * @param stickY Y-axis value (corrected for GameCube inversion)
+ * @param nunchuckX Nunchuck X-axis value
+ * @param nunchuckY Nunchuck Y-axis value
  */
-static void MapAnalogStick(u32 port, s32 stickX, s32 stickY)
+static void MapAnalogStick(u32 port, s32 stickX, s32 stickY, s32 nunchuckX, s32 nunchuckY)
 {
+    // Prioritize GameCube analog stick, fall back to Nunchuck
+    s32 finalX = stickX;
+    s32 finalY = stickY;
+    
+    // If GameCube stick is not being used (near center), use Nunchuck instead
+    if (abs(stickX) < ANALOG_DEADZONE && abs(stickY) < ANALOG_DEADZONE)
+    {
+        finalX = nunchuckX;
+        finalY = nunchuckY;
+    }
+    
     // Apply dead zone and clamp values
-    joyx[port] = ClampAnalogValue(stickX, ANALOG_DEADZONE);
+    joyx[port] = ClampAnalogValue(finalX, ANALOG_DEADZONE);
     // Invert Y-axis to match Dreamcast controller orientation
-    joyy[port] = ClampAnalogValue(-stickY, ANALOG_DEADZONE);
+    joyy[port] = ClampAnalogValue(-finalY, ANALOG_DEADZONE);
     
     // Also map stick to D-pad if beyond threshold (for analog stick as D-pad)
     // Using corrected Y-axis orientation
-    if (stickY < -ANALOG_DEADZONE)  // Stick pushed up (was inverted)
+    if (finalY < -ANALOG_DEADZONE)  // Stick pushed up (was inverted)
         kcode[port] &= ~key_CONT_DPAD_UP;
     
-    if (stickY > ANALOG_DEADZONE)   // Stick pushed down (was inverted)
+    if (finalY > ANALOG_DEADZONE)   // Stick pushed down (was inverted)
         kcode[port] &= ~key_CONT_DPAD_DOWN;
     
-    if (stickX < -ANALOG_DEADZONE)  // Stick pushed left
+    if (finalX < -ANALOG_DEADZONE)  // Stick pushed left
         kcode[port] &= ~key_CONT_DPAD_LEFT;
     
-    if (stickX > ANALOG_DEADZONE)   // Stick pushed right
+    if (finalX > ANALOG_DEADZONE)   // Stick pushed right
         kcode[port] &= ~key_CONT_DPAD_RIGHT;
 }
 
@@ -205,7 +221,21 @@ void UpdateInputState(u32 port)
     u32 wiiButtons = WPAD_ButtonsHeld(port);
     u32 gcButtons = PAD_ButtonsHeld(port);
     
-    // Read analog stick position
+    // Read Nunchuck state if available
+    WPADData *wpadData = WPAD_Data(port);
+    u32 nunchuckButtons = 0;
+    s32 nunchuckX = 0;
+    s32 nunchuckY = 0;
+    
+    if (wpadData && wpadData->exp.type == WPAD_EXP_NUNCHUK)
+    {
+        nunchuckButtons = wpadData->exp.nunchuk.btns;
+        // Scale Nunchuck joystick (0-255 range) to match GameCube (-128 to 127)
+        nunchuckX = (s32)(wpadData->exp.nunchuk.js.pos.x) - 128;
+        nunchuckY = (s32)(wpadData->exp.nunchuk.js.pos.y) - 128;
+    }
+    
+    // Read GameCube analog stick position
     s32 stickX = PAD_StickX(port);
     s32 stickY = PAD_StickY(port);
     
@@ -213,8 +243,8 @@ void UpdateInputState(u32 port)
     CheckExitCombination(wiiButtons, gcButtons);
     
     // Map all inputs to Dreamcast controller format
-    MapButtons(port, wiiButtons, gcButtons);
-    MapAnalogStick(port, stickX, stickY);
+    MapButtons(port, wiiButtons, gcButtons, nunchuckButtons);
+    MapAnalogStick(port, stickX, stickY, nunchuckX, nunchuckY);
     MapTriggers(port, gcButtons);
 }
 
