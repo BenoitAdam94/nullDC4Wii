@@ -7,6 +7,8 @@
 // - Trigger support from GameCube controller
 // - More robust input handling
 // - Cleaner button mapping logic
+// - Fixed inverted Y-axis for GameCube controller
+// - Added GameCube D-Pad support
 
 #include "plugins/plugin_header.h"
 #include <string.h>
@@ -101,7 +103,7 @@ static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons)
     if (wiiButtons & WPAD_BUTTON_PLUS || gcButtons & PAD_TRIGGER_R)
         kcode[port] &= ~key_CONT_C;  // Right trigger
     
-    // D-Pad mapping
+    // D-Pad mapping - Wii Remote D-Pad
     if (wiiButtons & WPAD_BUTTON_UP)
         kcode[port] &= ~key_CONT_DPAD_UP;
     
@@ -113,31 +115,46 @@ static void MapButtons(u32 port, u32 wiiButtons, u32 gcButtons)
     
     if (wiiButtons & WPAD_BUTTON_RIGHT)
         kcode[port] &= ~key_CONT_DPAD_RIGHT;
+    
+    // D-Pad mapping - GameCube Controller D-Pad
+    if (gcButtons & PAD_BUTTON_UP)
+        kcode[port] &= ~key_CONT_DPAD_UP;
+    
+    if (gcButtons & PAD_BUTTON_DOWN)
+        kcode[port] &= ~key_CONT_DPAD_DOWN;
+    
+    if (gcButtons & PAD_BUTTON_LEFT)
+        kcode[port] &= ~key_CONT_DPAD_LEFT;
+    
+    if (gcButtons & PAD_BUTTON_RIGHT)
+        kcode[port] &= ~key_CONT_DPAD_RIGHT;
 }
 
 /**
  * Maps analog stick input with dead zone handling
  * @param port Controller port (0-3)
  * @param stickX X-axis value
- * @param stickY Y-axis value
+ * @param stickY Y-axis value (corrected for GameCube inversion)
  */
 static void MapAnalogStick(u32 port, s32 stickX, s32 stickY)
 {
     // Apply dead zone and clamp values
     joyx[port] = ClampAnalogValue(stickX, ANALOG_DEADZONE);
-    joyy[port] = ClampAnalogValue(stickY, ANALOG_DEADZONE);
+    // Invert Y-axis to match Dreamcast controller orientation
+    joyy[port] = ClampAnalogValue(-stickY, ANALOG_DEADZONE);
     
-    // Also map stick to D-pad if beyond threshold (for Wiimote compatibility)
-    if (stickY > ANALOG_DEADZONE)
+    // Also map stick to D-pad if beyond threshold (for analog stick as D-pad)
+    // Using corrected Y-axis orientation
+    if (stickY < -ANALOG_DEADZONE)  // Stick pushed up (was inverted)
         kcode[port] &= ~key_CONT_DPAD_UP;
     
-    if (stickY < -ANALOG_DEADZONE)
+    if (stickY > ANALOG_DEADZONE)   // Stick pushed down (was inverted)
         kcode[port] &= ~key_CONT_DPAD_DOWN;
     
-    if (stickX < -ANALOG_DEADZONE)
+    if (stickX < -ANALOG_DEADZONE)  // Stick pushed left
         kcode[port] &= ~key_CONT_DPAD_LEFT;
     
-    if (stickX > ANALOG_DEADZONE)
+    if (stickX > ANALOG_DEADZONE)   // Stick pushed right
         kcode[port] &= ~key_CONT_DPAD_RIGHT;
 }
 
