@@ -12,7 +12,9 @@ a fork from https://github.com/skmp/nullDCe
 ### Developer (Easy)
 
 - Clean Warning/notes during compilation I guess
-- Gamecube gamepad implementation
+- Player 2 Gamecube/Wiimote (1rst step)
+- Player 3/4 Gamecube/Wiimote (2nd step)
+- Put external config file for conrollers (controls.cfg)
 - Clean Clean Clean
 - Optimize Optimize Optimize
 - Translate French baguette comments to English
@@ -47,7 +49,7 @@ vmu_default.bin
 
 Put your folders with GDI in this directory
 
-Might work for CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
+Might work for ISO / CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
 
 ## Configuration
 
@@ -61,35 +63,31 @@ Check nullDC.cfg at root
 
 DC - Wii
 
-A = A  
-B = B  
-Y = 1  
-X = 2  
-START = + (Home in 0.04)  
-D-UP = D-UP  
-D-DOWN = D-DOWN  
-D-LEFT = D-LEFT  
-D-RIGHT = D-RIGHT  
-L = - (in 0.04)  
-R = + (in 0.04)  
+- A = A  
+- B = B  
+- Y = 1  
+- X = 2  
+- START = Home
+- D-PAD = D-PAD  
+- STICK = Nunchuck Stick
+- L = - (and Nunchuck Z)
+- R = +  
 
-To Exit : - and + (in a0.04 and after), or HOME (a0.03 and before) 
+To Exit : - and +  
 
 #### Gamecube controller :
 
 DC - Gamecube
 
-A = A  
-B = B  
-Y = Y  
-X = X  
-START = START  
-STICK UP = STICK UP  
-STICK DOWN = STICK DOWN  
-STICK-LEFT = STICK-LEFT  
-STICK-RIGHT = STICK-RIGHT  
-L = L  
-R = R
+- A = A  
+- B = B  
+- Y = Y  
+- X = X  
+- START = START  
+- D-PAD = D-PAD
+- STICK = STICK
+- L = L  
+- R = R
 
 
 To exit : R + L + Z  
@@ -201,6 +199,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
