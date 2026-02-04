@@ -128,7 +128,7 @@ https://wiibrew.org/wiki/DevkitPPC
 
 #### 2/ Launch MSys2 terminal
 
-Devkitpro has it's own UNIX terminal, by defautl it's located here :  
+Devkitpro has it's own UNIX terminal, by default it's located here :  
 C:\devkitPro\msys2\usr\bin\mintty.exe
 
 #### 3/ Install additional development packages :
@@ -200,6 +200,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
