@@ -14,7 +14,7 @@ a fork from https://github.com/skmp/nullDCe
 - Clean Warning/notes during compilation I guess
 - Player 2 Gamecube/Wiimote (1rst step)
 - Player 3/4 Gamecube/Wiimote (2nd step)
-- Put external config file for conrollers (controls.cfg)
+- Put external config file for controllers (controls.cfg)
 - Clean Clean Clean
 - Optimize Optimize Optimize
 - Translate French baguette comments to English
@@ -200,6 +200,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
