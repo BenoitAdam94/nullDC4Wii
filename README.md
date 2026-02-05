@@ -15,6 +15,7 @@ a fork from https://github.com/skmp/nullDCe
 - Player 2 Gamecube/Wiimote (1rst step)
 - Player 3/4 Gamecube/Wiimote (2nd step)
 - Fishing Rod/USB Keyboard/Lightgun/Maracas support
+- Configuration adjustement for performance (FAST or ACCURATE)
 - Put external config file for controllers (controls.cfg)
 - Clean Clean Clean
 - Optimize Optimize Optimize
@@ -201,6 +202,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
