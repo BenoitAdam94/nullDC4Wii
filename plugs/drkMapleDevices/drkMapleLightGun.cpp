@@ -1,0 +1,1 @@
+// Light gun games (Wiimote IR)
