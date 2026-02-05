@@ -58,7 +58,7 @@
 | maple_cfg.cpp | Maple configuration | HLE | Approximate | No |  |
 | maple_devs.cpp | Maple devices | HLE | Approximate | No | Controllers |
 | maple_helper.cpp | Maple helper functions | HLE | Approximate | No |  |
-| drkMapleDevices.cpp | Extended Maple devices | HLE | Approximate | No |  Wii Controler |
+| drkMapleDevices.cpp | Extended Maple devices | HLE | Approximate | No |  Wii & Gamecube Controler |
 | nullExtDev.cpp | Null external device | HLE | N/A | No |  |
 
 ## GD-ROM / Disk Images
