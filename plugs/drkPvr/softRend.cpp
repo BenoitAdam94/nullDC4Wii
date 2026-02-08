@@ -1,5 +1,5 @@
 #include "../../config.h"
-#include "nullRend.h"
+
 
 #include "regs.h"
 #if REND_API == REND_SOFT

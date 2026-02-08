@@ -19,7 +19,7 @@ float dc_height=480;
 	#include <windows.h>
 #endif
 
-#include "nullRend.h"
+
 
 #if REND_API == REND_GLES2
 

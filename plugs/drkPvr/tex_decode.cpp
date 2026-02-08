@@ -16,7 +16,7 @@
 #endif
 #include "../../config.h"
 
-#include "nullRend.h"
+
 #include "regs.h"
 //input : address in the yyyyyxxxxx format
 //output : address in the xyxyxyxy format
