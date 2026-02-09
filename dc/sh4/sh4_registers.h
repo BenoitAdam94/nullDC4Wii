@@ -21,7 +21,7 @@ struct Sh4Context
 	fpscr_type old_fpscr;
 
 	u32 offset(u32 sh4_reg);
-	u32 offset(Sh4RegType sh4_reg) { offset(sh4_reg); }
+	u32 offset(Sh4RegType sh4_reg) { return offset((u32)sh4_reg); }
 };
 
 

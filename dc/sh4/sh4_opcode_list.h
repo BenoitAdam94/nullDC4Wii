@@ -133,6 +133,7 @@ enum DecParam
 
 enum DecMode
 {
+	DM_ReadSRF,		//Read SR with flags
 	DM_BinaryOp,	//d=d op s
 	DM_UnaryOp,		//d= op s
 	DM_ReadM,		//d=readm(s);s+=e
@@ -145,4 +146,6 @@ enum DecMode
 	DM_EXTOP,
 	DM_MUL,
 	DM_DIV0,
+	DM_ADC,			//Add/subtract with carry
+	DM_NEGC,		//Negate with carry
 };

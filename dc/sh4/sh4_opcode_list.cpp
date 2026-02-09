@@ -39,48 +39,48 @@ sh4_opcodelistentry* OpDesc[0x10000];
 //
 
 //,DEC_D_RN|DEC_S_RM|DEC_OP(shop_and)
-u64 dec_Fill(DecMode mode,DecParam d,DecParam s,shilop op,u32 extra=0)
+static u64 dec_Fill(DecMode mode,DecParam d,DecParam s,shilop op,u32 extra=0)
 {
 	return (((u64)extra)<<32)|(mode<<24)|(d<<16)|(s<<8)|op;
 }
-u64 dec_Un_rNrN(shilop op)
+static u64 dec_Un_rNrN(shilop op)
 {
 	return dec_Fill(DM_UnaryOp,PRM_RN,PRM_RN,op);
 }
-u64 dec_Un_rNrM(shilop op)
+static u64 dec_Un_rNrM(shilop op)
 {
 	return dec_Fill(DM_UnaryOp,PRM_RN,PRM_RM,op);
 }
-u64 dec_Un_frNfrN(shilop op)
+static u64 dec_Un_frNfrN(shilop op)
 {
 	return dec_Fill(DM_UnaryOp,PRM_FRN,PRM_FRN,op);
 }
-u64 dec_Un_frNfrM(shilop op)
+static u64 dec_Un_frNfrM(shilop op)
 {
 	return dec_Fill(DM_UnaryOp,PRM_FRN,PRM_FRM,op);
 }
-u64 dec_Bin_frNfrM(shilop op, u32 haswrite=1)
+static u64 dec_Bin_frNfrM(shilop op, u32 haswrite=1)
 {
 	return dec_Fill(DM_BinaryOp,PRM_FRN,PRM_FRM,op,haswrite);
 }
-u64 dec_Bin_rNrM(shilop op, u32 haswrite=1)
+static u64 dec_Bin_rNrM(shilop op, u32 haswrite=1)
 {
 	return dec_Fill(DM_BinaryOp,PRM_RN,PRM_RM,op,haswrite);
 }
-u64 dec_mul(u32 type)
+static u64 dec_mul(u32 type)
 {
 	//return 0;
 	return dec_Fill(DM_MUL,PRM_RN,PRM_RM,shop_mul_s16,type);
 }
-u64 dec_Bin_S8R(shilop op, u32 haswrite=1)
+static u64 dec_Bin_S8R(shilop op, u32 haswrite=1)
 {
 	return dec_Fill(DM_BinaryOp,PRM_RN,PRM_SIMM8,op,haswrite);
 }
-u64 dec_Bin_r0u8(shilop op, u32 haswrite=1)
+static u64 dec_Bin_r0u8(shilop op, u32 haswrite=1)
 {
 	return dec_Fill(DM_BinaryOp,PRM_R0,PRM_UIMM8,op,haswrite);
 }
-u64 dec_shft(s32 offs,bool arithm)
+static u64 dec_shft(s32 offs,bool arithm)
 {
 	if (offs>0)
 	{
@@ -94,23 +94,23 @@ u64 dec_shft(s32 offs,bool arithm)
 
 }
 
-u64 dec_cmp(shilop op, DecParam s1,DecParam s2)
+static u64 dec_cmp(shilop op, DecParam s1,DecParam s2)
 {
 	return dec_Fill(DM_WriteTOp,s1,s2,op);
 }
 
-u64 dec_LD(DecParam d)	{ return dec_Fill(DM_UnaryOp,d,PRM_RN,shop_mov32); }
-u64 dec_LDM(DecParam d)	{ return dec_Fill(DM_ReadM,d,PRM_RN,shop_readm,-4); }
-u64 dec_ST(DecParam d)	{ return dec_Fill(DM_UnaryOp,PRM_RN,d,shop_mov32); }
-u64 dec_STM(DecParam d)	{ return dec_Fill(DM_WriteM,PRM_RN,d,shop_writem,-4); }
+static u64 dec_LD(DecParam d)	{ return dec_Fill(DM_UnaryOp,d,PRM_RN,shop_mov32); }
+static u64 dec_LDM(DecParam d)	{ return dec_Fill(DM_ReadM,d,PRM_RN,shop_readm,-4); }
+static u64 dec_ST(DecParam d)	{ return dec_Fill(DM_UnaryOp,PRM_RN,d,shop_mov32); }
+static u64 dec_STM(DecParam d)	{ return dec_Fill(DM_WriteM,PRM_RN,d,shop_writem,-4); }
 
 //d=reg to read into
-u64 dec_MRd(DecParam d,DecParam s,u32 sz) { return dec_Fill(DM_ReadM,d,s,shop_readm,sz); }
+static u64 dec_MRd(DecParam d,DecParam s,u32 sz) { return dec_Fill(DM_ReadM,d,s,shop_readm,sz); }
 //d= reg to read from
-u64 dec_MWt(DecParam d,DecParam s,u32 sz) { return dec_Fill(DM_WriteM,d,s,shop_writem,sz); }
+static u64 dec_MWt(DecParam d,DecParam s,u32 sz) { return dec_Fill(DM_WriteM,d,s,shop_writem,sz); }
 
 //use this to disable opcodes :p
-u64 dec_rz(...) { return 0; }
+static u64 dec_rz(...) { return 0; }
 
 sh4_opcodelistentry missing_opcode = {0,iNotImplemented,0,0,ReadWritePC,"missing",0,0,CO,fix_none };
 
@@ -127,14 +127,15 @@ sh4_opcodelistentry opcodes[]=
 	{0							,i0000_nnnn_1000_0011	,Mask_n		,0x0083	,Normal				,"pref @<REG_N>"						,1,2,LS,fix_none	,dec_Fill(DM_UnaryOp,PRM_RN,PRM_ONE,shop_pref,1)},	//pref @<REG_N>
 	{0							,i0000_nnnn_mmmm_0111	,Mask_n_m	,0x0007	,Normal				,"mul.l <REG_M>,<REG_N>"				,2,4,CO,fix_none	,dec_mul(-32)},	//mul.l <REG_M>,<REG_N>
 	{0							,i0000_0000_0010_1000	,Mask_none	,0x0028	,Normal				,"clrmac"								,1,3,LS,fix_none},	//clrmac
-	{0							,i0000_0000_0100_1000	,Mask_none	,0x0048	,Normal				,"clrs"									,1,1,CO,fix_none	,dec_Fill(DM_BinaryOp,PRM_SR_STATUS,PRM_TWO_INV,shop_and)},	//clrs
+	{0							,i0000_0000_0100_1000	,Mask_none	,0x0048	,Normal				,"clrs"									,1,1,CO,fix_none	,dec_Fill(DM_BinaryOp,PRM_SR_STATUS,PRM_TWO_INV,shop_and,1)},	//clrs
 	{0							,i0000_0000_0000_1000	,Mask_none	,0x0008	,Normal				,"clrt"									,1,1,MT,fix_none	,dec_Fill(DM_UnaryOp,PRM_SR_T,PRM_ZERO,shop_mov32)},	//clrt
 	{0							,i0000_0000_0011_1000	,Mask_none	,0x0038	,Normal				,"ldtlb"								,1,1,CO,fix_none}	,//ldtlb
-	{0							,i0000_0000_0101_1000	,Mask_none	,0x0058	,Normal				,"sets"									,1,1,CO,fix_none	,dec_Fill(DM_BinaryOp,PRM_SR_STATUS,PRM_TWO,shop_or)},	//sets
+	{0							,i0000_0000_0101_1000	,Mask_none	,0x0058	,Normal				,"sets"									,1,1,CO,fix_none	,dec_Fill(DM_BinaryOp,PRM_SR_STATUS,PRM_TWO,shop_or,1)},	//sets
 	{0							,i0000_0000_0001_1000	,Mask_none	,0x0018	,Normal				,"sett"									,1,1,MT,fix_none	,dec_Fill(DM_UnaryOp,PRM_SR_T,PRM_ONE,shop_mov32)},	//sett
 	{0							,i0000_0000_0001_1001	,Mask_none	,0x0019	,Normal				,"div0u"								,1,1,EX,fix_none	,dec_Fill(DM_DIV0,PRM_RN,PRM_RM,shop_or,1)},//div0u
 	{0							,i0000_nnnn_0010_1001	,Mask_n		,0x0029	,Normal				,"movt <REG_N>"							,1,1,EX,fix_none	,dec_Fill(DM_UnaryOp,PRM_RN,PRM_SR_T,shop_mov32)},	//movt <REG_N>
-	{dec_i0000_0000_0000_1001	,i0000_0000_0000_1001	,Mask_none	,0x0009	,Normal				,"nop"									,1,0,MT,fix_none}	,//nop
+	{dec_i0000_0000_0000_1001	,i0000_0000_0000_1001	,Mask_none	,0x0009	,Normal				,"nop"									,1,0,MT,fix_none}	,//nop
+	{dec_i0000_0000_0000_1001	,i0000_0000_0000_1001	,Mask_none	,0x0000	,Normal				,"nop0"									,1,0,MT,fix_none}	,//nop0
 
 
 
