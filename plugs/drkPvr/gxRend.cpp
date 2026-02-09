@@ -64,7 +64,7 @@ struct TextureCacheDesc
 };
 void VBlank() { }
 
-Vertex ALIGN16  vertices[42*1024];
+Vertex ALIGN16  vertices[42*1024];   // 42*1024 = Wii memory limit
 VertexList  ALIGN16 lists[8*1024];
 PolyParam  ALIGN16 listModes[8*1024];
 
