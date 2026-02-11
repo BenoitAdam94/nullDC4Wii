@@ -29,6 +29,8 @@
  */
 enum Sh4RegType
 {
+  reg_temp,      // Temporary register for internal use (not a real SH4 register)
+
 	// General Purpose Registers (r0-r15)
 	reg_r0 = 0,
 	reg_r1,
