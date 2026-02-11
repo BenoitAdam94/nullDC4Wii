@@ -581,6 +581,22 @@ bool dec_generic(u32 op)
 
 	switch(mode)
 	{
+	case DM_ReadSRF:
+		// Read SR with flags combined
+		block.Emit(shop_mov32, rs1, reg_sr_status);
+		block.Emit(shop_or, rs1, rs1, reg_sr_T);
+		break;
+	
+	case DM_ADC:
+		// Add/subtract with carry
+		block.Emit(natop, rs1, rs1, rs2, 0, mk_reg(reg_sr_T), mk_reg(reg_sr_T));
+		break;
+	
+	case DM_NEGC:
+		// Negate with carry: 0 - src - T
+		block.Emit(natop, rs1, rs2, mk_reg(reg_sr_T), 0, shil_param(), mk_reg(reg_sr_T));
+		break;
+
 	case DM_WriteTOp:
 		block.Emit(natop,reg_sr_T,rs1,rs2);
 		break;
