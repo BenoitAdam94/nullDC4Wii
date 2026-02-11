@@ -12,15 +12,17 @@
 #include "dc/mem/sh4_mem.h"
 #include "decoder_opcodes.h"
 
-shil_param mk_imm(u32 immv)
+#define NullAddress 0xFFFFFFFF
+
+static shil_param mk_imm(u32 immv)
 {
 	return shil_param(FMT_IMM,immv);
 }
-shil_param mk_reg(Sh4RegType reg)
+static shil_param mk_reg(Sh4RegType reg)
 {
 	return shil_param(reg);
 }
-shil_param mk_regi(int reg)
+static shil_param mk_regi(int reg)
 {
 	return mk_reg((Sh4RegType)reg);
 }
@@ -94,7 +96,7 @@ struct
 	}
 } state;
 
-void dec_fallback(u32 op)
+static void dec_fallback(u32 op)
 {
 	shil_opcode opcd;
 	opcd.op=shop_ifb;
@@ -107,7 +109,7 @@ void dec_fallback(u32 op)
 }
 
 #if 1
-
+/*
 #define		FMT_I32 OMG!THIS!IS!WRONG++!!
 #define 	FMT_F32 OMG!THIS!IS!WRONG++!!
 #define		FMT_F32 OMG!THIS!IS!WRONG++!!
@@ -118,8 +120,9 @@ void dec_fallback(u32 op)
 
 #define 	FMT_PARAM OMG!THIS!IS!WRONG++!!
 #define 	FMT_MASK OMG!THIS!IS!WRONG++!!
+*/
 
-void dec_DynamicSet(u32 regbase,u32 offs=0)
+static void dec_DynamicSet(u32 regbase,u32 offs=0)
 {
 	if (offs==0)
 		block.Emit(shop_jdyn,reg_pc_dyn,mk_reg((Sh4RegType)regbase));
@@ -127,13 +130,13 @@ void dec_DynamicSet(u32 regbase,u32 offs=0)
 		block.Emit(shop_jdyn,reg_pc_dyn,mk_reg((Sh4RegType)regbase),mk_imm(offs));
 }
 
-void dec_End(u32 dst,BlockEndType flags,bool delay)
+static void dec_End(u32 dst,BlockEndType flags,bool delay)
 {
 	if (state.ngen.OnlyDynamicEnds && flags == BET_StaticJump)
 	{
 		block.Emit(shop_mov32,mk_reg(reg_nextpc),mk_imm(dst));
 		dec_DynamicSet(reg_nextpc);
-		dec_End(0,BET_DynamicJump,delay);
+		dec_End(NullAddress,BET_DynamicJump,delay);
 		return;
 	}
 
@@ -161,21 +164,21 @@ void dec_End(u32 dst,BlockEndType flags,bool delay)
 #define SR_STATUS_MASK 0x700083F2
 #define SR_T_MASK 1
 
-u32 dec_jump_simm8(u32 op)
+static u32 dec_jump_simm8(u32 op)
 {
 	return state.cpu.rpc + GetSImm8(op)*2 + 4;
 }
-u32 dec_jump_simm12(u32 op)
+static u32 dec_jump_simm12(u32 op)
 {
 	return state.cpu.rpc + GetSImm12(op)*2 + 4;
 }
-u32 dec_set_pr()
+static u32 dec_set_pr()
 {
 	u32 retaddr=state.cpu.rpc + 4;
 	block.Emit(shop_mov32,reg_pr,mk_imm(retaddr));
 	return retaddr;
 }
-void dec_write_sr(shil_param src)
+static void dec_write_sr(shil_param src)
 {
 	block.Emit(shop_and,mk_reg(reg_sr_status),src,mk_imm(SR_STATUS_MASK));
 	block.Emit(shop_and,mk_reg(reg_sr_T),src,mk_imm(SR_T_MASK));
@@ -213,7 +216,7 @@ sh4dec(i0000_nnnn_0010_0011)
 	u32 n = GetN(op);
 
 	dec_DynamicSet(reg_r0+n,state.cpu.rpc + 4);
-	dec_End(0,BET_DynamicJump,true);
+	dec_End(NullAddress,BET_DynamicJump,true);
 }
 //jmp @<REG_N>
 sh4dec(i0100_nnnn_0010_1011)
@@ -221,7 +224,7 @@ sh4dec(i0100_nnnn_0010_1011)
 	u32 n = GetN(op);
 
 	dec_DynamicSet(reg_r0+n);
-	dec_End(0,BET_DynamicJump,true);
+	dec_End(NullAddress,BET_DynamicJump,true);
 }
 //bsr <bdisp12>
 sh4dec(i1011_iiii_iiii_iiii)
@@ -237,7 +240,7 @@ sh4dec(i0000_nnnn_0000_0011)
 	//TODO: set PR
 	u32 retaddr=dec_set_pr();
 	dec_DynamicSet(reg_r0+n,retaddr);
-	dec_End(0,BET_DynamicCall,true);
+	dec_End(NullAddress,BET_DynamicCall,true);
 }
 //jsr @<REG_N>
 sh4dec(i0100_nnnn_0000_1011) 
@@ -247,13 +250,13 @@ sh4dec(i0100_nnnn_0000_1011)
 	//TODO: Set pr
 	dec_set_pr();
 	dec_DynamicSet(reg_r0+n);
-	dec_End(0,BET_DynamicCall,true);
+	dec_End(NullAddress,BET_DynamicCall,true);
 }
 //rts
 sh4dec(i0000_0000_0000_1011)
 {
 	dec_DynamicSet(reg_pr);
-	dec_End(0,BET_DynamicRet,true);
+	dec_End(NullAddress,BET_DynamicRet,true);
 }
 //rte
 sh4dec(i0000_0000_0010_1011)
@@ -262,7 +265,7 @@ sh4dec(i0000_0000_0010_1011)
 	dec_write_sr(reg_ssr);
 	block.Emit(shop_sync_sr);
 	dec_DynamicSet(reg_spc);
-	dec_End(0,BET_DynamicIntr,true);
+	dec_End(NullAddress,BET_DynamicIntr,true);
 }
 //trapa #<imm>
 sh4dec(i1100_0011_iiii_iiii)
@@ -270,7 +273,7 @@ sh4dec(i1100_0011_iiii_iiii)
 	//TODO: ifb
 	dec_fallback(op);
 	dec_DynamicSet(reg_nextpc);
-	dec_End(0,BET_DynamicJump,false);
+	dec_End(NullAddress,BET_DynamicJump,false);
 }
 //sleep
 sh4dec(i0000_0000_0001_1011)
@@ -278,7 +281,7 @@ sh4dec(i0000_0000_0001_1011)
 	//TODO: ifb
 	dec_fallback(op);
 	dec_DynamicSet(reg_nextpc);
-	dec_End(0,BET_DynamicJump,false);
+	dec_End(NullAddress,BET_DynamicJump,false);
 }
 
 //ldc.l @<REG_N>+,SR
@@ -296,7 +299,7 @@ sh4dec(i0100_nnnn_0000_0111)
 		//FIXME olny if interrupts got on .. :P
 		UpdateINTC();
 	}*/
-	dec_End(0,BET_StaticIntr,true);
+	dec_End(NullAddress,BET_StaticIntr,true);
 }
 
 //ldc <REG_N>,SR
@@ -309,7 +312,7 @@ sh4dec(i0100_nnnn_0000_1110)
 	{
 		UpdateINTC();
 	}*/
-	dec_End(0,BET_StaticIntr,true);
+	dec_End(NullAddress,BET_StaticIntr,true);
 }
 
 //nop !
@@ -813,7 +816,7 @@ DecodedBlock* dec_DecodeBlock(u32 startpc,fpscr_type fpu_cfg,u32 max_cycles)
 							if (OpDesc[op]->SetPC())
 							{
 								dec_DynamicSet(reg_nextpc);
-								dec_End(0,BET_DynamicJump,false);
+								dec_End(NullAddress,BET_DynamicJump,false);
 							}
 							if (OpDesc[op]->SetFPSCR() && !state.cpu.is_delayslot)
 							{
