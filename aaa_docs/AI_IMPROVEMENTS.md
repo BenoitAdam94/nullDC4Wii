@@ -34,10 +34,10 @@
 | sh4_interpreter.cpp | SH4 instruction interpreter | | |
 | sh4_fpu.cpp | SH4 floating point unit | | |
 | sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
-| sh4_opcode_list.cpp | SH4 opcode definitions | | |
+| sh4_opcode_list.cpp | SH4 opcode definitions | 0.05 | Improved with ClaudeAI |
 | sh4_registers.cpp | SH4 register definitions | | |
 | sh4_internal_reg.cpp | SH4 internal registers | | |
-| decoder.cpp | Instruction decoder | | |
+| decoder.cpp | Instruction decoder | 0.05 | Improved with ClaudeAI (clean and 3 news JIT codes) |
 | shil.cpp | SH4 intermediate language (JIT layer) | | |
 
 ## SH4 System Controllers
