@@ -284,6 +284,15 @@ sh4dec(i0000_0000_0001_1011)
 	dec_End(NullAddress,BET_DynamicJump,false);
 }
 
+//illegal instruction handler
+void dec_illegalOp(u32 op)
+{
+	printf("WARNING: Illegal instruction %04x at pc %08x\n", op, state.cpu.rpc);
+	dec_fallback(op);
+	dec_DynamicSet(reg_nextpc);
+	dec_End(NullAddress, BET_DynamicJump, false);
+}
+
 //ldc.l @<REG_N>+,SR
 sh4dec(i0100_nnnn_0000_0111)
 {
@@ -336,6 +345,141 @@ sh4dec(i1111_0011_1111_1101)
 	if (!state.cpu.is_delayslot)
 		dec_End(state.cpu.rpc + 2, BET_StaticJump, false);
 }
+
+//frchg
+sh4dec(i1111_1011_1111_1101)
+{
+	//fpscr.FR is bit 21
+	block.Emit(shop_xor, reg_fpscr, reg_fpscr, mk_imm(1 << 21));
+	
+	// Si shop_sync_fpscr existe:
+	block.Emit(shop_sync_fpscr);
+	// SINON utilisez:
+	// dec_fallback(op);
+	
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticJump, false);
+}
+
+//rotcl <REG_N>
+sh4dec(i0100_nnnn_0010_0100)
+{
+	u32 n = GetN(op);
+	shil_param rn = mk_regi(reg_r0 + n);
+	
+	// Save old T
+	block.Emit(shop_mov32, reg_temp, reg_sr_T);
+	
+	// Set T to MSB (bit 31)
+	block.Emit(shop_shr, reg_sr_T, rn, mk_imm(31));
+	
+	// Shift left
+	block.Emit(shop_shl, rn, rn, mk_imm(1));
+	
+	// OR in old T (at bit 0)
+	block.Emit(shop_or, rn, rn, reg_temp);
+}
+
+//rotcr <REG_N>
+sh4dec(i0100_nnnn_0010_0101)
+{
+	u32 n = GetN(op);
+	shil_param rn = mk_regi(reg_r0 + n);
+	
+	// Save old T shifted to bit 31
+	block.Emit(shop_shl, reg_temp, reg_sr_T, mk_imm(31));
+	
+	// Set T to LSB (bit 0)
+	block.Emit(shop_and, reg_sr_T, rn, mk_imm(1));
+	
+	// Shift right
+	block.Emit(shop_shr, rn, rn, mk_imm(1));
+	
+	// OR in old T (at bit 31)
+	block.Emit(shop_or, rn, rn, reg_temp);
+}
+
+//tas.b @<REG_N>
+sh4dec(i0100_nnnn_0001_1011)
+{
+	u32 n = GetN(op);
+	shil_param rn = mk_regi(reg_r0 + n);
+	
+	// Read byte
+	state.info.has_readm = true;
+	block.Emit(shop_readm, reg_temp, rn, shil_param(), 1);
+	
+	// Set T flag if zero
+	block.Emit(shop_seteq, reg_sr_T, reg_temp, mk_imm(0));
+	
+	// Set bit 7
+	block.Emit(shop_or, reg_temp, reg_temp, mk_imm(0x80));
+	
+	// Write back
+	state.info.has_writem = true;
+	block.Emit(shop_writem, shil_param(), rn, reg_temp, 1);
+}
+
+//stc.l SR,@-<REG_N>
+sh4dec(i0100_nnnn_0000_0011)
+{
+	u32 n = GetN(op);
+	
+	// Combine SR status and T flag into temp
+	block.Emit(shop_mov32, reg_temp, reg_sr_status);
+	block.Emit(shop_or, reg_temp, reg_temp, reg_sr_T);
+	
+	// Write to memory with predecrement
+	shil_param rn = mk_regi(reg_r0 + n);
+	state.info.has_writem = true;
+	block.Emit(shop_writem, shil_param(), rn, reg_temp, 4, mk_imm(-4));
+	
+	// Decrement pointer
+	block.Emit(shop_add, rn, rn, mk_imm(-4));
+}
+
+//ldc <REG_N>,FPSCR
+sh4dec(i0100_nnnn_0110_1010)
+{
+	u32 n = GetN(op);
+	
+	// Load FPSCR from register
+	block.Emit(shop_mov32, reg_fpscr, mk_regi(reg_r0 + n));
+	
+	// Sync FPSCR
+	// Si shop_sync_fpscr existe:
+	block.Emit(shop_sync_fpscr);
+	// SINON:
+	// dec_fallback(op);
+	
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticJump, false);
+}
+
+//ldc.l @<REG_N>+,FPSCR
+sh4dec(i0100_nnnn_0110_0110)
+{
+	u32 n = GetN(op);
+	shil_param rn = mk_regi(reg_r0 + n);
+	
+	// Read from memory
+	state.info.has_readm = true;
+	block.Emit(shop_readm, reg_fpscr, rn, shil_param(), 4);
+	
+	// Increment pointer
+	block.Emit(shop_add, rn, rn, mk_imm(4));
+	
+	// Sync FPSCR
+	// IF shop_sync_fpscr exist :
+	block.Emit(shop_sync_fpscr);
+	// ELSE:
+	// dec_fallback(op);
+	
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticJump, false);
+}
+
+
 #endif
 
 const Sh4RegType SREGS[] =
@@ -924,10 +1068,16 @@ _end:
 		{
 			printf("Compile stats:\n");
 			qsort(&stuff[0],stuff.size(),sizeof(stuff[0]),stuffcmp);
+      /* Debug print, enable if you want to see the most common fallbacks
+      !!! This also generates a warning at compilation for now
 			for (u32 i=0;i<10 && i<stuff.size();i++)
 			{
-				printf("%05I64u :%04X %s\n",stuff[i].fallbacks,stuff[i].rez,stuff[i].diss);
+				printf("%05llu :%04llX %u\n",
+       (unsigned long long)stuff[i].fallbacks,
+       (unsigned long long)stuff[i].rez,
+       stuff[i].diss);
 			}
+      */
 		}
 	}
 	return &block;
