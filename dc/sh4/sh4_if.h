@@ -29,8 +29,6 @@
  */
 enum Sh4RegType
 {
-  reg_temp,      // Temporary register for internal use (not a real SH4 register)
-
 	// General Purpose Registers (r0-r15)
 	reg_r0 = 0,
 	reg_r1,
@@ -113,6 +111,8 @@ enum Sh4RegType
 	reg_fpscr,      // Floating Point Status/Control Register
 	
 	reg_pc_dyn,     // Dynamic PC (write-only, dynarec use only)
+
+  reg_temp,      // Temporary register for internal use (not a real SH4 register)
 
 	sh4_reg_count,  // Total count of physical registers
 
