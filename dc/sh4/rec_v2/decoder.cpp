@@ -287,32 +287,37 @@ sh4dec(i0000_0000_0001_1011)
 //ldc.l @<REG_N>+,SR
 sh4dec(i0100_nnnn_0000_0111)
 {
-	/*
-	u32 sr_t;
-	ReadMemU32(sr_t,r[n]);
-	if (sh4_exept_raised)
-		return;
-	sr.SetFull(sr_t);
-	r[n] += 4;
-	if (UpdateSR())
-	{
-		//FIXME olny if interrupts got on .. :P
-		UpdateINTC();
-	}*/
-	dec_End(NullAddress,BET_StaticIntr,true);
+	u32 n = GetN(op);
+	shil_param rn = mk_regi(reg_r0 + n);
+	
+	// Read from memory into temp
+	state.info.has_readm = true;
+	block.Emit(shop_readm, reg_temp, rn, shil_param(), 4);
+	
+	// Increment pointer
+	block.Emit(shop_add, rn, rn, mk_imm(4));
+	
+	// Write temp to SR
+	dec_write_sr(reg_temp);
+	block.Emit(shop_sync_sr);
+	
+	// Check interrupts
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticIntr, false);
 }
 
 //ldc <REG_N>,SR
 sh4dec(i0100_nnnn_0000_1110)
 {
-	/*
 	u32 n = GetN(op);
-	sr.SetFull(r[n]);
-	if (UpdateSR())
-	{
-		UpdateINTC();
-	}*/
-	dec_End(NullAddress,BET_StaticIntr,true);
+	
+	// Write SR from register
+	dec_write_sr(mk_regi(reg_r0 + n));
+	block.Emit(shop_sync_sr);
+	
+	// Check for interrupts if not in delay slot
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticIntr, false);
 }
 
 //nop !
@@ -320,11 +325,16 @@ sh4dec(i0000_0000_0000_1001)
 {
 }
 
+//fschg
 sh4dec(i1111_0011_1111_1101)
 {
 	//fpscr.SZ is bit 20
 	block.Emit(shop_xor,reg_fpscr,reg_fpscr,mk_imm(1<<20));
+	block.Emit(shop_sync_fpscr);
 	state.cpu.FSZ64=!state.cpu.FSZ64;
+	
+	if (!state.cpu.is_delayslot)
+		dec_End(state.cpu.rpc + 2, BET_StaticJump, false);
 }
 #endif
 
