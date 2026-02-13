@@ -8,9 +8,9 @@
 			r0     volatile, temp
 			r1     stack pointer, grows down
 			r2     TOC (what ?) Pointer (who cares)
-		    r3:10  voalitle, first 8 params.r3 is also return value
-		    r11    volatile (used as 'enviroment' pointers for calls by ptr .. what?)
-		    r12    volatie (sed for ming & magic as well as linking)
+		    r3:10  volatile, first 8 params.r3 is also return value
+		    r11    volatile (used as 'environment' pointers for calls by ptr .. what?)
+		    r12    volatile (used for ming (mingw ?) & magic as well as linking)
 		    r13:31 preserved (19 of em)
 		
 		32 64-bit fprs (single, vector or double)
@@ -40,10 +40,11 @@
 #include "dc\mem\sh4_mem.h"
 #include "emitter\PPCEmit\ppc_emitter.h"
 
-// Définir des valeurs "invalides" pour les registres non mappés
-const ppc_freg ppc_finvalid = (ppc_freg)-1;  // ou une valeur hors plage (ex: 32+)
-const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // ou une valeur hors plage (ex: 32+)
+// Define "invalid" value for non-mapped-registery
+const ppc_freg ppc_finvalid = (ppc_freg)-1;  // or a out of range value (ex: 32+)
+const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // or a out of range value (ex: 32+)
 
+// ppc_li: Loads a 32-bit immediate value into a PowerPC register.
 void ppc_li(u32 D,u32 imm)
 {
 	if (is_s16(imm))
@@ -57,6 +58,10 @@ void ppc_li(u32 D,u32 imm)
 		ppc_ori(D,D,(u16)imm);
 	}
 }
+
+// =======================
+// JUMP OFFSET CALCULATION
+// =======================
 
 snat ppc_jdiff_raw(void* dst)
 {
@@ -138,6 +143,10 @@ struct
 } compile_state;
 u32 last_block;
 
+// =======================
+// BLOCK BEGIN/END
+// =======================
+
 void ngen_Begin(DecodedBlock* block,bool force_checks)
 {
 	compile_state.Reset();
@@ -152,6 +161,10 @@ void ngen_Begin(DecodedBlock* block,bool force_checks)
 
 	jdst->MarkLabel();
 }
+
+// =====================
+// MEMORY ACCESS HELPERS
+// =====================
 
 //1 opcode
 void ppc_sh_load(u32 D,u32 sh4_reg)
@@ -220,6 +233,10 @@ void ppc_sh_store_f32(u32 D,shil_param prm)
 	verify(prm.is_reg());
 	ppc_sh_store_f32(D,prm._reg);
 }
+
+// ==========================
+// CALLING CONVENTION ADAPTER
+// ==========================
 
 struct CC_PS
 {
@@ -294,6 +311,10 @@ void ngen_CC_Call(shil_opcode*op,void* function)
 	ppc_call(function);
 }
 
+// =================
+// BINARY OPERATIONS
+// =================
+
 void binop_start(shil_opcode* op)
 {
 	verify(!op->rs1.is_null() && !op->rs2.is_null() && !op->rd.is_null());
@@ -344,6 +365,10 @@ void DoStatic(u32 pc)
 	ppc_li(ppc_rarg0,pc);
 	ppc_call(ngen_LinkBlock_Static_stub);
 }
+
+// ====================================
+// ngen_End: Block Exit Code Generation
+// ====================================
 
 void ngen_End(DecodedBlock* block)
 {
@@ -474,6 +499,11 @@ void reg_reload_all()
 void FASTCALL do_sqw_mmu(u32 dst);
 void FASTCALL do_sqw_nommu(u32 dst);
 
+// =====================
+// OPERATION COMPILATION
+// =====================
+
+// ngen_CompileBlock: Main Block Compilation Loop
 DynarecCodeEntry* ngen_Compile(DecodedBlock* block,bool force_checks)
 {
 	if (emit_FreeSpace()<16*1024)
@@ -760,8 +790,9 @@ void* FASTCALL ngen_LinkBlock_Static(u32 pc,u32* patch)
 	return (void*)rv;
 }
 
-
-
+// =========
+// MAIN LOOP
+// =========
 
 void ngen_mainloop()
 {
@@ -865,6 +896,10 @@ void ngen_mainloop()
 			ppc_call_and_jump(&rdv_FailedToFindBlock);
 		}
 
+    // ====================
+    // STATIC BLOCK LINKING
+    // ====================
+
 		ngen_LinkBlock_Static_stub=emit_GetCCPtr();
 		{
 			//not used for now
@@ -906,7 +941,8 @@ void ngen_mainloop()
 			fclose(f);
 		}
 		
-		make_address_range_executable((u8*)loop_code, (u8*)emit_GetCCPtr()-(u8*)loop_code);
+    // CACHE COHERENCY
+    make_address_range_executable((u8*)loop_code, (u8*)emit_GetCCPtr()-(u8*)loop_code);
 	}
 
 	loop_code();

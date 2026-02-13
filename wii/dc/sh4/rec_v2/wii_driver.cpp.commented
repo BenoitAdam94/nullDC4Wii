@@ -1,0 +1,1294 @@
+/*
+  wii dynarec
+  based on the mips one !
+
+  PPC/Wii calling rules:
+  Registers:
+    32 32-bit gprs
+      r0     volatile, temp
+      r1     stack pointer, grows down
+      r2     TOC (what ?) Pointer (who cares)
+        r3:10  voalitle, first 8 params.r3 is also return value
+        r11    volatile (used as 'enviroment' pointers for calls by ptr .. what?)
+        r12    volatie (sed for ming & magic as well as linking)
+        r13:31 preserved (19 of em)
+
+    32 64-bit fprs (single, vector or double)
+        f0     volatile, scratch
+      f1:4   volatile, params, return
+      f5:13  volatile, params
+      f14:31 preserved (18 of em)
+    LR  Link
+    XER (exception register)
+    FPSCR
+    CR (CR0:1;CR5:7 volatile, CR2:4 preserved)
+
+  When calling
+
+  Call stack:
+    Return is stored on the link register and its saved at a specific location on function entry
+    lr is stored on sp+4
+    stack grows towards zero
+
+*/
+
+// ============================================================================
+// HEADER COMMENT (Claude AI comment)
+// ============================================================================
+
+/*
+ * Dynamic Recompiler for Dreamcast Emulation on Nintendo Wii
+ *
+ * This file implements a JIT (Just-In-Time) compiler that translates Dreamcast
+ * SH4 CPU instructions into PowerPC instructions for native execution on the Wii.
+ *
+ * Architecture Overview:
+ * - Source ISA: Hitachi SH4 (32-bit RISC, used in Sega Dreamcast)
+ * - Target ISA: PowerPC 750CL "Broadway" (32-bit RISC, used in Nintendo Wii)
+ *
+ * Key Design Patterns:
+ * 1. Block Compilation: SH4 code is compiled in basic blocks for efficiency
+ * 2. Register Mapping: SH4 registers are stored in memory; PowerPC registers
+ *    are used as temporaries and for frequently accessed state
+ * 3. Cycle Counting: Tracks instruction timing for accurate emulation
+ * 4. Static Linking: Compiled blocks are directly linked when possible
+ *
+ * Memory Model:
+ * - SH4 Context: Structure containing all emulated CPU state (registers, flags)
+ * - Code Buffer: Area where generated PowerPC code is written
+ * - Stack: Standard PowerPC stack for function calls and register preservation
+ */
+
+#include "types.h"
+#include "dc\sh4\sh4_opcode_list.h"
+
+#include "dc\sh4\sh4_registers.h"
+#include "dc\sh4\ccn.h"
+#include "dc\sh4\rec_v2\ngen.h"
+#include "dc\mem\sh4_mem.h"
+#include "emitter\PPCEmit\ppc_emitter.h"
+
+// Define "invalid" value for non-mapped-registery
+const ppc_freg ppc_finvalid = (ppc_freg)-1;  // or a out of range value (ex: 32+)
+const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // or a out of range value (ex: 32+)
+
+/*
+ * ppc_li: Load Immediate
+ *
+ * Loads a 32-bit immediate value into a PowerPC register. Since PowerPC
+ * immediate instructions are limited to 16 bits, larger values require
+ * multiple instructions.
+ *
+ * @param D   Destination register
+ * @param imm 32-bit immediate value to load
+ *
+ * Implementation:
+ * - If value fits in 16 bits: use single ADDI instruction (add immediate to r0)
+ * - Otherwise: use ADDIS to load upper 16 bits, then ORI to set lower 16 bits
+ */
+void ppc_li(u32 D, u32 imm)
+{
+  if (is_s16(imm))
+  {
+    ppc_addi(D, 0, imm);
+    return;
+  }
+  else
+  {
+    ppc_addis(D, 0, imm >> 16);
+    ppc_ori(D, D, (u16)imm);
+  }
+}
+
+// ============================================================================
+// JUMP OFFSET CALCULATION (Claude AI comment)
+// ============================================================================
+
+/*
+ * ppc_jdiff and ppc_jdiff_raw: Calculate Branch Offsets
+ *
+ * PowerPC branch instructions encode the target as a signed offset from the
+ * current instruction. These functions calculate that offset.
+ *
+ * ppc_jdiff_raw: Returns byte offset
+ * ppc_jdiff: Returns instruction offset (divided by 4, since instructions are 4 bytes)
+ *
+ * The offset must fit in 24 bits for the unconditional branch instruction,
+ * giving a range of ±32MB from the current location.
+ */
+
+snat ppc_jdiff_raw(void *dst)
+{
+  return (u8 *)dst - (u8 *)emit_GetCCPtr();
+}
+snat ppc_jdiff(void *dst)
+{
+  return ppc_jdiff_raw(dst) >> 2;
+}
+
+void ppc_bx(void *dst, u32 LK)
+{
+  snat offs = ppc_jdiff_raw(dst);
+  // offs must fit in 24 bits
+  verify(offs < 33554432 && offs > -33554432);
+  offs >>= 2;
+  // does this work ? //
+  ppc_bx(offs, 0, LK);
+}
+
+void ppc_call(void *funct)
+{
+  ppc_bx(funct, 1);
+}
+template <typename T>
+void ppc_call(T *dst) { return ppc_call((void *)dst); }
+
+void ppc_jump(void *funct)
+{
+  ppc_bx(funct, 0);
+}
+template <typename T>
+void ppc_jump(T *dst) { return ppc_jump((void *)dst); }
+void ppc_call_and_jump(void *funct)
+{
+  ppc_call(funct);
+  ppc_mtctr(ppc_r3);
+  ppc_bctr();
+}
+template <typename T>
+void ppc_call_and_jump(T *dst) { return ppc_call_and_jump((void *)dst); }
+void make_address_range_executable(void *addr, u32 size)
+{
+  // what gives?
+  DCFlushRange(addr, size);
+  ICInvalidateRange(addr, size);
+}
+
+void ppc_lip(u32 D, void *ptr)
+{
+  ppc_li(D, (u8 *)ptr - (u8 *)0);
+}
+template <typename T>
+void ppc_lip(T *ptr) { return ppc_lip((void *)ptr); }
+
+ppc_ireg ppc_cycles = ppc_r29;
+ppc_ireg ppc_contex = ppc_r30;
+ppc_ireg ppc_djump = ppc_r31;
+ppc_ireg ppc_next_pc = ppc_rarg0;
+
+void ppc_emit(u32 insn)
+{
+  emit_Write32(insn);
+}
+
+void *loop_no_update;
+void *ngen_LinkBlock_Static_stub;
+void *ngen_LinkBlock_Dynamic_1st_stub;
+void *ngen_LinkBlock_Dynamic_2nd_stub;
+void *ngen_BlockCheckFail_stub;
+void *loop_do_update_write;
+void (*loop_code)();
+void (*ngen_FailedToFindBlock)();
+
+struct
+{
+  bool has_jcond;
+
+  void Reset()
+  {
+    has_jcond = false;
+  }
+} compile_state;
+u32 last_block;
+
+// ============================================================================
+// BLOCK BEGIN/END (Claude AI Comment)
+// ============================================================================
+
+/*
+ * ngen_Begin: Block Entry Code Generation
+ *
+ * Generates code for the start of a compiled SH4 basic block:
+ *
+ * 1. Decrement cycle counter by this block's cycle cost
+ * 2. Check if cycles exhausted (using ADDIC with carry flag update)
+ * 3. If exhausted (negative), jump to update path:
+ *    - Save current PC
+ *    - Jump to loop_do_update_write (handles interrupts/timing)
+ * 4. Otherwise, continue executing this block
+ *
+ * Cycle counting ensures accurate timing - the emulator only processes
+ * timing-critical updates (interrupts, hardware timers) when the virtual
+ * CPU has executed enough instructions.
+ */
+
+void ngen_Begin(DecodedBlock *block, bool force_checks)
+{
+  compile_state.Reset();
+
+  ppc_addic(ppc_cycles, ppc_cycles, -block->cycles, 1);
+
+  ppc_label *jdst = ppc_CreateLabel();
+  ppc_bcx(BO_FALSE, BI_CR0_LT, 0, 0, 0);
+
+  ppc_li(ppc_next_pc, block->start);
+  ppc_jump(loop_do_update_write);
+
+  jdst->MarkLabel();
+}
+
+// ============================================================================
+// MEMORY ACCESS HELPERS (Claude AI comment)
+// ============================================================================
+
+/*
+ * SH4 Register Access Functions
+ *
+ * The emulated SH4 CPU state is stored in a context structure in memory.
+ * These helper functions abstract the loading and storing of SH4 registers
+ * from/to this context structure.
+ *
+ * ppc_sh_load:     Load 32-bit integer from SH4 context to PowerPC register
+ * ppc_sh_load_f32: Load 32-bit float from SH4 context to PowerPC FPR
+ * ppc_sh_load_u16: Load 16-bit unsigned from SH4 context (zero-extended)
+ * ppc_sh_store:    Store 32-bit integer from PowerPC register to SH4 context
+ * ppc_sh_store_f32:Store 32-bit float from PowerPC FPR to SH4 context
+ * ppc_sh_addr:     Calculate address of SH4 register in context (for pointers)
+ *
+ * All use the ppc_contex register (r30) as the base pointer to the SH4
+ * context structure, with offsets calculated by Sh4cntx.offset().
+ */
+
+void ppc_sh_load(u32 D, u32 sh4_reg)
+{
+  ppc_lwz(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+void ppc_sh_load(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_load(D, prm._reg);
+}
+void ppc_sh_load_f32(u32 D, u32 sh4_reg)
+{
+  ppc_lfs(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+void ppc_sh_load_f32(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_load_f32(D, prm._reg);
+}
+void ppc_sh_load_u16(u32 D, u32 sh4_reg)
+{
+  ppc_lhz(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+void ppc_sh_load_u16(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_load_u16(D, prm._reg);
+}
+// 1 opcode
+void ppc_sh_addr(u32 D, u32 sh4_reg)
+{
+  ppc_addi(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+void ppc_sh_addr(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_addr(D, prm._reg);
+}
+// 1 opcode
+void ppc_sh_store(u32 D, u32 sh4_reg)
+{
+  ppc_stw(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+void ppc_sh_store(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_store(D, prm._reg);
+}
+void ppc_sh_store_f32(u32 D, u32 sh4_reg)
+{
+  ppc_stfs(D, ppc_contex, Sh4cntx.offset(sh4_reg));
+}
+u32 ppc_addr_high(u32 rD, void *ptr)
+{
+  unat diff = (u8 *)ptr - (u8 *)0;
+  u32 rv = (s32)(s16)diff;
+  diff -= rv;
+  ppc_addis(rD, 0, diff >> 16);
+
+  return rv;
+}
+
+void ppc_sh_store_f32(u32 D, shil_param prm)
+{
+  verify(prm.is_reg());
+  ppc_sh_store_f32(D, prm._reg);
+}
+
+// ============================================================================
+// CALLING CONVENTION ADAPTER (ClaudeAI comment)
+// ============================================================================
+
+/*
+ * ngen_CC_* Functions: Calling Convention Adapter
+ *
+ * These functions adapt between the SH4 calling convention and the PowerPC
+ * calling convention. SH4 operations that need to call C/C++ helper functions
+ * go through this adapter.
+ *
+ * Process:
+ * 1. ngen_CC_Start: Initialize parameter collection
+ * 2. ngen_CC_Param: Queue parameters (called multiple times)
+ *    - Return values: immediately stored to SH4 context
+ *    - Input parameters: queued for later processing
+ * 3. ngen_CC_Call: Emit the actual function call
+ *    - Allocates argument registers (r3-r10 for integers, f1-f13 for floats)
+ *    - Loads parameters from SH4 context or immediate values
+ *    - Parameters processed in reverse order to match stack-like semantics
+ * 4. ngen_CC_Finish: Clean up
+ *
+ * This allows complex operations (memory access, division, etc.) to call
+ * helper functions while maintaining the illusion of direct SH4 execution.
+ */
+
+struct CC_PS
+{
+  CanonicalParamType type;
+  shil_param *par;
+};
+vector<CC_PS> CC_pars;
+
+void ngen_CC_Start(shil_opcode *op)
+{
+  CC_pars.clear();
+}
+void ngen_CC_Param(shil_opcode *op, shil_param *par, CanonicalParamType tp)
+{
+  switch (tp)
+  {
+  case CPT_f32rv:
+    ppc_sh_store_f32(ppc_frv0, *par);
+    break;
+
+  case CPT_u32rv:
+  case CPT_u64rvL:
+    ppc_sh_store(ppc_rrv0, *par);
+    break;
+
+  case CPT_u64rvH:
+    ppc_sh_store(ppc_rrv1, *par);
+    break;
+
+  case CPT_u32:
+  case CPT_ptr:
+  case CPT_f32:
+  {
+    CC_PS t = {tp, par};
+    CC_pars.push_back(t);
+  }
+  break;
+
+  default:
+    die("invalid tp");
+  }
+}
+void ngen_CC_Call(shil_opcode *op, void *function)
+{
+  u32 rd_fp = ppc_farg0;
+  u32 rd_gpr = ppc_rarg0;
+  for (int i = CC_pars.size(); i-- > 0;)
+  {
+    if (CC_pars[i].type == CPT_ptr)
+    {
+      ppc_sh_addr(rd_gpr, *CC_pars[i].par);
+    }
+    else
+    {
+      if (CC_pars[i].par->is_reg())
+      {
+        if (CC_pars[i].type == CPT_f32)
+        {
+          ppc_sh_load_f32(rd_fp, *CC_pars[i].par);
+          rd_fp++;
+        }
+        else
+        {
+          ppc_sh_load(rd_gpr, *CC_pars[i].par);
+        }
+      }
+      else
+        ppc_li(rd_gpr, CC_pars[i].par->_imm);
+    }
+    rd_gpr++;
+  }
+  // printf("used reg r0 to r%d, %d params, calling %08X\n",rd-1,CC_pars.size(),function);
+  ppc_call(function);
+}
+
+// ============================================================================
+// BINARY OPERATIONS (Claude AI Comment)
+// ============================================================================
+
+/*
+ * Binary Operation Helpers
+ *
+ * Most SH4 binary operations (add, subtract, logical ops, etc.) follow the
+ * same pattern:
+ *
+ * 1. binop_start: Load source operands into ppc_rarg0 and ppc_rarg1
+ *    - rs1 is always a register
+ *    - rs2 can be register or immediate
+ *
+ * 2. [Operation]: Perform the actual PowerPC instruction
+ *    - Result typically goes into ppc_rarg0
+ *
+ * 3. binop_end: Store result from ppc_rarg0 to destination in SH4 context
+ *
+ * Similar pattern for FPU operations with binop_start_fpu/binop_end_fpu,
+ * using ppc_farg0 and ppc_farg1 for float operands.
+ *
+ * This abstraction allows single-line implementations for most operations:
+ * shop_add: binop_start(op); ppc_addx(...); binop_end(op);
+ */
+
+void binop_start(shil_opcode *op)
+{
+  verify(!op->rs1.is_null() && !op->rs2.is_null() && !op->rd.is_null());
+
+  verify(op->rs1.is_reg());
+  // verify(!op->rs2.is_imm() || op->rs2.is_imm_s16());
+
+  ppc_sh_load(ppc_rarg0, op->rs1);
+
+  if (op->rs2.is_imm())
+  {
+    ppc_li(ppc_rarg1, op->rs2._imm);
+  }
+  else if (op->rs2.is_reg())
+  {
+    ppc_sh_load(ppc_rarg1, op->rs2);
+  }
+}
+
+void binop_end(shil_opcode *op)
+{
+  ppc_sh_store(ppc_rarg0, op->rd);
+}
+
+void binop_start_fpu(shil_opcode *op)
+{
+  verify(!op->rs1.is_null() && !op->rs2.is_null() && !op->rd.is_null());
+
+  verify(op->rs1.is_reg());
+  verify(op->rs2.is_reg());
+
+  ppc_sh_load_f32(ppc_farg0, op->rs1);
+  ppc_sh_load_f32(ppc_farg1, op->rs2);
+}
+
+void binop_end_fpu(shil_opcode *op)
+{
+  ppc_sh_store_f32(ppc_farg0, op->rd);
+}
+
+void ngen_CC_Finish(shil_opcode *op)
+{
+  CC_pars.clear();
+}
+void DoStatic(u32 pc)
+{
+  ppc_li(ppc_rarg0, pc);
+  ppc_call(ngen_LinkBlock_Static_stub);
+}
+
+/*
+ * ngen_End: Block Exit Code Generation
+ *
+ * Generates code for the end of a compiled SH4 basic block. The type of
+ * exit determines the generated code:
+ *
+ * Conditional Branches (BET_Cond_0, BET_Cond_1):
+ * - Test the T flag in SR (status register)
+ * - Generate two static links: one for taken, one for not-taken
+ *
+ * Dynamic Branches (BET_DynamicJump, BET_DynamicCall, BET_DynamicRet):
+ * - Target address computed at runtime
+ * - Load target into ppc_djump
+ * - Call block manager to find/compile target block
+ * - For calls, save return address to PR register first
+ *
+ * Static Branches (BET_StaticJump, BET_StaticCall):
+ * - Target address known at compile time
+ * - Directly generate jump to target block
+ * - For calls, save return address to PR register first
+ *
+ * Static Interrupt (BET_StaticIntr):
+ * - Check interrupt pending flag
+ * - Conditionally branch to interrupt handler
+ */
+void ngen_End(DecodedBlock *block)
+{
+  switch (block->BlockType)
+  {
+  case BET_Cond_0:
+  case BET_Cond_1:
+  {
+    // printf("COND %d\n",block->BlockType&1);
+    // die("not supported");
+    u32 reg;
+    if (compile_state.has_jcond)
+    {
+      reg = ppc_djump;
+    }
+    else
+    {
+      reg = ppc_rarg0;
+      ppc_sh_load(ppc_rarg0, reg_sr_T);
+    }
+
+    ppc_cmpi(ppc_cr0, reg, block->BlockType & 1, 0);
+
+    ppc_label *jtrue = ppc_CreateLabel();
+    ppc_bcx(BO_TRUE, BI_CR0_EQ, 0, 0, 0);
+
+    DoStatic(block->NextBlock);
+    jtrue->MarkLabel();
+    DoStatic(block->BranchBlock);
+  }
+  break;
+
+  case BET_DynamicCall:
+  case BET_DynamicJump:
+  case BET_DynamicRet:
+    // printf("Dynamic !\n");
+    // mov reg,djump
+    ppc_mov(ppc_rarg0, ppc_djump);
+    // jmp no update
+    ppc_jump(loop_no_update);
+    break;
+
+  case BET_StaticIntr:
+  case BET_DynamicIntr:
+    printf("BET: Interrupt !\n");
+    {
+      u32 reg;
+      if (block->BlockType == BET_StaticIntr)
+      {
+        ppc_li(ppc_rarg0, block->BranchBlock);
+        reg = ppc_rarg0;
+      }
+      else
+      {
+        reg = ppc_djump;
+      }
+      ppc_sh_store(reg, reg_nextpc);
+      ppc_call(&UpdateINTC);
+
+      ppc_sh_load(ppc_next_pc, reg_nextpc);
+      ppc_jump(loop_no_update);
+    }
+    break;
+
+  case BET_StaticCall:
+  case BET_StaticJump:
+    printf("Static 0x%08X!\n", block->BranchBlock);
+    DoStatic(block->BranchBlock);
+    break;
+
+  default:
+    printf("END TYPE: %d\n", block->BlockType);
+    die("wtfh end type\n");
+  }
+}
+
+// f14:f29
+ppc_freg GetFloatReg(u32 reg)
+{
+  if (reg >= reg_fr_0 && reg <= reg_fr_15)
+  {
+    return (ppc_freg)((reg - reg_fr_0) + ppc_f14);
+  }
+
+  return ppc_finvalid;
+}
+
+// r14:r28 (shr11 missing)
+ppc_ireg GetIntReg(u32 reg)
+{
+  if (reg >= reg_r0 && reg <= reg_r15 && reg != reg_r11)
+  {
+    if (reg >= reg_r11)
+      reg--;
+
+    return (ppc_ireg)((reg - reg_r0) + ppc_r14);
+  }
+
+  return ppc_rinvalid;
+}
+void reg_flush_all()
+{
+  /*
+  for(u32 i=0;i<=sh4_reg_count;i++)
+  {
+    ppc_ireg ri=GetIntReg(i);
+    ppc_freg rf=GetFloatReg(i);
+    if (rf!=ppc_finvalid)
+      ppc_sh_store_f32(rf,i);
+    else if (ri!=ppc_rinvalid)
+      ppc_sh_store(ri,i);
+  }
+  */
+}
+void reg_reload_all()
+{
+  /*
+  for(u32 i=0;i<=sh4_reg_count;i++)
+  {
+    ppc_ireg ri=GetIntReg(i);
+    ppc_freg rf=GetFloatReg(i);
+    if (rf!=ppc_finvalid)
+      ppc_sh_load_f32(rf,i);
+    else if (ri!=ppc_rinvalid)
+      ppc_sh_load(ri,i);
+  }
+  */
+}
+void FASTCALL do_sqw_mmu(u32 dst);
+void FASTCALL do_sqw_nommu(u32 dst);
+
+// =========================================
+// OPERATION COMPILATION (Claude AI Comment)
+// =========================================
+
+/*
+ * ngen_CompileBlock: Main Block Compilation Loop
+ *
+ * This function compiles an entire SH4 basic block into PowerPC code:
+ *
+ * Structure:
+ * 1. ngen_Begin: Generate block entry code (cycle checking)
+ * 2. For each SH4 operation in the block:
+ *    - Switch on operation type
+ *    - Generate appropriate PowerPC instructions
+ *    - Handle register allocation
+ * 3. ngen_End: Generate block exit code (branching)
+ * 4. make_address_range_executable: Flush caches
+ *
+ * Memory Operations (shop_readm, shop_writem):
+ * - Can use optimized RAM access if address is in known RAM region
+ * - Otherwise calls helper functions (ReadMem* /WriteMem*)
+ * - Supports 8, 16, 32, and 64-bit operations
+ *
+ * Control Flow Operations:
+ * - shop_ifb: Conditional blocks (flushes register cache)
+ * - shop_jdyn: Dynamic jump (target in register)
+ * - shop_jcond: Conditional jump setup
+ *
+ * Data Movement:
+ * - shop_mov32: 32-bit move (register or immediate)
+ * - shop_mov64: 64-bit move (uses register pairs)
+ *
+ * Arithmetic/Logic:
+ * - Integer ops: add, sub, and, or, xor, shl, shr, sar, mul
+ * - Float ops: fadd, fsub, fmul, fdiv
+ *
+ * Fallback:
+ * - Operations without specialized code use canonical handlers (shil_chf)
+ * - This provides correctness at the cost of performance
+ */
+
+DynarecCodeEntry *ngen_Compile(DecodedBlock *block, bool force_checks)
+{
+  if (emit_FreeSpace() < 16 * 1024)
+    return 0;
+
+  DynarecCodeEntry *rv = (DynarecCodeEntry *)emit_GetCCPtr();
+
+  ngen_Begin(block, force_checks);
+
+  for (size_t i = 0; i < block->oplist.size(); i++)
+  {
+    shil_opcode *op = &block->oplist[i];
+    switch (op->op)
+    {
+
+    case shop_readm:
+    {
+      void *fuct = 0;
+      bool isram = false;
+      verify(op->rs1.is_imm() || op->rs1.is_r32i());
+
+      if (op->rs1.is_imm())
+      {
+        void *ptr = _vmem_read_const(op->rs1._imm, isram, op->flags);
+        if (isram)
+        {
+          if (op->flags == 1)
+          {
+            ppc_lbz(ppc_r3, ppc_r4, ppc_addr_high(ppc_r4, ptr));
+            ppc_extsbx(ppc_r3, ppc_r3, 0);
+          }
+          else if (op->flags == 2)
+            ppc_lha(ppc_r3, ppc_r4, ppc_addr_high(ppc_r4, ptr));
+          else if (op->flags == 4)
+            ppc_lwz(ppc_r3, ppc_r4, ppc_addr_high(ppc_r4, ptr));
+          else
+          {
+            die("Invalid mem read size");
+          }
+        }
+        else
+        {
+          ppc_li(ppc_rarg0, op->rs1._imm);
+          fuct = ptr;
+        }
+      }
+      else
+      {
+        ppc_sh_load(ppc_rarg0, op->rs1);
+        if (op->rs3.is_imm())
+        {
+          verify(op->rs3.is_imm_s16());
+          ppc_addi(ppc_rarg0, ppc_rarg0, op->rs3._imm);
+        }
+        else if (op->rs3.is_r32i())
+        {
+          ppc_sh_load(ppc_rarg1, op->rs3);
+          ppc_addx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0, 0);
+        }
+        else if (!op->rs3.is_null())
+        {
+          die("invalid rs3");
+        }
+      }
+
+      if (!isram)
+      {
+        switch (op->flags)
+        {
+        case 1:
+          if (!fuct)
+            fuct = (void *)ReadMem8;
+          ppc_call(fuct);
+          ppc_extsbx(ppc_rrv0, ppc_rrv0, 0);
+          break;
+        case 2:
+          if (!fuct)
+            fuct = (void *)ReadMem16;
+          ppc_call(fuct);
+          ppc_extshx(ppc_rrv0, ppc_rrv0, 0);
+          break;
+        case 4:
+          if (!fuct)
+            fuct = (void *)ReadMem32;
+          ppc_call(fuct);
+          break;
+        case 8:
+          if (!fuct)
+            fuct = (void *)ReadMem64;
+          ppc_call(fuct);
+          break;
+        default:
+          verify(false);
+        }
+      }
+
+      ppc_sh_store(ppc_rrv0, op->rd);
+
+      if (op->flags == 8)
+      {
+        ppc_sh_store(ppc_rrv1, op->rd._reg + 1);
+      }
+    }
+    break;
+
+    case shop_writem:
+    {
+      ppc_sh_load(ppc_rarg0, op->rs1);
+
+      if (op->flags == 8)
+      {
+        ppc_sh_load(ppc_rarg2, op->rs2);
+        ppc_sh_load(ppc_rarg3, op->rs2._reg + 1);
+      }
+      else
+        ppc_sh_load(ppc_rarg1, op->rs2);
+
+      if (op->rs3.is_imm())
+      {
+        verify(op->rs3.is_imm_s16());
+        ppc_addi(ppc_rarg0, ppc_rarg0, op->rs3._imm);
+      }
+      else if (op->rs3.is_r32i())
+      {
+        ppc_sh_load(ppc_rarg3, op->rs3);
+
+        ppc_addx(ppc_rarg0, ppc_rarg0, ppc_rarg3, 0, 0);
+      }
+      else if (!op->rs3.is_null())
+      {
+        printf("rs3: %08X\n", op->rs3.type);
+        die("invalid rs3");
+      }
+
+      switch (op->flags)
+      {
+      case 1:
+        ppc_andi(ppc_rarg1, ppc_rarg1, 0xFF);
+        ppc_call(&WriteMem8);
+        break;
+      case 2:
+        ppc_andi(ppc_rarg1, ppc_rarg1, 0xFFFF);
+        ppc_call(&WriteMem16);
+        break;
+      case 4:
+        ppc_call(&WriteMem32);
+        break;
+      case 8:
+        ppc_call(&WriteMem64);
+        break;
+      default:
+        die("invalid size on memwrite");
+      }
+    }
+    break;
+
+    case shop_ifb:
+    {
+      reg_flush_all();
+      if (op->rs1._imm)
+      {
+        ppc_li(ppc_rarg0, op->rs2._imm);
+        ppc_sh_store(ppc_rarg0, reg_nextpc);
+      }
+      ppc_li(ppc_rarg0, op->rs3._imm);
+      ppc_call(OpDesc[op->rs3._imm]->oph);
+      reg_reload_all();
+    }
+    break;
+
+    case shop_jdyn:
+    {
+      ppc_sh_load(ppc_djump, op->rs1);
+
+      if (op->rs2.is_imm())
+      {
+        if (op->rs2.is_imm_s16())
+        {
+          ppc_addi(ppc_djump, ppc_djump, op->rs2._imm);
+        }
+        else
+        {
+          ppc_li(ppc_rarg0, op->rs2._imm);
+          ppc_addx(ppc_djump, ppc_djump, ppc_rarg0, 0, 0);
+        }
+      }
+    }
+    break;
+
+    case shop_jcond:
+    {
+      compile_state.has_jcond = true;
+      ppc_sh_load(ppc_djump, op->rs1);
+    }
+    break;
+
+    case shop_mov64:
+    {
+      verify(op->rd.is_r64());
+      verify(op->rs1.is_r64());
+
+      ppc_sh_load(ppc_rarg0, op->rs1);
+      ppc_sh_load(ppc_rarg1, op->rs1._reg + 1);
+
+      ppc_sh_store(ppc_rarg0, op->rd);
+      ppc_sh_store(ppc_rarg1, op->rd._reg + 1);
+    }
+    break;
+
+    case shop_mov32:
+    {
+      verify(op->rd.is_r32());
+
+      if (op->rs1.is_imm())
+      {
+        ppc_li(ppc_rarg0, op->rs1._imm);
+      }
+      else if (op->rs1.is_r32())
+      {
+        ppc_sh_load(ppc_rarg0, op->rs1);
+      }
+      else
+      {
+        die("Invalid mov32 size");
+      }
+
+      ppc_sh_store(ppc_rarg0, op->rd);
+    }
+    break;
+
+    case shop_add:
+      binop_start(op);
+      ppc_addx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0, 0);
+      binop_end(op);
+      break;
+    case shop_sub:
+      binop_start(op);
+      ppc_subfx(ppc_rarg0, ppc_rarg1, ppc_rarg0, 0, 0);
+      binop_end(op);
+      break;
+
+    case shop_or:
+      binop_start(op);
+      ppc_orx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+    case shop_and:
+      binop_start(op);
+      ppc_andx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+    case shop_xor:
+      binop_start(op);
+      ppc_xorx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+
+    case shop_shl:
+      binop_start(op);
+      ppc_slwx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+    case shop_shr:
+      binop_start(op);
+      ppc_srwx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+    case shop_sar:
+      binop_start(op);
+      ppc_srawx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0);
+      binop_end(op);
+      break;
+    case shop_mul_i32:
+      binop_start(op);
+      ppc_mullwx(ppc_rarg0, ppc_rarg0, ppc_rarg1, 0, 0);
+      binop_end(op);
+      break;
+
+    case shop_fadd:
+      binop_start_fpu(op);
+      ppc_faddsx(ppc_farg0, ppc_farg0, ppc_farg1, 0);
+      binop_end_fpu(op);
+      break;
+    case shop_fsub:
+      binop_start_fpu(op);
+      ppc_fsubsx(ppc_farg0, ppc_farg0, ppc_farg1, 0);
+      binop_end_fpu(op);
+      break;
+    case shop_fmul:
+      binop_start_fpu(op);
+      ppc_fmulsx(ppc_farg0, ppc_farg0, ppc_farg1, 0);
+      binop_end_fpu(op);
+      break;
+    case shop_fdiv:
+      binop_start_fpu(op);
+      ppc_fdivsx(ppc_farg0, ppc_farg0, ppc_farg1, 0);
+      binop_end_fpu(op);
+      break;
+
+    default:
+      // canonical fallback ~
+      shil_chf[op->op](op);
+      break;
+
+    defaulty:
+      printf("OH CRAP %d\n", op->op);
+      die("Recompiler doesn't know about that opcode");
+    }
+  }
+
+  ngen_End(block);
+
+  make_address_range_executable((u8 *)rv, (u8 *)emit_GetCCPtr() - (u8 *)rv);
+  return rv;
+}
+
+void ngen_ResetBlocks()
+{
+}
+
+void *FASTCALL ngen_LinkBlock_Static(u32 pc, u32 *patch)
+{
+  next_pc = pc;
+
+  DynarecCodeEntry *rv = rdv_FindOrCompile();
+
+  emit_ptr = patch;
+  {
+    ppc_jump(rv);
+  }
+  emit_ptr = 0;
+
+  make_address_range_executable(patch, 1 * sizeof(u32));
+
+  return (void *)rv;
+}
+
+// ============================================================================
+// MAIN LOOP (Claude AI Comment)
+// ============================================================================
+
+/*
+ * ngen_mainloop: Main Execution Loop Setup
+ *
+ * This function generates the core execution loop that runs compiled SH4 code.
+ * It is only generated once and reused for the lifetime of the emulator.
+ *
+ * Generated Code Structure:
+ *
+ * 1. Prologue:
+ *    - Create stack frame (8 + 20*4 bytes)
+ *    - Save Link Register at SP+stacksize+4
+ *    - Save preserved registers (r13-r31) on stack
+ *
+ * 2. Initialization:
+ *    - Load SH4 context base pointer into ppc_contex (r30)
+ *    - Set initial cycle count to SH4_TIMESLICE
+ *    - Load initial PC from context
+ *
+ * 3. Execution Loop (loop_no_update):
+ *    - Call bm_GetCode() to fetch compiled block for current PC
+ *    - bm_GetCode returns function pointer in r3
+ *    - Move r3 to CTR and branch (ppc_call_and_jump pattern)
+ *    - Compiled blocks jump back here when done
+ *
+ * 4. Update Path (loop_do_update_write):
+ *    - Entered when cycle counter exhausted
+ *    - Save PC to context (needed for interrupt processing)
+ *    - Restore cycle counter (add back SH4_TIMESLICE)
+ *    - Call UpdateSystem() for timing/interrupts/hardware updates
+ *    - Reload PC (may have changed due to interrupt)
+ *    - Continue execution
+ *
+ * 5. Epilogue:
+ *    - Restore Link Register from stack
+ *    - Restore preserved registers (r14-r31)
+ *    - Destroy stack frame
+ *    - Return to caller via BLR
+ *
+ * Stub Generation:
+ * After the main loop, several stub functions are generated:
+ * - ngen_FailedToFindBlock: Called when block lookup fails
+ * - ngen_LinkBlock_Static_stub: Entry point for static block linking
+ * - ngen_BlockCheckFail_stub: Called when block validation fails
+ *
+ * Debug Output:
+ * The generated code is saved to a file (dynarec_[address].bin) for
+ * disassembly and debugging purposes.
+ *
+ * Cache Management:
+ * After generation, make_address_range_executable is called to flush the
+ * data cache and invalidate the instruction cache. This is critical on
+ * PowerPC to ensure the CPU fetches the newly generated instructions rather
+ * than stale cache data.
+ */
+
+void ngen_mainloop()
+{
+  if (loop_code == 0)
+  {
+
+    loop_code = (void (*)())emit_GetCCPtr();
+    {
+      /*
+      create stack frame, push regsters, etc ..
+      */
+      u32 stac_alloc_size = 8 + 20 * 4;
+      ppc_mfspr(ppc_r0, ppc_spr_lr);
+      ppc_addi(ppc_sp, ppc_sp, -stac_alloc_size);
+
+      // store link register
+      ppc_stw(ppc_r0, ppc_sp, stac_alloc_size + 4);
+
+      // store gprs
+      for (int i = 0; i < 19; i++)
+      {
+        ppc_stw(ppc_r13 + i, ppc_sp, stac_alloc_size - 4 - i * 4);
+      }
+
+      /*
+      pre load registers/counters etc ..
+      */
+      reg_reload_all();
+
+      // cntx base
+      ppc_lip(ppc_contex, &Sh4cntx);
+
+      // cycles
+      ppc_li(ppc_cycles, SH4_TIMESLICE);
+
+      // and pc!
+      ppc_sh_load(ppc_next_pc, reg_nextpc);
+
+      // no_update
+      loop_no_update = emit_GetCCPtr();
+
+      // handy function !
+      ppc_call_and_jump(bm_GetCode);
+
+      // do_update_write
+      loop_do_update_write = emit_GetCCPtr();
+
+      // next_pc _MUST_ be on ram since update system uses it for interrupt processing
+      ppc_sh_store(ppc_next_pc, reg_nextpc);
+      ppc_addi(ppc_cycles, ppc_cycles, SH4_TIMESLICE); // add cycles ...
+
+      ppc_call(UpdateSystem); // call UpdateSystem
+      ppc_sh_load(ppc_next_pc, reg_nextpc);
+      //
+      ppc_jump(loop_no_update);
+      // right
+
+      ppc_lbz(ppc_rarg0, ppc_rarg0, ppc_addr_high(ppc_rarg0, (void *)&sh4_int_bCpuRun));
+      ppc_sh_load(ppc_next_pc, reg_nextpc);
+
+      ppc_cmpi(ppc_cr0, ppc_rarg0, 1, 0); // set flags
+
+      // does this even work ?
+      // ppc_bcx(BO_TRUE,BI_CR0_EQ,ppc_jdiff(loop_no_update),0,0);
+
+      /*
+      //write back registers and stuff ...
+      */
+
+      // cleanup
+      /*
+      Clean up the stack frame and return ...
+      */
+
+      // restore link register
+      ppc_lwz(ppc_r0, ppc_sp, stac_alloc_size + 4);
+      ppc_mtlr(ppc_r0);
+
+      // restore gprs 13 .. 31
+      for (int i = 0; i < 19; i++)
+      {
+        ppc_lwz(ppc_r14 + i, ppc_sp, stac_alloc_size - 4 - i * 4);
+      }
+
+      // destroy stack frame
+      ppc_addi(ppc_sp, ppc_sp, stac_alloc_size);
+
+      // return
+      ppc_blr();
+
+    } // that was mainloop
+
+    // ngen_FailedToFindBlock
+    ngen_FailedToFindBlock = (void (*)())emit_GetCCPtr();
+    {
+      ppc_call_and_jump(&rdv_FailedToFindBlock);
+    }
+
+    // ============================================================================
+    // STATIC BLOCK LINKING (Insert around line 746)
+    // ============================================================================
+
+    /*
+     * ngen_LinkBlock_Static: Dynamic Block Linking
+     *
+     * Called at runtime when a branch to a statically-known address is taken
+     * for the first time. This function:
+     *
+     * 1. Sets next_pc to the target address
+     * 2. Calls rdv_FindOrCompile() to get compiled code for target
+     *    - If block already compiled: returns existing code
+     *    - If not compiled: compiles it now
+     * 3. Patches the calling site with a direct jump to the target
+     *    - This optimization means subsequent executions jump directly
+     *    - Avoids the overhead of block lookup after first execution
+     * 4. Flushes caches to make patched code visible to CPU
+     *
+     * This "link-on-first-use" approach balances compilation time and runtime
+     * performance. Blocks are only compiled when actually reached, but once
+     * linked, subsequent executions are very fast.
+     */
+
+    ngen_LinkBlock_Static_stub = emit_GetCCPtr();
+    {
+      // not used for now
+      ppc_mfspr(ppc_rarg1, ppc_spr_lr);
+
+      ppc_addi(ppc_rarg1, ppc_rarg1, (u32)-12);
+      ppc_call_and_jump(&ngen_LinkBlock_Static);
+    }
+
+    ngen_LinkBlock_Dynamic_1st_stub = emit_GetCCPtr();
+    {
+      // not used for now
+    }
+
+    ngen_LinkBlock_Dynamic_2nd_stub = emit_GetCCPtr();
+    {
+      // not used for now
+    }
+
+    ngen_BlockCheckFail_stub = emit_GetCCPtr();
+    {
+      ppc_call_and_jump(&rdv_BlockCheckFail);
+    }
+
+    // Make _SURE_ this code is not overwriten !
+    emit_SetBaseAddr();
+
+    char file[512];
+    sprintf(file, "dynarec_%08X.bin", loop_code);
+    char *path = GetEmuPath(file);
+
+    FILE *f = fopen(path, "wb");
+    free(path);
+
+    if (f)
+    {
+      fwrite((void *)loop_code, 1, CODE_SIZE - emit_FreeSpace(), f);
+      fflush(f);
+      fclose(f);
+    }
+
+    // ============================================================================
+    // CACHE COHERENCY (Claude AI Comment)
+    // ============================================================================
+
+    /*
+     * make_address_range_executable: PowerPC Cache Management
+     *
+     * On PowerPC processors, there are separate data and instruction caches.
+     * When code is generated at runtime (as this JIT does), we must ensure:
+     *
+     * 1. Data cache writes are flushed to main memory (DCFlushRange)
+     *    - The code we just wrote exists in the data cache
+     *    - Must be written to RAM so instruction fetch can see it
+     *
+     * 2. Instruction cache is invalidated (ICInvalidateRange)
+     *    - Old instructions may still be cached at these addresses
+     *    - Must be invalidated so CPU refetches from RAM
+     *
+     * Without these steps, the CPU might execute old instructions or garbage
+     * data instead of the newly generated code. This is a common requirement
+     * for JIT compilers on architectures with split I/D caches.
+     *
+     * The Wii SDK provides these functions specifically for this purpose.
+     */
+
+    make_address_range_executable((u8 *)loop_code, (u8 *)emit_GetCCPtr() - (u8 *)loop_code);
+  }
+
+  loop_code();
+}
+
+void ngen_GetFeatures(ngen_features *dst)
+{
+  dst->InterpreterFallback = false;
+  dst->OnlyDynamicEnds = false;
+}
