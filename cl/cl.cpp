@@ -6,9 +6,9 @@
 #include <stdio.h>
 #include <string.h>
 #include "config/config.h"
-wchar* filename=0;
+char* filename=0;
 
-wchar* trim_ws(wchar* str)
+char* trim_ws(char* str)
 {
 	if (str==0 || strlen(str)==0)
 		return 0;
@@ -38,7 +38,7 @@ wchar* trim_ws(wchar* str)
 
 	return str;
 }
-int file_cmdl(wchar** arg,int cl)
+int file_cmdl(char** arg,int cl)
 {
 	if (cl<1)
 	{
@@ -48,7 +48,7 @@ int file_cmdl(wchar** arg,int cl)
 	filename=strdup(arg[1]);
 	return 1;
 }
-int setconfig(wchar** arg,int cl)
+int setconfig(char** arg,int cl)
 {
 	int rv=0;
 	for(;;)
@@ -58,13 +58,13 @@ int setconfig(wchar** arg,int cl)
 			printf("-config : invalid number of parameters, format is section:key=value\n");
 			return rv;
 		}
-		wchar* sep=strstr(arg[1],":");
+		char* sep=strstr(arg[1],":");
 		if (sep==0)
 		{
 			printf("-config : invalid parameter %s, format is section:key=value\n",arg[1]);
 			return rv;
 		}
-		wchar* value=strstr(sep+1,"=");
+		char* value=strstr(sep+1,"=");
 		if (value==0)
 		{
 			printf("-config : invalid parameter %s, format is section:key=value\n",arg[1]);
@@ -74,8 +74,8 @@ int setconfig(wchar** arg,int cl)
 		*sep++=0;
 		*value++=0;
 
-		wchar* sect=trim_ws(arg[1]);
-		wchar* key=trim_ws(sep);
+		char* sect=trim_ws(arg[1]);
+		char* key=trim_ws(sep);
 		value=trim_ws(value);
 
 		if (sect==0 || key==0)
@@ -103,7 +103,7 @@ int setconfig(wchar** arg,int cl)
 	}
 	return rv;
 }
-int setconfigfile(wchar** arg,int cl)
+int setconfigfile(char** arg,int cl)
 {
 	if (cl<1)
 	{
@@ -113,7 +113,7 @@ int setconfigfile(wchar** arg,int cl)
 	strcpy(cfgPath,arg[1]);
 	return 1;
 }
-int showhelp(wchar** arg,int cl)
+int showhelp(char** arg,int cl)
 {
 	if (cl>=1)
 	{
@@ -151,11 +151,11 @@ int showhelp(wchar** arg,int cl)
 
 	return 0;
 }
-bool ParseCommandLine(int argc,wchar* argv[])
+bool ParseCommandLine(int argc,char* argv[])
 {
 
 	int cl=argc-2;
-	wchar** arg=argv+1;
+	char** arg=argv+1;
 	while(cl>=0)
 	{
 		if (strcmp(*arg,"-help")==0)

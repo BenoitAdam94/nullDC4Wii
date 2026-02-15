@@ -122,7 +122,7 @@ f32 sin_table[0x10000+0x4000];	//+0x4000 to avoid having to warp around twice on
 void GenerateSinCos()
 {
 	printf("Generating sincos tables ...\n");
-	wchar* path=GetEmuPath("data/fsca-table.bin");
+	char* path=GetEmuPath("data/fsca-table.bin");
 	FILE* tbl=fopen(path,"rb");
 	free(path);
 	if (!tbl)

@@ -4,7 +4,7 @@
 
 
 // *FIXME* ENDIAN
-u32 LoadFileToSh4Mem(u32 offset,wchar*file)
+u32 LoadFileToSh4Mem(u32 offset,char*file)
 {
 	FILE * fd = fopen(file, "rb");
 	if (fd==NULL) {
@@ -40,7 +40,7 @@ u32 LoadFileToSh4Mem(u32 offset,wchar*file)
 	}
 }
 
-u32 LoadBinfileToSh4Mem(u32 offset,wchar*file)
+u32 LoadBinfileToSh4Mem(u32 offset,char*file)
 {
 	u8 CheckStr[8]={0x7,0xd0,0x8,0xd1,0x17,0x10,0x5,0xdf};/* String for checking if a binary file has an inbuilt ip.bin */
 	u32 rv=0;

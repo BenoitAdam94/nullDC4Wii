@@ -5,8 +5,8 @@
          nullDC.cpp
          stdclass.cpp
          cl.cpp
-         c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp: In function 'int setconfig(wchar**, int)':
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp(84): warning : deprecated conversion from string constant to 'wchar*'
+         c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp: In function 'int setconfig(char**, int)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../cl/cl.cpp(84): warning : deprecated conversion from string constant to 'char*'
          config.cpp
          aica_if.cpp
          asic.cpp
@@ -227,10 +227,10 @@
          iso9660.cpp
          local_cache.cpp
          mds.cpp
-         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds.cpp: In function 'bool mds_init(wchar*)':
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds.cpp: In function 'bool mds_init(char*)':
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds.cpp(190): warning : deprecated conversion from string constant to 'char*'
          mds_reader.cpp
-         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_mds(wchar*, bool)':
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_mds(char*, bool)':
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(167): warning : unused variable 'smth1'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(170): warning : unused variable 'smth2'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(174): warning : unused variable 'smth3'
@@ -240,7 +240,7 @@
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(179): warning : unused variable 'smth7'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(108): warning : unused variable 'mds_header_size'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(111): warning : unused variable 'mds_footer_size'
-         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_nrg(wchar*, bool)':
+         c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp: In function 'bool parse_nrg(char*, bool)':
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(313): warning : format '%x' expects type 'unsigned int', but argument 3 has type 's64'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(313): warning : format '%x' expects type 'unsigned int', but argument 3 has type 's64'
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/ImgReader/mds_reader.cpp(491): warning : format '%08x' expects type 'unsigned int', but argument 9 has type 's64'
@@ -267,33 +267,33 @@
      1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/SPG.cpp(115): warning : comparison between signed and unsigned integer expressions
          drkPvr.cpp
          c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp: In function 'void LSPVR()':
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(123): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(124): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(125): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(126): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(128): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(129): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(131): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(135): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(136): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(137): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(139): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(140): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(141): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(123): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(124): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(125): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(126): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(128): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(129): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(131): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(135): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(136): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(137): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(139): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(140): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(141): warning : deprecated conversion from string constant to 'char*'
          c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp: In function 'void SSPVR()':
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(147): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(148): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(149): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(150): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(152): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(153): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(155): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(156): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(157): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(158): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(160): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(161): warning : deprecated conversion from string constant to 'wchar*'
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(162): warning : deprecated conversion from string constant to 'wchar*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(147): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(148): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(149): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(150): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(152): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(153): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(155): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(156): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(157): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(158): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(160): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(161): warning : deprecated conversion from string constant to 'char*'
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/drkPvr.cpp(162): warning : deprecated conversion from string constant to 'char*'
          glesRend.cpp
          gxRend.cpp
          c:/Projects/nulldc_psp_stable/stable/wii/../plugs/drkPvr/gxRend.cpp: In function 'void decode_pvr_vertex(u32, u32, Vertex*)':
@@ -311,8 +311,8 @@
          ta.cpp
          tex_decode.cpp
          main.cpp
-         c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp: In function 'int main(int, wchar**)':
-     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp(79): warning : deprecated conversion from string constant to 'wchar*'
+         c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp: In function 'int main(int, char**)':
+     1>c:/Projects/nulldc_psp_stable/stable/wii/../wii/main.cpp(79): warning : deprecated conversion from string constant to 'char*'
          wii_driver.cpp
          In file included from c:/Projects/nulldc_psp_stable/stable/wii/../wii/dc/sh4/rec_v2/wii_driver.cpp(38) :
          c:/Projects/nulldc_psp_stable/stable/wii/../dc\sh4\sh4_registers.h: In member function 'u32 Sh4Context::offset(Sh4RegType)':

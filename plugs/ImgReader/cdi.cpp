@@ -255,7 +255,7 @@ void cdi_CreateToc(FILE* ftoc)
 }
 
 //HMODULE pfctoc_mod=NULL;
-bool cdi_init(wchar* file_)
+bool cdi_init(char* file_)
 {
 	char file[512];
 	strcpy(file,file_);

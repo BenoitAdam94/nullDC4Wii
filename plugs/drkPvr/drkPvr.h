@@ -11,7 +11,7 @@
 
 #include <string.h>
 
-int msgboxf(const wchar* text,unsigned int type,...);
+int msgboxf(const char* text,unsigned int type,...);
 
 
 #if DO_VERIFY==OP_ON

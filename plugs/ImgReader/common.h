@@ -30,7 +30,7 @@ struct SessionInfo
 
 
 typedef bool IsCompatableFileFP();
-typedef bool InitFP(wchar* file);
+typedef bool InitFP(char* file);
 typedef void TermFP();
 typedef void DriveGetTocInfoModFP(TocInfo* toc,DiskArea area);
 typedef void DriveGetSessionInfoModFP(SessionInfo* ses);
@@ -64,6 +64,6 @@ void PatchRegion_6(u8* sector,int size);
 void ConvToc(u32* to,TocInfo* from);
 void GetDriveToc(u32* to,DiskArea area);
 void GetDriveSessionInfo(u8* to,u8 session);
-int msgboxf(const wchar* text,unsigned int type,...);
+int msgboxf(const char* text,unsigned int type,...);
 void printtoc(TocInfo* toc,SessionInfo* ses);
 extern u8 q_subchannel[96];

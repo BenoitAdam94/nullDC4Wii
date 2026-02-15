@@ -254,7 +254,7 @@ u32 FASTCALL ioctl_DriveGetDiscType()
 {
 	return ioctl_Disctype;
 }
-bool ioctl_init(wchar* file)
+bool ioctl_init(char* file)
 {
 	if (wcslen(file)==3 && GetDriveType(file)==DRIVE_CDROM)
 	{

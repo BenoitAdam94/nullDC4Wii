@@ -109,11 +109,11 @@ void FASTCALL libPvr_Term()
 char* GetNullDCSoruceFileName(char* full);
 
 
-int cfgGetInt(wchar* key,int def)
+int cfgGetInt(char* key,int def)
 {
 	return cfgLoadInt("drkpvr",key,def);
 }
-void cfgSetInt(wchar* key,int val)
+void cfgSetInt(char* key,int val)
 {
 	cfgSaveInt("drkpvr",key,val);
 }

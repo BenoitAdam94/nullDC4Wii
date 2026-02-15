@@ -19,7 +19,7 @@ u32 fastrand()
 
 //Misc function to get relative source directory for printf's
 wchar temp[1000];
-wchar* GetNullDCSoruceFileName(const char* full)
+char* GetNullDCSoruceFileName(const char* full)
 {
 	size_t len = strlen(full);
 	while(len>18)
@@ -41,7 +41,7 @@ wchar* GetNullDCSoruceFileName(const char* full)
 	return &temp[0];
 }
 
-wchar* GetPathFromFileNameTemp(wchar* full)
+char* GetPathFromFileNameTemp(char* full)
 {
 	size_t len = strlen(full);
 	while(len>2)
@@ -58,12 +58,12 @@ wchar* GetPathFromFileNameTemp(wchar* full)
 	return &temp[0];
 }
 
-void GetPathFromFileName(wchar* path)
+void GetPathFromFileName(char* path)
 {
 	strcpy(path,GetPathFromFileNameTemp(path));
 }
 
-void GetFileNameFromPath(wchar* path,wchar* outp)
+void GetFileNameFromPath(char* path,char* outp)
 {
 
 	size_t i=strlen(path);
@@ -82,7 +82,7 @@ void GetFileNameFromPath(wchar* path,wchar* outp)
 }
 
 wchar AppPath[1024];
-void GetApplicationPath(wchar* path,u32 size)
+void GetApplicationPath(char* path,u32 size)
 {
 	if (AppPath[0]==0)
 	{
@@ -92,14 +92,14 @@ void GetApplicationPath(wchar* path,u32 size)
 	strcpy(path,AppPath);
 }
 
-void SetApplicationPath(wchar* path)
+void SetApplicationPath(char* path)
 {
 	strcpy(AppPath,path);
 }
 
-wchar* GetEmuPath(const wchar* subpath)
+char* GetEmuPath(const char* subpath)
 {
-	wchar* temp=(wchar*)malloc(1024);
+	char* temp=(char*)malloc(1024);
 	GetApplicationPath(temp,1024);
 	strcat(temp,subpath);
 	return temp;
@@ -114,7 +114,7 @@ void VArray2::UnLockRegion(u32 offset,u32 size)
 	printf("UNLOCK REGION\n");
 }
 
-int msgboxf(const wchar* text,unsigned int type,...)
+int msgboxf(const char* text,unsigned int type,...)
 {
 
 	va_list args;

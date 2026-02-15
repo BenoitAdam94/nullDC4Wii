@@ -136,7 +136,7 @@ u32 iso_DriveGetDiscType()
 		return GdRom;
 }
 
-bool load_gdi(wchar* file_)
+bool load_gdi(char* file_)
 {
 	char file[512];
 	strcpy(file,file_);
@@ -210,7 +210,7 @@ bool load_gdi(wchar* file_)
 
 	return true;
 }
-bool iso_init(wchar* file)
+bool iso_init(char* file)
 {
 	size_t len=strlen(file);
 	if (len>4)

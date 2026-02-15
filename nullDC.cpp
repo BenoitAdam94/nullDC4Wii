@@ -41,7 +41,7 @@ int RunDC()
 //////////////////////////////////////
 
 //command lineparsing & init
-int main___(int argc,wchar* argv[])
+int main___(int argc,char* argv[])
 {
 	if(ParseCommandLine(argc,argv))
 	{
@@ -58,7 +58,7 @@ int main___(int argc,wchar* argv[])
 
 	int rv= 0;
 
-	wchar* temp_path=GetEmuPath(_T("data/dc_boot.bin"));
+	char* temp_path=GetEmuPath(_T("data/dc_boot.bin"));
 
 	FILE* fr=fopen(temp_path,"r");
 	if (!fr)
@@ -105,7 +105,7 @@ cleanup:
 }
 
 //entry point, platform specific main() calls this when done with init/stuff
-int EmuMain(int argc, wchar* argv[])
+int EmuMain(int argc, char* argv[])
 {
 	printf(VER_FULLNAME " starting up ..");
 

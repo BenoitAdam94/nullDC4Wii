@@ -240,7 +240,7 @@ void LoadSettings();
 void SaveSettings();
 u32 GetRTC_now();
 
-int EmuMain(int argc, wchar* argv[]);
+int EmuMain(int argc, char* argv[]);
 
 inline bool is_s8(u32 v) { return (s8)v==(s32)v; }
 inline bool is_u8(u32 v) { return (u8)v==(s32)v; }

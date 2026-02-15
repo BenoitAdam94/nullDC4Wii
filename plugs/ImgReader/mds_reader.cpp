@@ -212,7 +212,7 @@ bool parse_mds(wchar *mds_filename,bool verbose)
     return true;
 }
 
-bool parse_nrg(wchar*nrg_filename,bool verbose)
+bool parse_nrg(char*nrg_filename,bool verbose)
 {
     /*"returns the supposable bin_filename and raw entries, if something went \
     wrong it throws an exception"*/

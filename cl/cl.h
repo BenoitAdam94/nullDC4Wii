@@ -1,3 +1,3 @@
 #pragma once
-bool ParseCommandLine(int argc,wchar* argv[]);
-extern wchar* filename;
+bool ParseCommandLine(int argc,char* argv[]);
+extern char* filename;

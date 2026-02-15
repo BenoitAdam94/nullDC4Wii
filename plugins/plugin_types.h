@@ -85,7 +85,7 @@ enum DriveEvent
 //passed on GDRom init call
 struct gdr_init_params
 {
-	wchar* source;
+	char* source;
 };
 void NotifyEvent_gdrom(u32 info,void* param);
 

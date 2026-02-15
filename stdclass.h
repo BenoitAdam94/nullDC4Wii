@@ -11,9 +11,9 @@
 
 
 extern u32 Array_T_id_count;
-wchar* GetNullDCSoruceFileName(const char* full);
-void GetPathFromFileName(wchar* full);
-void GetFileNameFromPath(wchar* path,wchar* outp);
+char* GetNullDCSoruceFileName(const char* full);
+void GetPathFromFileName(char* full);
+void GetFileNameFromPath(char* path,char* outp);
 u32 fastrand();
 //comonly used classes across the project
 //Simple Array class for helping me out ;P
@@ -609,15 +609,15 @@ private :
 public:
 	cDllHandler();
 	~cDllHandler();
-	bool Load(wchar* dll);
+	bool Load(char* dll);
 	bool IsLoaded();
 	void Unload();
 	void* GetProcAddress(char* name);
 };
 
 //Paths
-void GetApplicationPath(wchar* path,u32 size);
-wchar* GetEmuPath(const wchar* subpath);
+void GetApplicationPath(char* path,u32 size);
+char* GetEmuPath(const char* subpath);
 
 class VArray
 {
@@ -680,4 +680,4 @@ public:
 };
 
 
-int msgboxf(const wchar* text,unsigned int type,...);
+int msgboxf(const char* text,unsigned int type,...);

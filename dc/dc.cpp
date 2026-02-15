@@ -270,7 +270,7 @@ void Term_DC()
  * @param filename File to append
  * @return Allocated string with full path (caller must free)
  */
-static wchar* BuildFilePath(const wchar* base_path, const char* filename)
+static char* BuildFilePath(const char* base_path, const char* filename)
 {
 	if (!base_path || !filename)
 		return NULL;
@@ -279,7 +279,7 @@ static wchar* BuildFilePath(const wchar* base_path, const char* filename)
 	size_t file_len = strlen(filename);
 	
 	// Allocate space for base + filename + null terminator
-	wchar* full_path = (wchar*)malloc(base_len + file_len + 1);
+	char* full_path = (char*)malloc(base_len + file_len + 1);
 	if (!full_path)
 	{
 		printf("ERROR: Failed to allocate memory for file path\n");
@@ -300,7 +300,7 @@ void LoadBiosFiles()
 {
 	printf("Loading BIOS files...\n");
 
-	wchar* base_path = GetEmuPath("data/");
+	char* base_path = GetEmuPath("data/");
 	if (!base_path)
 	{
 		printf("ERROR: Failed to get emulator data path\n");
@@ -310,7 +310,7 @@ void LoadBiosFiles()
 	bool any_loaded = false;
 
 	// Load boot ROM
-	wchar* boot_path = BuildFilePath(base_path, "dc_boot.bin");
+	char* boot_path = BuildFilePath(base_path, "dc_boot.bin");
 	if (boot_path)
 	{
 		if (LoadFileToSh4Bootrom(boot_path))
@@ -326,7 +326,7 @@ void LoadBiosFiles()
 	}
 
 	// Try to load saved flash first, fallback to default
-	wchar* flash_path = BuildFilePath(base_path, "dc_flash_wb.bin");
+	char* flash_path = BuildFilePath(base_path, "dc_flash_wb.bin");
 	if (flash_path)
 	{
 		if (LoadFileToSh4Flashrom(flash_path))
@@ -358,7 +358,7 @@ void LoadBiosFiles()
 	}
 
 	// Load syscalls
-	wchar* syscalls_path = BuildFilePath(base_path, "syscalls.bin");
+	char* syscalls_path = BuildFilePath(base_path, "syscalls.bin");
 	if (syscalls_path)
 	{
 		if (LoadFileToSh4Mem(0x00000, syscalls_path))
@@ -374,7 +374,7 @@ void LoadBiosFiles()
 	}
 
 	// Load IP.BIN
-	wchar* ip_path = BuildFilePath(base_path, "IP.bin");
+	char* ip_path = BuildFilePath(base_path, "IP.bin");
 	if (ip_path)
 	{
 		if (LoadFileToSh4Mem(0x08000, ip_path))

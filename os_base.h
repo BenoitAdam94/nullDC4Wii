@@ -53,5 +53,5 @@ int os_ExceptionHandler(void* info);
 #define MBX_RV_YES               6
 #define MBX_RV_NO                7
 
-int os_msgbox(const wchar* text,unsigned int type);
+int os_msgbox(const char* text,unsigned int type);
 double os_GetSeconds();

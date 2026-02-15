@@ -125,7 +125,7 @@ bool ConvertSector(u8* in_buff , u8* out_buff , int from , int to,int sector)
 	return true;
 }
 
-bool InitDrive_(wchar* fn)
+bool InitDrive_(char* fn)
 {
 	if (CurrDrive !=0 && CurrDrive->Inited==true)
 	{

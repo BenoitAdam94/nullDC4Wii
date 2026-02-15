@@ -301,7 +301,7 @@ struct vitem
 	vitem(string a,string b,string c){s=a;n=b;v=c;}
 };
 vector<vitem> vlist;
-wchar* trim_ws(wchar* str);
+char* trim_ws(char* str);
 bool cfgOpen()
 {
 	wchar * tmpPath = GetEmuPath("");
@@ -352,7 +352,7 @@ bool cfgOpen()
 		if (line[strlen(line)-1]=='\r' || line[strlen(line)-1]=='\n')
 			line[strlen(line)-1]=0;
 
-		wchar* tl=trim_ws(line);
+		char* tl=trim_ws(line);
 		if (tl[0]=='[' && tl[strlen(tl)-1]==']')
 		{
 			tl[strlen(tl)-1]=0;
@@ -363,7 +363,7 @@ bool cfgOpen()
 		{
 			if (cur_sect[0]==0)
 				continue;//no open section
-			wchar* str1=strstr(tl,"=");
+			char* str1=strstr(tl,"=");
 			if (!str1)
 			{
 				printf("Malformed entry on cfg,  ingoring @ %d(%s)\n",cline,tl);
@@ -371,8 +371,8 @@ bool cfgOpen()
 			}
 			*str1=0;
 			str1++;
-			wchar* v=trim_ws(str1);
-			wchar* k=trim_ws(tl);
+			char* v=trim_ws(str1);
+			char* k=trim_ws(tl);
 			if (v && k)
 			{
 				ConfigSection*cs=cfgdb.GetEntry(cur_sect);
@@ -424,7 +424,7 @@ s32 cfgExists(const wchar * Section, const wchar * Key)
 	else
 		return 0;
 }
-void cfgLoadStr(const wchar * Section, const wchar * Key, wchar * Return,const wchar* Default)
+void cfgLoadStr(const wchar * Section, const wchar * Key, wchar * Return,const char* Default)
 {
 	verify(Section!=0 && strlen(Section)!=0);
 	verify(Key!=0 && strlen(Key)!=0);

@@ -229,7 +229,7 @@ void mem_Term()
 	sh4_area0_Term();
 
 	//write back flash ?
-	wchar* temp_path=GetEmuPath("data/");
+	char* temp_path=GetEmuPath("data/");
 	strcat(temp_path,"dc_flash_wb.bin");
 	SaveSh4FlashromToFile(temp_path);
 	free(temp_path);
