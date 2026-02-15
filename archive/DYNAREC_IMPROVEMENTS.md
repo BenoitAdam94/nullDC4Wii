@@ -36,10 +36,6 @@ The following files were definitely changed:
 ---
 
 
-### Root Files
-
-- `file_list.txt`
-- `listfile.bat`
 
 ### Memory-Related Files
 
@@ -96,6 +92,7 @@ Further debugging is required to determine whether:
 ## Claude AI last message :
 
 The issue now is that the BIOS keeps looping infinitely through the same boot sequence. Looking at the pattern:
+
 `Boot detected at 8F008300 → 93010000 → 96008300 → 9A010000 → 9D008300
 [Unknown opcodes]
 [i-cache invalidation, reset]
