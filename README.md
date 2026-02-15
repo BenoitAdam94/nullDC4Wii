@@ -162,7 +162,7 @@ Correct errors if they are some errors
 
 #### ~~Use dollz3~~
 
-dollz3 is a compress tool for *.dol files, and it is in the original "make" file, but it seems not to work
+dollz3 is a compress tool for *.dol files, and it is in the original "vs_make.bat" file, but it seems not to work
 
 ~~https://wiibrew.org/wiki/Dollz~~
 
@@ -202,6 +202,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
