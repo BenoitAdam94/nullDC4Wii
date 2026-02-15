@@ -158,7 +158,7 @@ int displayMenuAndSelectFile()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
-    printf("\nNullDC4Wii - Alpha 0.04\n");
+    printf("\nNullDC4Wii - Alpha 0.06\n");
     printf("Current directory: %s\n", currentPath);
     printf("Select a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n\n");
 
