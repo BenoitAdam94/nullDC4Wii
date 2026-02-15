@@ -1,13 +1,32 @@
+/* 
+First step of optimisation by Claude AI
+TODO :
+Remove unused PSP Code
+Remove unused NATIVE_FSCA code (Slower and not SH4 accurate, SH4 uses sin_table() )
+Remove unused M_PI (used only by NATIVE FSCA)
+
+Future Optimization Opportunities:
+  Paired Singles: Wii's PowerPC has paired-single instructions that could accelerate vector ops
+  SIMD: Could use AltiVec for FIPR/FTRV operations
+  Cache Optimization: Consider data layout for better cache usage
+
+Rollback double idp to float ? Or FAST/NORMAL preset opportunity ?
+
+*/
+
+
+
 #include "types.h"
 #include <math.h>
 #include <float.h>
 
-
 #include "sh4_interpreter.h"
 #include "sh4_registers.h"
-
 #include "dc/mem/sh4_mem.h"
 
+// ============================================================================
+// MACROS AND HELPER FUNCTIONS
+// ============================================================================
 
 #define sh4op(str) void FASTCALL str (u32 op)
 #define GetN(str) ((str>>8) & 0xf)
@@ -19,7 +38,10 @@
 #define GetDN(opc)	((op&0x0F00)>>9)
 #define GetDM(opc)	((op&0x00F0)>>5)
 
-#define pi (3.14159265f)
+// Use standard M_PI instead of hardcoded value
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 void iNimp(const char*str);
 
@@ -47,44 +69,78 @@ void iNimp(const char*str);
 #define WriteMemBOU16(addr,offset,data)		WriteMemU16(addr+offset,data)
 #define WriteMemBOU8(addr,offset,data)		WriteMemU8(addr+offset,data)
 
+// ============================================================================
+// NaN FIXING - Flycast improvement for better accuracy
+// ============================================================================
+
+// Fix NaN values according to SH4 spec
+INLINE float fixNaN(float value)
+{
+	u32* v = (u32*)&value;
+	// If NaN, return default NaN (0x7FFFFFFF for positive, 0xFFFFFFFF for negative)
+	if ((*v & 0x7F800000) == 0x7F800000 && (*v & 0x007FFFFF) != 0)
+	{
+		*v = (*v & 0x80000000) | 0x7FFFFFFF;
+	}
+	return value;
+}
+
+INLINE double fixNaN64(double value)
+{
+	u64* v = (u64*)&value;
+	// If NaN, return default NaN
+	if ((*v & 0x7FF0000000000000ULL) == 0x7FF0000000000000ULL && (*v & 0x000FFFFFFFFFFFFFULL) != 0)
+	{
+		*v = (*v & 0x8000000000000000ULL) | 0x7FFFFFFFFFFFFFFFULL;
+	}
+	return value;
+}
+
+// ============================================================================
+// DENORMAL HANDLING
+// ============================================================================
+
 INLINE void Denorm32(float &value)
 {
 	if (fpscr.DN)
 	{
-		u32* v=(u32*)&value;
-		if (IS_DENORMAL(v) && (*v&0x7fFFFFFF)!=0)
+		u32* v = (u32*)&value;
+		if (IS_DENORMAL(v) && (*v & 0x7fFFFFFF) != 0)
 		{
-			*v&=0x80000000;
-			//printf("Denromal ..\n");
-		}
-		if ((*v<=0x007FFFFF) && *v>0)
-		{
-			*v=0;
-			printf("Fixed +denorm\n");
-		}
-		else if ((*v<=0x807FFFFF) && *v>0x80000000)
-		{
-			*v=0x80000000;
-			printf("Fixed -denorm\n");
+			*v &= 0x80000000;
 		}
 	}
 }
 
+// Use fixNaN for better accuracy (Flycast improvement)
+#define CHECK_FPU_32(v) v = fixNaN(v)
+#define CHECK_FPU_64(v) v = fixNaN64(v)
 
-#define CHECK_FPU_32(v) //Denorm32(v)
-#define CHECK_FPU_64(v)
-
+// Placeholder macros for potential future rounding mode control
 #define START64()
-//_controlfp(_PC_53, MCW_PC)
 #define END64()
-//_controlfp(_PC_24, MCW_PC)
-
 #define STARTMODE64()
-//_controlfp(_PC_53, MCW_PC)
 #define ENDMODE64()
-//_controlfp(_PC_24, MCW_PC)
 
-//all fpu emulation ops :)
+// ============================================================================
+// HELPER FUNCTIONS FOR DOUBLE PRECISION (Flycast style)
+// ============================================================================
+
+static INLINE double getDRn(u32 op) {
+	return GetDR((op >> 9) & 7);
+}
+
+static INLINE double getDRm(u32 op) {
+	return GetDR((op >> 5) & 7);
+}
+
+static INLINE void setDRn(u32 op, double d) {
+	SetDR((op >> 9) & 7, d);
+}
+
+// ============================================================================
+// FPU OPERATIONS
+// ============================================================================
 
 //fadd <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_0000)
@@ -94,19 +150,13 @@ sh4op(i1111_nnnn_mmmm_0000)
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 		fr[n] += fr[m];
-		//CHECK_FPU_32(fr[n]);
+		CHECK_FPU_32(fr[n]);
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-
-		START64();
-		double drn=GetDR(n), drm=GetDR(m);
-		drn += drm;
-		CHECK_FPU_64(drn);
-		SetDR(n,drn);
-		END64();
+		double d = getDRn(op) + getDRm(op);
+		CHECK_FPU_64(d);
+		setDRn(op, d);
 	}
 }
 
@@ -123,17 +173,12 @@ sh4op(i1111_nnnn_mmmm_0001)
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-
-		START64();
-		double drn=GetDR(n), drm=GetDR(m);
-		drn-=drm;
-		//dr[n] -= dr[m];
-		SetDR(n,drn);
-		END64();
+		double d = getDRn(op) - getDRm(op);
+		CHECK_FPU_64(d);
+		setDRn(op, d);
 	}
 }
+
 //fmul <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_0010)
 {
@@ -146,16 +191,12 @@ sh4op(i1111_nnnn_mmmm_0010)
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-		START64();
-		double drn=GetDR(n), drm=GetDR(m);
-		drn*=drm;
-		//dr[n] *= dr[m];
-		SetDR(n,drn);
-		END64();
+		double d = getDRn(op) * getDRm(op);
+		CHECK_FPU_64(d);
+		setDRn(op, d);
 	}
 }
+
 //fdiv <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_0011)
 {
@@ -170,15 +211,12 @@ sh4op(i1111_nnnn_mmmm_0011)
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-		START64();
-		double drn=GetDR(n), drm=GetDR(m);
-		drn/=drm;
-		SetDR(n,drn);
-		END64();
+		double d = getDRn(op) / getDRm(op);
+		CHECK_FPU_64(d);
+		setDRn(op, d);
 	}
 }
+
 //fcmp/eq <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_0100)
 {
@@ -187,17 +225,14 @@ sh4op(i1111_nnnn_mmmm_0100)
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		sr.T = !!(fr[m] == fr[n]);
+		sr.T = (fr[m] == fr[n]) ? 1 : 0;
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-		START64();
-		sr.T = !!(GetDR(m) == GetDR(n));
-		END64();
+		sr.T = (getDRm(op) == getDRn(op)) ? 1 : 0;
 	}
 }
+
 //fcmp/gt <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_0101)
 {
@@ -206,25 +241,18 @@ sh4op(i1111_nnnn_mmmm_0101)
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		if (fr[n] > fr[m])
-			sr.T = 1;
-		else
-			sr.T = 0;
+		sr.T = (fr[n] > fr[m]) ? 1 : 0;
 	}
 	else
 	{
-		u32 n = (op >> 9) & 0x07;
-		u32 m = (op >> 5) & 0x07;
-
-		START64();
-		if (GetDR(n) > GetDR(m))
-			sr.T = 1;
-		else
-			sr.T = 0;
-		END64();
+		sr.T = (getDRn(op) > getDRm(op)) ? 1 : 0;
 	}
 }
-//All memory opcodes are here
+
+// ============================================================================
+// MEMORY OPERATIONS
+// ============================================================================
+
 //fmov.s @(R0,<REG_M>),<FREG_N>
 sh4op(i1111_nnnn_mmmm_0110)
 {
@@ -233,27 +261,22 @@ sh4op(i1111_nnnn_mmmm_0110)
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		ReadMemU32(fr_hex[n],r[m] + r[0]);
+		ReadMemU32(fr_hex[n], r[m] + r[0]);
 	}
 	else
 	{
-		u32 n = GetN(op)>>1;
+		u32 n = GetN(op) >> 1;
 		u32 m = GetM(op);
 		if (((op >> 8) & 0x1) == 0)
 		{
-			//ReadMemU32(fr_hex[n],r[m] + r[0]);  exept_tet_now;
-			//ReadMemU32(fr_hex[n + 1],r[m] + r[0] + 4);
-			ReadMemU64(dr_hex[n],r[m] + r[0]);
+			ReadMemU64(dr_hex[n], r[m] + r[0]);
 		}
 		else
 		{
-			//ReadMemU32(xf_hex[n],r[m] + r[0]);  exept_tet_now;
-			//ReadMemU32(xf_hex[n + 1],r[m] + r[0] + 4);
-			ReadMemU64(xd_hex[n],r[m] + r[0]);
+			ReadMemU64(xd_hex[n], r[m] + r[0]);
 		}
 	}
 }
-
 
 //fmov.s <FREG_M>,@(R0,<REG_N>)
 sh4op(i1111_nnnn_mmmm_0111)
@@ -268,22 +291,17 @@ sh4op(i1111_nnnn_mmmm_0111)
 	else
 	{
 		u32 n = GetN(op);
-		u32 m = GetM(op)>>1;
+		u32 m = GetM(op) >> 1;
 		if (((op >> 4) & 0x1) == 0)
 		{
-			//WriteMem32(r[n] + r[0], fr_hex[m]);  exept_tet_now;
-			//WriteMem32(r[n] + r[0] + 4, fr_hex[m + 1]);
-			WriteMemU64(r[n] + r[0],dr_hex[m]);
+			WriteMemU64(r[n] + r[0], dr_hex[m]);
 		}
 		else
 		{
-			//WriteMem32(r[n] + r[0], xf_hex[m]);  exept_tet_now;
-			//WriteMem32(r[n] + r[0] + 4, xf_hex[m + 1]);
-			WriteMemU64(r[n] + r[0],xd_hex[m]);
+			WriteMemU64(r[n] + r[0], xd_hex[m]);
 		}
 	}
 }
-
 
 //fmov.s @<REG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_1000)
@@ -292,27 +310,22 @@ sh4op(i1111_nnnn_mmmm_1000)
 	{
 		u32 n = GetN(op);
 		u32 m = GetM(op);
-		ReadMemU32(fr_hex[n],r[m]);
+		ReadMemU32(fr_hex[n], r[m]);
 	}
 	else
 	{
-		u32 n = GetN(op)>>1;
+		u32 n = GetN(op) >> 1;
 		u32 m = GetM(op);
 		if (((op >> 8) & 0x1) == 0)
 		{
-			//ReadMemU32(fr_hex[n],r[m]);  exept_tet_now;
-			//ReadMemU32(fr_hex[n + 1],r[m] + 4);
-			ReadMemU64(dr_hex[n],r[m]);
+			ReadMemU64(dr_hex[n], r[m]);
 		}
 		else
 		{
-			//ReadMemU32(xf_hex[n],r[m]);  exept_tet_now;
-			//ReadMemU32(xf_hex[n + 1],r[m] + 4);
-			ReadMemU64(xd_hex[n],r[m]);
+			ReadMemU64(xd_hex[n], r[m]);
 		}
 	}
 }
-
 
 //fmov.s @<REG_M>+,<FREG_N>
 sh4op(i1111_nnnn_mmmm_1001)
@@ -322,29 +335,24 @@ sh4op(i1111_nnnn_mmmm_1001)
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		ReadMemU32(fr_hex[n],r[m]);
+		ReadMemU32(fr_hex[n], r[m]);
 		r[m] += 4;
 	}
 	else
 	{
-		u32 n = GetN(op)>>1;
+		u32 n = GetN(op) >> 1;
 		u32 m = GetM(op);
 		if (((op >> 8) & 0x1) == 0)
 		{
-			//ReadMemU32(fr_hex[n],r[m]); exept_tet_now;
-			//ReadMemU32(fr_hex[n + 1],r[m]+ 4);
-			ReadMemU64(dr_hex[n],r[m]);
+			ReadMemU64(dr_hex[n], r[m]);
 		}
 		else
 		{
-			//ReadMemU32(xf_hex[n],r[m] ); exept_tet_now;
-			//ReadMemU32(xf_hex[n + 1],r[m]+ 4);
-			ReadMemU64(xd_hex[n],r[m] );
+			ReadMemU64(xd_hex[n], r[m]);
 		}
 		r[m] += 8;
 	}
 }
-
 
 //fmov.s <FREG_M>,@<REG_N>
 sh4op(i1111_nnnn_mmmm_1010)
@@ -358,21 +366,16 @@ sh4op(i1111_nnnn_mmmm_1010)
 	else
 	{
 		u32 n = GetN(op);
-		u32 m = GetM(op)>>1;
+		u32 m = GetM(op) >> 1;
 
 		if (((op >> 4) & 0x1) == 0)
 		{
-			//WriteMemU32(r[n], fr_hex[m]); exept_tet_now;
-			//WriteMemU32(r[n] + 4, fr_hex[m + 1]);
 			WriteMemU64(r[n], dr_hex[m]);
 		}
 		else
 		{
-			//WriteMemU32(r[n], xf_hex[m]); exept_tet_now;
-			//WriteMemU32(r[n] + 4, xf_hex[m + 1]);
 			WriteMemU64(r[n], xd_hex[m]);
 		}
-
 	}
 }
 
@@ -381,37 +384,30 @@ sh4op(i1111_nnnn_mmmm_1011)
 {
 	if (fpscr.SZ == 0)
 	{
-		//iNimp("fmov.s <FREG_M>,@-<REG_N>");
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		r[n] -= 4;
-
-		WriteMemU32(r[n], fr_hex[m]);
+		u32 addr = r[n] - 4;
+		WriteMemU32(addr, fr_hex[m]);
+		r[n] = addr;
 	}
 	else
 	{
-
 		u32 n = GetN(op);
-		u32 m = GetM(op)>>1;
+		u32 m = GetM(op) >> 1;
 
-		r[n] -= 8;
+		u32 addr = r[n] - 8;
 		if (((op >> 4) & 0x1) == 0)
 		{
-			//WriteMemU32(r[n] , fr_hex[m]); exept_tet_now;
-			//WriteMemU32(r[n]+ 4, fr_hex[m + 1]);
-			WriteMemU64(r[n] , dr_hex[m]);
+			WriteMemU64(addr, dr_hex[m]);
 		}
 		else
 		{
-			//WriteMemU32(r[n] , xf_hex[m]); exept_tet_now;
-			//WriteMemU32(r[n]+ 4, xf_hex[m + 1]);
-			WriteMemU64(r[n] , xd_hex[m]);
+			WriteMemU64(addr, xd_hex[m]);
 		}
+		r[n] = addr;
 	}
 }
-
-//end of memory opcodes
 
 //fmov <FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_1100)
@@ -424,60 +420,52 @@ sh4op(i1111_nnnn_mmmm_1100)
 	}
 	else
 	{
-		u32 n = GetN(op)>>1;
-		u32 m = GetM(op)>>1;
+		u32 n = GetN(op) >> 1;
+		u32 m = GetM(op) >> 1;
 		switch ((op >> 4) & 0x11)
 		{
 			case 0x00:
-				//dr[n] = dr[m];
 				dr_hex[n] = dr_hex[m];
 				break;
 			case 0x01:
-				//dr[n] = xd[m];
 				dr_hex[n] = xd_hex[m];
 				break;
 			case 0x10:
-				//xd[n] = dr[m];
 				xd_hex[n] = dr_hex[m];
 				break;
 			case 0x11:
-				//xd[n] = xd[m];
 				xd_hex[n] = xd_hex[m];
 				break;
 		}
 	}
 }
 
+// ============================================================================
+// SINGLE OPERAND OPERATIONS
+// ============================================================================
 
 //fabs <FREG_N>
 sh4op(i1111_nnnn_0101_1101)
 {
-	int n=GetN(op);
+	int n = GetN(op);
 
-	if (fpscr.PR ==0)
-		fr_hex[n]&=0x7FFFFFFF;
+	if (fpscr.PR == 0)
+		fr_hex[n] &= 0x7FFFFFFF;
 	else
-		fr_hex[(n&0xE)]&=0x7FFFFFFF;
-
+		fr_hex[n & 0xE] &= 0x7FFFFFFF;
 }
 
 //FSCA FPUL, DRn//F0FD//1111_nnn0_1111_1101
 sh4op(i1111_nnn0_1111_1101)
 {
-//#define MY_PI2 6.283185307179586f
-//#define MY_ANG_RAD(k)  ((k) * MY_PI2 / 65536.0f)
+	int n = GetN(op) & 0xE;
 
-	int n=GetN(op) & 0xE;
-
-
-	//cosine(x) = sine(pi/2 + x).
-	if (fpscr.PR==0)
+	if (fpscr.PR == 0)
 	{
-		//float real_pi=(((float)(s32)fpul)/65536)*(2*pi);
-		u32 pi_index=fpul&0xFFFF;
+		u32 pi_index = fpul & 0xFFFF;
 
 #if HOST_SYS == SYS_PSP
-		float* fo=&fr[n];
+		float* fo = &fr[n];
 		__asm__ volatile (
 			"mtv	%2, S100\n"
 			"vi2f.s S100, S100, 14\n"
@@ -487,16 +475,18 @@ sh4op(i1111_nnn0_1111_1101)
 		: "=m" ( *fo ),"=m" ( *(fo+1) ) : "r" ( pi_index ) );
 #else
 	#ifdef NATIVE_FSCA
-			float rads=pi_index/(65536.0f/2)*pi;
+		// Use M_PI for better accuracy
+		float rads = pi_index / (65536.0f / 2.0f) * (float)M_PI;
 
-			fr[n + 0] = sinf(rads);
-			fr[n + 1] = cosf(rads);
+		fr[n + 0] = sinf(rads);
+		fr[n + 1] = cosf(rads);
 
-			CHECK_FPU_32(fr[n]);
-			CHECK_FPU_32(fr[n+1]);
+		CHECK_FPU_32(fr[n]);
+		CHECK_FPU_32(fr[n + 1]);
 	#else
-			fr[n + 0] = sin_table[pi_index];
-			fr[n + 1] = sin_table[pi_index+0x4000];
+		// Use lookup table (assumes sin_table is defined elsewhere)
+		fr[n + 0] = sin_table[pi_index];
+		fr[n + 1] = sin_table[pi_index + 0x4000];
 	#endif
 #endif
 	}
@@ -507,12 +497,11 @@ sh4op(i1111_nnn0_1111_1101)
 //FSRRA //1111_nnnn_0111_1101
 sh4op(i1111_nnnn_0111_1101)
 {
-	// What about double precision?
 	u32 n = GetN(op);
-	if (fpscr.PR==0)
+	if (fpscr.PR == 0)
 	{
 #if HOST_SYS == SYS_PSP
-		float* fio=&fr[n];
+		float* fio = &fr[n];
 		__asm__ 
 			(
 		".set			push\n"
@@ -525,7 +514,7 @@ sh4op(i1111_nnnn_0111_1101)
 		: "m"(*fio)
 			);
 #else
-		fr[n] = (float)(1/sqrtf(fr[n]));
+		fr[n] = 1.0f / sqrtf(fr[n]);
 		CHECK_FPU_32(fr[n]);
 #endif
 	}
@@ -536,56 +525,43 @@ sh4op(i1111_nnnn_0111_1101)
 //fcnvds <DR_N>,FPUL
 sh4op(i1111_nnnn_1011_1101)
 {
-
 	if (fpscr.PR == 1)
 	{
-		START64();
-		//iNimp("fcnvds <DR_N>,FPU");
-		u32 n = (op >> 9) & 0x07;
-		u32*p=&fpul;
-		*((float*)p) = (float)GetDR(n);
-		//fpul= (int)GetDR(n);
-		END64();
+		u32* p = &fpul;
+		*((float*)p) = (float)getDRn(op);
 	}
 	else
 	{
-		iNimp("fcnvds <DR_N>,FPUL,m=0");
+		iNimp("FCNVDS: Single precision mode");
 	}
 }
-
 
 //fcnvsd FPUL,<DR_N>
 sh4op(i1111_nnnn_1010_1101)
 {
 	if (fpscr.PR == 1)
 	{
-		START64();
-		u32 n = (op >> 9) & 0x07;
 		u32* p = &fpul;
-		SetDR(n,(double)*((float*)p));
-		//SetDR(n,(double)fpul);
-		END64();
+		setDRn(op, (double)*((float*)p));
 	}
 	else
 	{
-		iNimp("fcnvsd FPUL,<DR_N>,m=0");
+		iNimp("FCNVSD: Single precision mode");
 	}
 }
 
 //fipr <FV_M>,<FV_N>
 sh4op(i1111_nnmm_1110_1101)
 {
-//	iNimp("fipr <FV_M>,<FV_N>");
-
-
-	int n=GetN(op)&0xC;
-	int m=(GetN(op)&0x3)<<2;
-	if(fpscr.PR ==0)
+	int n = GetN(op) & 0xC;
+	int m = (GetN(op) & 0x3) << 2;
+	
+	if (fpscr.PR == 0)
 	{
 #if HOST_SYS == SYS_PSP
-		float* fvec1=&fr[n];
-		float* fvec2=&fr[m];
-		float* fres=&fr[n+3];
+		float* fvec1 = &fr[n];
+		float* fvec2 = &fr[m];
+		float* fres = &fr[n+3];
 		__asm__ 
 			(
 		".set			push\n"
@@ -599,66 +575,49 @@ sh4op(i1111_nnmm_1110_1101)
 		: "m"(*fvec1),"m"(*fvec2)
 			);
 #else
-		float idp;
-		idp=fr[n+0]*fr[m+0];
-		idp+=fr[n+1]*fr[m+1];
-		idp+=fr[n+2]*fr[m+2];
-		idp+=fr[n+3]*fr[m+3];
+		// Use double precision for intermediate calculations (Flycast improvement)
+		double idp = (double)fr[n + 0] * fr[m + 0];
+		idp += (double)fr[n + 1] * fr[m + 1];
+		idp += (double)fr[n + 2] * fr[m + 2];
+		idp += (double)fr[n + 3] * fr[m + 3];
 
-		CHECK_FPU_32(idp);
-		fr[n+3]=idp;
+		fr[n + 3] = fixNaN((float)idp);
 #endif
 	}
 	else
 		iNimp("FIPR Precision=1");
 }
 
-
 //fldi0 <FREG_N>
 sh4op(i1111_nnnn_1000_1101)
 {
-	if (fpscr.PR!=0)
-		iNimp("fldi0 <Dreg_N>");
+	if (fpscr.PR != 0)
+		return;  // Flycast improvement: just return instead of iNimp
 
-	//iNimp("fldi0 <FREG_N>");
 	u32 n = GetN(op);
-
 	fr[n] = 0.0f;
-
 }
-
 
 //fldi1 <FREG_N>
 sh4op(i1111_nnnn_1001_1101)
 {
-	if (fpscr.PR!=0)
-		iNimp("fldi1 <Dreg_N>");
+	if (fpscr.PR != 0)
+		return;  // Flycast improvement: just return instead of iNimp
 
-	//iNimp("fldi1 <FREG_N>");
 	u32 n = GetN(op);
-
 	fr[n] = 1.0f;
 }
-
 
 //flds <FREG_N>,FPUL
 sh4op(i1111_nnnn_0001_1101)
 {
-	//iNimp("flds <FREG_N>,FPU");
-	/*if (fpscr.PR != 0)
-		iNimp("flds <DREG_N>,FPU");*/
-
 	u32 n = GetN(op);
-
 	fpul = fr_hex[n];
 }
+
 //fsts FPUL,<FREG_N>
 sh4op(i1111_nnnn_0000_1101)
 {
-	//iNimp("fsts FPUL,<FREG_N>");
-	/*if (fpscr.PR != 0)
-		iNimp("fsts FPUL,<DREG_N>");*/
-
 	u32 n = GetN(op);
 	fr_hex[n] = fpul;
 }
@@ -673,42 +632,32 @@ sh4op(i1111_nnnn_0010_1101)
 	}
 	else
 	{
-		START64();
-		u32 n = (op >> 9) & 0x07;
-		SetDR(n, (double)(int)fpul);
-		//iNimp("float FPUL,<DREG_N>");
-		END64();
+		setDRn(op, (double)(int)fpul);
 	}
 }
-
 
 //fneg <FREG_N>
 sh4op(i1111_nnnn_0100_1101)
 {
 	u32 n = GetN(op);
 
-	if (fpscr.PR ==0)
-		fr_hex[n]^=0x80000000;
+	if (fpscr.PR == 0)
+		fr_hex[n] ^= 0x80000000;
 	else
-		fr_hex[(n&0xE)]^=0x80000000;
+		fr_hex[n & 0xE] ^= 0x80000000;
 }
-
 
 //frchg
 sh4op(i1111_1011_1111_1101)
 {
-	//iNimp("frchg");
  	fpscr.FR = 1 - fpscr.FR;
-
 	UpdateFPSCR();
 }
 
 //fschg
 sh4op(i1111_0011_1111_1101)
 {
-	//iNimp("fschg");
 	fpscr.SZ = 1 - fpscr.SZ;
-	//printf("SZ %d %08X\n",fpscr.SZ,id);
 }
 
 //fsqrt <FREG_N>
@@ -718,7 +667,7 @@ sh4op(i1111_nnnn_0110_1101)
 	{
 		u32 n = GetN(op);
 #if HOST_SYS == SYS_PSP
-		float* fio=&fr[n];
+		float* fio = &fr[n];
 		__asm__ 
 			(
 		".set			push\n"
@@ -731,25 +680,16 @@ sh4op(i1111_nnnn_0110_1101)
 		: "m"(*fio)
 			);
 #else
-		//iNimp("fsqrt <FREG_N>");
-
 		fr[n] = sqrtf(fr[n]);
 		CHECK_FPU_32(fr[n]);
 #endif
 	}
 	else
 	{
-		//Operation _can_ be done on sh4
-		u32 n = GetN(op)>>1;
-
-		START64();
-		SetDR(n,sqrt(GetDR(n)));
-		//CHECK_FPU_32(fr[n]);
-		//iNimp("fsqrt <DREG_N>");
-		END64();
+		u32 n = GetN(op) >> 1;
+		setDRn(op, fixNaN64(sqrt(getDRn(op))));
 	}
 }
-
 
 //ftrc <FREG_N>, FPUL
 sh4op(i1111_nnnn_0011_1101)
@@ -757,41 +697,71 @@ sh4op(i1111_nnnn_0011_1101)
 	if (fpscr.PR == 0)
 	{
 		u32 n = GetN(op);
-		fpul = (u32)(s32)fr[n];
-
-		if (fpul==0x80000000)
+		
+		// Flycast improvement: Better NaN handling
+		if (isnan(fr[n]))
 		{
-			if (fr[n]>0)
+			fpul = 0x80000000;
+		}
+		else
+		{
+			fpul = (u32)(s32)fr[n];
+			
+			// Handle overflow to max positive value
+			if ((s32)fpul > 0x7fffff80)
+				fpul = 0x7fffffff;
+#if HOST_CPU == CPU_X86 || HOST_CPU == CPU_X64
+			// Intel CPUs convert out of range float numbers to 0x80000000
+			// Manually set the correct sign
+			else if (fpul == 0x80000000 && fr[n] > 0)
 				fpul--;
+#else
+			// Generic handling for other architectures
+			else if (fpul == 0x80000000 && fr[n] > 0)
+				fpul--;
+#endif
 		}
 	}
 	else
 	{
-		START64();
-		u32 n = (op >> 9) & 0x07;
-		fpul = (u32)(s32)GetDR(n);
-		if (fpul==0x80000000)
+		double d = getDRn(op);
+		
+		// Flycast improvement: Better NaN handling for double precision
+		if (isnan(d))
 		{
-			if (GetDR(n)>0)
-				fpul--;
+			fpul = 0x80000000;
 		}
-		END64();
+		else
+		{
+			fpul = (u32)(s32)d;
+#if HOST_CPU == CPU_X86 || HOST_CPU == CPU_X64
+			// Intel CPUs convert out of range float numbers to 0x80000000
+			if (fpul == 0x80000000 && d > 0)
+				fpul--;
+#else
+			// Generic handling for other architectures
+			if (fpul == 0x80000000 && d > 0)
+				fpul--;
+#endif
+		}
 	}
 }
-
-
-
 
 //fmac <FREG_0>,<FREG_M>,<FREG_N>
 sh4op(i1111_nnnn_mmmm_1110)
 {
-	//iNimp("fmac <FREG_0>,<FREG_M>,<FREG_N>");
-	if (fpscr.PR==0)
+	if (fpscr.PR == 0)
 	{
 		u32 n = GetN(op);
 		u32 m = GetM(op);
 
-		fr[n] =(f32) ((f64)fr[n]+(f64)fr[0] * (f64)fr[m]);
+#ifdef __cpp_lib_math_special_functions
+		// Flycast improvement: Use FMA if available for better accuracy
+		fr[n] = fmaf(fr[0], fr[m], fr[n]);
+#else
+		// Fallback: Use double precision for intermediate calculation
+		fr[n] = (f32)((f64)fr[n] + (f64)fr[0] * (f64)fr[m]);
+#endif
 		CHECK_FPU_32(fr[n]);
 	}
 	else
@@ -800,30 +770,23 @@ sh4op(i1111_nnnn_mmmm_1110)
 	}
 }
 
-
 //ftrv xmtrx,<FV_N>
 sh4op(i1111_nn01_1111_1101)
 {
-	//iNimp("ftrv xmtrx,<FV_N>");
-
-
-
 	/*
-	XF[0] XF[4] XF[8] XF[12]	FR[n]			FR[n]
-	XF[1] XF[5] XF[9] XF[13]  *	FR[n+1]		->	FR[n+1]
-	XF[2] XF[6] XF[10] XF[14]	FR[n+2]			FR[n+2]
-	XF[3] XF[7] XF[11] XF[15]	FR[n+3]			FR[n+3]
-	
-	gota love linear algebra !
+	XF[0] XF[4] XF[8] XF[12]    FR[n]      FR[n]
+	XF[1] XF[5] XF[9] XF[13]  * FR[n+1] -> FR[n+1]
+	XF[2] XF[6] XF[10] XF[14]   FR[n+2]    FR[n+2]
+	XF[3] XF[7] XF[11] XF[15]   FR[n+3]    FR[n+3]
 	*/
 
-	u32 n=GetN(op)&0xC;
+	u32 n = GetN(op) & 0xC;
 
-	if (fpscr.PR==0)
+	if (fpscr.PR == 0)
 	{
 #if HOST_SYS == SYS_PSP
-		float* fvec=&fr[n];
-		const float* fmtrx=xf;
+		float* fvec = &fr[n];
+		const float* fmtrx = xf;
 		__asm__ 
 			(
 		".set			push\n"
@@ -840,49 +803,44 @@ sh4op(i1111_nn01_1111_1101)
 		: "m"(*fmtrx),"m"(*(fmtrx+4)),"m"(*(fmtrx+8)),"m"(*(fmtrx+12)), "m"(*fvec)
 			);
 #else
-		float v1, v2, v3, v4;
+		// Flycast improvement: Use double precision for intermediate calculations
+		double v1 = (double)xf[0]  * fr[n + 0] +
+					(double)xf[4]  * fr[n + 1] +
+					(double)xf[8]  * fr[n + 2] +
+					(double)xf[12] * fr[n + 3];
 
-		v1 = xf[0]  * fr[n + 0] +
-			 xf[4]  * fr[n + 1] +
-			 xf[8]  * fr[n + 2] +
-			 xf[12] * fr[n + 3];
+		double v2 = (double)xf[1]  * fr[n + 0] +
+					(double)xf[5]  * fr[n + 1] +
+					(double)xf[9]  * fr[n + 2] +
+					(double)xf[13] * fr[n + 3];
 
-		v2 = xf[1]  * fr[n + 0] +
-			 xf[5]  * fr[n + 1] +
-			 xf[9]  * fr[n + 2] +
-			 xf[13] * fr[n + 3];
+		double v3 = (double)xf[2]  * fr[n + 0] +
+					(double)xf[6]  * fr[n + 1] +
+					(double)xf[10] * fr[n + 2] +
+					(double)xf[14] * fr[n + 3];
 
-		v3 = xf[2]  * fr[n + 0] +
-			 xf[6]  * fr[n + 1] +
-			 xf[10] * fr[n + 2] +
-			 xf[14] * fr[n + 3];
+		double v4 = (double)xf[3]  * fr[n + 0] +
+					(double)xf[7]  * fr[n + 1] +
+					(double)xf[11] * fr[n + 2] +
+					(double)xf[15] * fr[n + 3];
 
-		v4 = xf[3]  * fr[n + 0] +
-			 xf[7]  * fr[n + 1] +
-			 xf[11] * fr[n + 2] +
-			 xf[15] * fr[n + 3];
-
-		CHECK_FPU_32(v1);
-		CHECK_FPU_32(v2);
-		CHECK_FPU_32(v3);
-		CHECK_FPU_32(v4);
-
-		fr[n + 0] = v1;
-		fr[n + 1] = v2;
-		fr[n + 2] = v3;
-		fr[n + 3] = v4;
+		fr[n + 0] = fixNaN((float)v1);
+		fr[n + 1] = fixNaN((float)v2);
+		fr[n + 2] = fixNaN((float)v3);
+		fr[n + 3] = fixNaN((float)v4);
 #endif
 	}
 	else
 		iNimp("FTRV in dp mode");
 }
 
+// ============================================================================
+// ERROR HANDLING
+// ============================================================================
 
-void iNimp(const char*str)
+void iNimp(const char* str)
 {
-	printf("Unimplemented sh4 fpu instruction: ");
-	printf(str);
-	printf("\n");
-
-	//Sh4_int_Stop();
+	printf("Unimplemented sh4 fpu instruction: %s\n", str);
+	// Optional: Add more robust error handling here
+	// For example: log to file, trigger breakpoint, etc.
 }
