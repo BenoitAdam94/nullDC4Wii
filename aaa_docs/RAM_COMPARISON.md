@@ -171,9 +171,21 @@ Wii Memory Map for NullDC:
 └─────────────────────────────────────┘
 ```
 
+## **Your Actual Memory Layout:**
+```
+MEM2 (64 MB): 0x90000000
+├── Sound RAM:    2 MB  ✅
+├── VRAM:         8 MB  ✅
+├── Main RAM:    16 MB  ✅
+├── VRAM buffer: 16 MB  
+└── Free:       ~22 MB  ✅
+
+Total Used: ~58 MB
+Remaining:  ~30 MB (plenty!)
+
 ---
 
-## How to Check Your Current Memory Layout
+## How to Check Current Memory Layout
 
 ### Method 1: Check malloc/memory allocation calls
 
@@ -255,6 +267,7 @@ Look for Wii/libogc specific allocators:
 grep -r "MEM1_memalign\|MEM2_memalign\|SYS_AllocArena" *.cpp
 grep -r "0x80000000\|0x90000000" *.cpp  # MEM1/MEM2 base addresses
 ```
+
 
 ---
 
