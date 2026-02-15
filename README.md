@@ -115,7 +115,7 @@ Few games are runnable :
 - Castlevania (Demo)
 - Sega Tetris
 
-Wii Dynarec has been improved & completed by AI. Compile but doesn't run. See /archive folder
+Wii Dynarec has been improved & completed by AI. Compile but doesn't run (Black Screen). See /archive folder
 
 ## Compatibility
 
@@ -205,6 +205,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
