@@ -18,6 +18,7 @@ u8* vram_buffer;
 static void *frameBuffer[2] = { NULL, NULL};
 static GXRModeObj *rmode;
 static u8 gp_fifo[DEFAULT_FIFO_SIZE] __attribute__((aligned(32)));
+static int fb = 0;  // ADD THIS LINE!
 
 #define ABGR8888(x) ((x&0xFF00FF00) |((x>>16)&0xFF) | ((x&0xFF)<<16))
 /*
@@ -1158,15 +1159,15 @@ u32 vri(u32 addr)
 
 		reset_vtx_state();
 
-		static int fb=1;
+		
 		GX_DrawDone();
 		GX_CopyDisp(frameBuffer[fb],GX_TRUE);
 
 		VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 
 		VIDEO_Flush();
-		//VIDEO_WaitVSync(); //why bother ?
-		//fb ^= 1;		// flip framebuffer
+		VIDEO_WaitVSync(); // Needed, because otherwise Dreamcast logo goes too fast in O3 mode
+		// fb ^= 1;		// flip framebuffer
 	}
 
 	void StartRender()

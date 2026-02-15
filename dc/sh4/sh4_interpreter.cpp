@@ -17,7 +17,7 @@
 #include "tmu.h"
 #include "dc/mem/sh4_mem.h"
 #include "ccn.h"
-
+// #include <gccore.h> // Wii-specific includes for frame limiting
 #include <time.h>
 #include <float.h>
 
@@ -48,6 +48,9 @@ void Sh4_int_Run()
 		} while(l>0);
 		l+=SH4_TIMESLICE;
 		UpdateSystem();
+
+		// TIMING FIX: Lock to 60 FPS on Wii
+		// VIDEO_WaitVSync();
 
 	} while(sh4_int_bCpuRun);
 
@@ -246,4 +249,3 @@ void Get_Sh4Interpreter(sh4_if* rv)
 
 	rv->ResetCache=sh4_int_resetcache;
 }
-
