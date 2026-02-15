@@ -6,9 +6,9 @@
 extern u32 VertexCount;
 extern u32 FrameCount;
 
-#include "gsRend.h"
-#include "gxRend.h"
-#include "nullRend.h"
-#include "glesRend.h"
-#include "softRend.h"
+// #include "gsRend.h" // PS2
+#include "gxRend.h" // Wii
+// #include "nullRend.h" // PSP
+// #include "glesRend.h" // DirectX 11 ? OpenGL ? PS3 ?
+// #include "softRend.h" // Sofware Render
 
