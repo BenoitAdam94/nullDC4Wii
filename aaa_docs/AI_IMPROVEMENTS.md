@@ -82,11 +82,7 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| glesRend.cpp | OpenGL ES renderer | | |
-| gsRend.cpp | Generic graphics renderer (PS2) | | |
 | gxRend.cpp | GX renderer (Wii / GameCube) | | Improvement failed for now (Blackscreen with white flashes). May need improvement at the same time with ta.cpp/ta.h/ta_const_df./ta_structus.h files also |
-| softRend.cpp | Software renderer | | |
-| nullRend.cpp | Null renderer (no rendering output) | | |
 
 ## GD-ROM / Storage / Disc Images
 
