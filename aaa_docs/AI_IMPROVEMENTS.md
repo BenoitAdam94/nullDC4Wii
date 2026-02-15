@@ -30,7 +30,7 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| sh4_cpu.cpp | SH4 CPU core implementation | | |
+| sh4_cpu.cpp | SH4 CPU core implementation | 0.05 | improved with ClaudeAI |
 | sh4_interpreter.cpp | SH4 instruction interpreter | | |
 | sh4_fpu.cpp | SH4 floating point unit | | |
 | sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
