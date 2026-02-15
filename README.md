@@ -14,6 +14,7 @@ a fork from https://github.com/skmp/nullDCe
 - Clean Warning/notes during compilation I guess
 - Player 2 Gamecube/Wiimote (1rst step)
 - Player 3/4 Gamecube/Wiimote (2nd step)
+- Wii U gamepad support like WiiStation ?
 - Fishing Rod/USB Keyboard/Lightgun/Maracas support
 - Configuration adjustement for performance (FAST or ACCURATE)
 - Put external config file for controllers (controls.cfg)
@@ -114,7 +115,7 @@ Few games are runnable :
 - Castlevania (Demo)
 - Sega Tetris
 
-Wii Dynarec has been improved & completed by AI. Compile but doesn't run. See /archive folder
+Wii Dynarec has been improved & completed by AI. Compile but doesn't run (Black Screen). See /archive folder
 
 ## Compatibility
 
@@ -204,6 +205,8 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
+
 
 
 
