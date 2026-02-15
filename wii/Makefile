@@ -74,11 +74,13 @@ CXXFLAGS := $(CFLAGS)
 CXXFLAGS += -fno-exceptions
 CXXFLAGS += -fno-rtti
 
-# The optimization flags control how aggressively GCC optimizes your code:
-# CXXFLAGS += -g -O0  				# for debugging on dolphin using addr2line
-# CXXFLAGS += -O1  						# Basic optimization (Safe Default)
-# CXXFLAGS += -O2           # Baseline Safe Default (Industry Standard)
-CXXFLAGS += -O3           # Maximum optimization : that goes fast !! (/!\ INACCURATE SPEED, DC logo is way too fast)
+# The optimization flags control how aggressively GCC optimizes your code: (choose one)
+# !!! Remember to use vs_clean before vs_make if you change optimization flag !!!
+# CXXFLAGS += -g -O0  		# for debugging on dolphin using addr2line
+# CXXFLAGS += -O1  				# Basic optimization (Safe Default)
+# CXXFLAGS += -O2         # Baseline Safe Default (Industry Standard)
+CXXFLAGS += -O3           # Maximum & optimum optimization : that goes fast !!
+# CXXFLAGS += -Ofast      # Probably will cause bugs and freeze after 15 minutes of game
 
 # C++ Optimization Flags (Claude AI) (only enable for release builds, as they can make debugging difficult)
 
