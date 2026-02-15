@@ -70,7 +70,7 @@
 |------|----------|---------|----------------|
 | pvr_if.cpp | PVR interface layer | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvr_sb_regs.cpp | PVR system bus registers | 0.04 | Improved by ClaudeAI (no notable change) |
-| pvrLock.cpp | PVR synchronization mechanisms | | |
+| pvrLock.cpp | PVR synchronization mechanisms | 0.05 |Improved by ClaudeAI (gxRend.cpp also updated) - Makefile flto suggested |
 | drkPvr.cpp | PVR renderer backend | | |
 | Renderer_if.cpp | Renderer abstraction interface | | |
 | regs.cpp | PVR register definitions | | |
@@ -82,11 +82,7 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| glesRend.cpp | OpenGL ES renderer | | |
-| gsRend.cpp | Generic graphics renderer (PS2) | | |
 | gxRend.cpp | GX renderer (Wii / GameCube) | | Improvement failed for now (Blackscreen with white flashes). May need improvement at the same time with ta.cpp/ta.h/ta_const_df./ta_structus.h files also |
-| softRend.cpp | Software renderer | | |
-| nullRend.cpp | Null renderer (no rendering output) | | |
 
 ## GD-ROM / Storage / Disc Images
 
