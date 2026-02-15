@@ -105,7 +105,7 @@ vmu_save_A1.bin
 vmu_save_A2.bin
 
 
-## Status (04/02/2026)
+## Status (15/02/2026)
 
 launch on dolphin an real Wii with few FPS  
 game selector implemented  
@@ -113,6 +113,8 @@ game selector implemented
 Few games are runnable :
 - Castlevania (Demo)
 - Sega Tetris
+
+Wii Dynarec has been improved & completed by AI. Compile but doesn't run. See /archive folder
 
 ## Compatibility
 
@@ -202,6 +204,7 @@ NullDC team for the emulator
 skmp  
 Joseph Jordan - libiso  
 Xale00 (also know as Benoit Adam) - 2026 recompilation
+
 
 
 
