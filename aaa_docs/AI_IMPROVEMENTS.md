@@ -8,7 +8,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | main.cpp | Emulator entry point and initialization | 0.03 | Various AI improvement |
-| dc.cpp | Dreamcast core system orchestration | | |
+| dc.cpp | Dreamcast core system orchestration | 0.05 | Improved by ClaudeAI (fix memory leaks, add logging, improve error handling) |
 | nullDC.cpp | Main emulator implementation and loop | | |
 | common.cpp | Shared utilities and helpers | | |
 | config.cpp | Configuration handling | | |
