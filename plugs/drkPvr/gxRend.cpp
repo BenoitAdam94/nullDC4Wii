@@ -99,15 +99,25 @@ float vtx_max_Z;
 		u32 i;
 		f32 f;
 	};
-	u32 vramlock_ConvOffset32toOffset64(u32 offset32);
-	f32 vrf(u32 addr)
-	{
-		return *(f32*)&params.vram[vramlock_ConvOffset32toOffset64(addr)];
-	}
-	u32 vri(u32 addr)
-	{
-		return *(u32*)&params.vram[vramlock_ConvOffset32toOffset64(addr)];
-	}
+// Inline VRAM conversion for maximum performance
+static INLINE u32 fast_ConvOffset32toOffset64(u32 offset32)
+{
+	offset32 &= VRAM_MASK;
+	u32 bank = ((offset32 >> 22) & 0x1) << 2;
+	u32 lower = offset32 & 0x3;
+	u32 addr_shifted = (offset32 & 0x3FFFFC) << 1;
+	return addr_shifted | bank | lower;
+}
+
+f32 vrf(u32 addr)
+{
+	return *(f32*)&params.vram[fast_ConvOffset32toOffset64(addr)];
+}
+
+u32 vri(u32 addr)
+{
+	return *(u32*)&params.vram[fast_ConvOffset32toOffset64(addr)];
+}
 	static f32 CVT16UV(u32 uv)
 	{
 		uv<<=16;
