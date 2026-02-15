@@ -73,7 +73,24 @@ CFLAGS  += -ffast-math
 CXXFLAGS := $(CFLAGS)
 CXXFLAGS += -fno-exceptions
 CXXFLAGS += -fno-rtti
-CXXFLAGS += -g -O0  # for debugging on dolphin using addr2line
+
+# The optimization flags control how aggressively GCC optimizes your code:
+# CXXFLAGS += -g -O0  				# for debugging on dolphin using addr2line
+# CXXFLAGS += -O1  						# Basic optimization (Safe Default)
+# CXXFLAGS += -O2           # Baseline Safe Default (Industry Standard)
+CXXFLAGS += -O3           # Maximum optimization : that goes fast !! (/!\ INACCURATE SPEED, DC logo is way too fast)
+
+# C++ Optimization Flags (Claude AI) (only enable for release builds, as they can make debugging difficult)
+
+# CXXFLAGS += -fno-strict-aliasing # Prevents type-punning bugs (with O3)
+# CXXFLAGS += -fwrapv              # Defines integer overflow behavior (With O3)
+CXXFLAGS += -fomit-frame-pointer # Free up register
+CXXFLAGS += -funroll-loops       # Unroll instruction decode
+CXXFLAGS += -finline-functions   # Inline sh4op handlers
+
+# C++ Optional aggressive optimization (Claude AI)
+CXXFLAGS += -ffast-math          # If no FPU edge cases needed
+CXXFLAGS += -fno-exceptions      # Reduce code size
 
 # Linker Flags
 LDFLAGS  := -g $(MACHDEP) -Wl,-Map,$(TARGET).map
