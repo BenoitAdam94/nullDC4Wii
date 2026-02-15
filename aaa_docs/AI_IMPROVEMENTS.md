@@ -70,7 +70,7 @@
 |------|----------|---------|----------------|
 | pvr_if.cpp | PVR interface layer | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvr_sb_regs.cpp | PVR system bus registers | 0.04 | Improved by ClaudeAI (no notable change) |
-| pvrLock.cpp | PVR synchronization mechanisms | | |
+| pvrLock.cpp | PVR synchronization mechanisms | 0.05 |Improved by ClaudeAI (gxRend.cpp also updated) - Makefile flto suggested |
 | drkPvr.cpp | PVR renderer backend | | |
 | Renderer_if.cpp | Renderer abstraction interface | | |
 | regs.cpp | PVR register definitions | | |
