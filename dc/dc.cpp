@@ -1,7 +1,6 @@
 /*
 	Emulation Interface for very high level stuff, like starting/pausing emulation
-	This is not modified (much) from baseline, and thats why it looks so ugly.
-	Needs to be rewriten for ndce as it doesn't use multithreading
+	Rewritten for improved safety, clarity, and Wii compatibility
 */
 
 #include "mem/sh4_mem.h"
@@ -14,14 +13,15 @@
 #include "dc.h"
 #include "config/config.h"
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-bool dc_inited=false;
-bool dc_reseted=false;
-bool dc_Ignore_init=false;
-bool dc_running=false;
+// Global state flags
+static bool dc_inited = false;
+static bool dc_reseted = false;
+static bool dc_running = false;
 
-void _Reset_DC(bool Manual);
-
+// Emulator thread states
 enum emu_thread_state_t
 {
 	EMU_IDLE,
@@ -34,241 +34,441 @@ enum emu_thread_state_t
 	EMU_RESET,
 	EMU_RESET_MANUAL,
 };
+
+// Emulator thread return values
 enum emu_thread_rv_t
 {
 	RV_OK = 1,
-	RV_ERROR=2,
-
-	RV_EXEPTION=-2,
-	RV_WAIT =-1,
+	RV_ERROR = 2,
+	RV_EXCEPTION = -2,
+	RV_WAIT = -1,
 };
 
+static volatile emu_thread_state_t emu_thread_state = EMU_IDLE;
+static volatile emu_thread_rv_t emu_thread_rv = RV_WAIT;
 
-volatile emu_thread_state_t emu_thread_state=EMU_IDLE;
-volatile emu_thread_rv_t emu_thread_rv=RV_WAIT;
+// Forward declarations
+static void ResetDC(bool manual);
+static emu_thread_rv_t ExecuteEmulatorCommand(emu_thread_state_t cmd);
 
-emu_thread_rv_t emu_rtc(emu_thread_state_t cmd)
+/**
+ * Execute emulator command with state machine
+ * @param cmd Command to execute
+ * @return Result of command execution
+ */
+static emu_thread_rv_t ExecuteEmulatorCommand(emu_thread_state_t cmd)
 {
-	emu_thread_state=cmd;
-	while(emu_thread_state!=EMU_QUIT)
+	emu_thread_state = cmd;
+	
+	while (emu_thread_state != EMU_QUIT)
 	{
-		switch(emu_thread_state)
+		switch (emu_thread_state)
 		{
 		case EMU_IDLE:
 			return emu_thread_rv;
-			break;
 
 		case EMU_NOP:
-			emu_thread_state=EMU_IDLE;
-
-			emu_thread_rv=RV_OK;
+			emu_thread_state = EMU_IDLE;
+			emu_thread_rv = RV_OK;
 			break;
 
 		case EMU_CPU_START:
-			emu_thread_state=EMU_IDLE;
-			emu_thread_rv=RV_OK;
+			emu_thread_state = EMU_IDLE;
+			emu_thread_rv = RV_OK;
+			dc_running = true;
 			sh4_cpu.Run();
+			dc_running = false;
 			break;
+
 		case EMU_SOFTRESET:
-			emu_thread_state=EMU_CPU_START;
-			_Reset_DC(true);
+			emu_thread_state = EMU_CPU_START;
+			ResetDC(true);
 			break;
 
 		case EMU_INIT:
-			emu_thread_state=EMU_IDLE;
-
+			emu_thread_state = EMU_IDLE;
 
 			if (!plugins_Init())
-			{ 
-				printf("Emulation thread : Plugin init failed\n"); 	
+			{
+				printf("ERROR: Plugin initialization failed\n");
 				plugins_Term();
-				emu_thread_rv=RV_ERROR;
+				emu_thread_rv = RV_ERROR;
 				break;
 			}
+
 			sh4_cpu.Init();
-
-
 			mem_Init();
 			pvr_Init();
 			aica_Init();
 			mem_map_defualt();
 
-			emu_thread_rv=RV_OK;
+			emu_thread_rv = RV_OK;
 			break;
 
 		case EMU_TERM:
-			emu_thread_state=EMU_IDLE;
+			emu_thread_state = EMU_IDLE;
 
+			// Terminate in reverse order of initialization
 			aica_Term();
 			pvr_Term();
 			mem_Term();
 			sh4_cpu.Term();
 			plugins_Term();
 
-
-			emu_thread_rv=RV_OK;
+			emu_thread_rv = RV_OK;
 			break;
 
 		case EMU_RESET:
-			emu_thread_state=EMU_IDLE;
-
-			_Reset_DC(false);
-
-			emu_thread_rv=RV_OK;
+			emu_thread_state = EMU_IDLE;
+			ResetDC(false);
+			emu_thread_rv = RV_OK;
 			break;
 
 		case EMU_RESET_MANUAL:
-			emu_thread_state=EMU_IDLE;
-
-			_Reset_DC(true);
-
-			//when we boot from ip.bin , it's nice to have it seted up
-
-			emu_thread_rv=RV_OK;
+			emu_thread_state = EMU_IDLE;
+			ResetDC(true);
+			emu_thread_rv = RV_OK;
 			break;
+
 		case EMU_QUIT:
-			emu_thread_rv=RV_OK;
+			emu_thread_rv = RV_OK;
 			break;
 
+		default:
+			printf("ERROR: Unknown emulator state: %d\n", emu_thread_state);
+			emu_thread_state = EMU_IDLE;
+			emu_thread_rv = RV_ERROR;
+			break;
 		}
 	}
+	
 	return emu_thread_rv;
 }
 
-
-//Init mainly means allocate
-//Reset is called before first run
-//Init is called olny once
-//When Init is called , cpu interface and all plugins configurations myst be finished
-//Plugins/Cpu core must not change after this call is made.
+/**
+ * Initialize the Dreamcast emulator
+ * @return true on success, false on failure
+ */
 bool Init_DC()
 {
 	if (dc_inited)
+	{
+		printf("WARNING: DC already initialized\n");
 		return true;
+	}
+
+	printf("Initializing Dreamcast emulator...\n");
 
 	if (!plugins_Load())
+	{
+		printf("ERROR: Failed to load plugins\n");
 		return false;
+	}
 
-	if (emu_rtc(EMU_INIT)!=RV_OK)
+	if (ExecuteEmulatorCommand(EMU_INIT) != RV_OK)
+	{
+		printf("ERROR: Emulator initialization failed\n");
 		return false;
+	}
 
-	dc_inited=true;
+	dc_inited = true;
+	printf("Dreamcast emulator initialized successfully\n");
 	return true;
 }
-void _Reset_DC(bool Manual)
+
+/**
+ * Internal reset function
+ * @param manual true for manual reset, false for automatic
+ */
+static void ResetDC(bool manual)
 {
-	plugins_Reset(Manual);
-	sh4_cpu.Reset(Manual);
-	mem_Reset(Manual);
-	pvr_Reset(Manual);
-	aica_Reset(Manual);
+	printf("Resetting DC (%s)...\n", manual ? "manual" : "auto");
+	
+	plugins_Reset(manual);
+	sh4_cpu.Reset(manual);
+	mem_Reset(manual);
+	pvr_Reset(manual);
+	aica_Reset(manual);
 }
+
+/**
+ * Perform a soft reset (can be called while CPU is running)
+ * @return true if reset was initiated, false otherwise
+ */
 bool SoftReset_DC()
 {
+	if (!dc_inited)
+	{
+		printf("ERROR: Cannot soft reset - DC not initialized\n");
+		return false;
+	}
+
 	if (sh4_cpu.IsCpuRunning())
 	{
+		printf("Performing soft reset...\n");
 		sh4_cpu.Stop();
-		emu_rtc(EMU_SOFTRESET);
+		ExecuteEmulatorCommand(EMU_SOFTRESET);
 		return true;
 	}
-	else
-		return false;
+	
+	printf("WARNING: Soft reset requested but CPU not running\n");
+	return false;
 }
-bool Reset_DC(bool Manual)
+
+/**
+ * Reset the Dreamcast emulator
+ * @param manual true for manual reset, false for automatic
+ * @return true on success, false on failure
+ */
+bool Reset_DC(bool manual)
 {
-	if (!dc_inited || sh4_cpu.IsCpuRunning())
+	if (!dc_inited)
+	{
+		printf("ERROR: Cannot reset - DC not initialized\n");
 		return false;
+	}
 
-	if (Manual)
-		emu_rtc(EMU_RESET_MANUAL);
+	if (sh4_cpu.IsCpuRunning())
+	{
+		printf("ERROR: Cannot reset while CPU is running\n");
+		return false;
+	}
+
+	if (manual)
+		ExecuteEmulatorCommand(EMU_RESET_MANUAL);
 	else
-		emu_rtc(EMU_RESET);
+		ExecuteEmulatorCommand(EMU_RESET);
 
-	dc_reseted=true;
+	dc_reseted = true;
 	return true;
 }
 
+/**
+ * Terminate the Dreamcast emulator
+ */
 void Term_DC()
 {
-	if (dc_inited)
-	{
-		Stop_DC();
-		emu_rtc(EMU_TERM);
-		emu_rtc(EMU_QUIT);
-		dc_inited=false;
-	}
+	if (!dc_inited)
+		return;
+
+	printf("Terminating Dreamcast emulator...\n");
+	
+	Stop_DC();
+	ExecuteEmulatorCommand(EMU_TERM);
+	ExecuteEmulatorCommand(EMU_QUIT);
+	
+	dc_inited = false;
+	dc_reseted = false;
+	dc_running = false;
+	
+	printf("Dreamcast emulator terminated\n");
 }
 
+/**
+ * Helper function to safely build file paths
+ * @param base_path Base directory path
+ * @param filename File to append
+ * @return Allocated string with full path (caller must free)
+ */
+static wchar* BuildFilePath(const wchar* base_path, const char* filename)
+{
+	if (!base_path || !filename)
+		return NULL;
+
+	size_t base_len = strlen(base_path);
+	size_t file_len = strlen(filename);
+	
+	// Allocate space for base + filename + null terminator
+	wchar* full_path = (wchar*)malloc(base_len + file_len + 1);
+	if (!full_path)
+	{
+		printf("ERROR: Failed to allocate memory for file path\n");
+		return NULL;
+	}
+
+	// Copy base path and append filename
+	strcpy(full_path, base_path);
+	strcat(full_path, filename);
+
+	return full_path;
+}
+
+/**
+ * Load BIOS and system files
+ */
 void LoadBiosFiles()
 {
-	wchar* temp_path=GetEmuPath("data/");
-	u32 pl=(u32)strlen(temp_path);
+	printf("Loading BIOS files...\n");
 
-	strcat(temp_path,"dc_boot.bin");
-
-	if (!LoadFileToSh4Bootrom(temp_path))
+	wchar* base_path = GetEmuPath("data/");
+	if (!base_path)
 	{
-
+		printf("ERROR: Failed to get emulator data path\n");
+		return;
 	}
 
-	temp_path[pl]=0;
-	//try to load saved flash
-	strcat(temp_path,"dc_flash_wb.bin");
-	if (!LoadFileToSh4Flashrom(temp_path))
+	bool any_loaded = false;
+
+	// Load boot ROM
+	wchar* boot_path = BuildFilePath(base_path, "dc_boot.bin");
+	if (boot_path)
 	{
-		//not found , load default :)
-		temp_path[pl]=0;
-		strcat(temp_path,"dc_flash.bin");
-		LoadFileToSh4Flashrom(temp_path);
+		if (LoadFileToSh4Bootrom(boot_path))
+		{
+			printf("Loaded dc_boot.bin\n");
+			any_loaded = true;
+		}
+		else
+		{
+			printf("WARNING: Failed to load dc_boot.bin\n");
+		}
+		free(boot_path);
 	}
-	
 
-	temp_path[pl]=0;
-	strcat(temp_path,"syscalls.bin");
-	LoadFileToSh4Mem(0x00000, temp_path);
+	// Try to load saved flash first, fallback to default
+	wchar* flash_path = BuildFilePath(base_path, "dc_flash_wb.bin");
+	if (flash_path)
+	{
+		if (LoadFileToSh4Flashrom(flash_path))
+		{
+			printf("Loaded dc_flash_wb.bin (writeback)\n");
+			any_loaded = true;
+		}
+		else
+		{
+			printf("No writeback flash found, trying default...\n");
+			free(flash_path);
+			
+			flash_path = BuildFilePath(base_path, "dc_flash.bin");
+			if (flash_path)
+			{
+				if (LoadFileToSh4Flashrom(flash_path))
+				{
+					printf("Loaded dc_flash.bin\n");
+					any_loaded = true;
+				}
+				else
+				{
+					printf("WARNING: Failed to load dc_flash.bin\n");
+				}
+			}
+		}
+		if (flash_path)
+			free(flash_path);
+	}
 
-	temp_path[pl]=0;
-	strcat(temp_path,"IP.bin");
-	LoadFileToSh4Mem(0x08000, temp_path);
-	temp_path[pl]=0;
+	// Load syscalls
+	wchar* syscalls_path = BuildFilePath(base_path, "syscalls.bin");
+	if (syscalls_path)
+	{
+		if (LoadFileToSh4Mem(0x00000, syscalls_path))
+		{
+			printf("Loaded syscalls.bin\n");
+			any_loaded = true;
+		}
+		else
+		{
+			printf("WARNING: Failed to load syscalls.bin\n");
+		}
+		free(syscalls_path);
+	}
 
+	// Load IP.BIN
+	wchar* ip_path = BuildFilePath(base_path, "IP.bin");
+	if (ip_path)
+	{
+		if (LoadFileToSh4Mem(0x08000, ip_path))
+		{
+			printf("Loaded IP.bin\n");
+			any_loaded = true;
+		}
+		else
+		{
+			printf("WARNING: Failed to load IP.bin\n");
+		}
+		free(ip_path);
+	}
 
-	free(temp_path);
+	free(base_path);
+
+	if (any_loaded)
+		printf("BIOS files loaded\n");
+	else
+		printf("WARNING: No BIOS files were loaded successfully\n");
 }
 
+/**
+ * Start the Dreamcast emulator
+ */
 void Start_DC()
 {
-	if (!sh4_cpu.IsCpuRunning())
-	{
-		if (!dc_inited)
-		{
-			if (!Init_DC())
-				return;
-		}
-		if (!dc_reseted)
-		{
-			Reset_DC(false);//hard reset kthx
-		}
-		
-		verify(emu_rtc(EMU_CPU_START)==RV_OK);
+	printf("Starting Dreamcast emulator...\n");
 
-		//sh4_cpu.Run();
+	if (sh4_cpu.IsCpuRunning())
+	{
+		printf("WARNING: CPU already running\n");
+		return;
 	}
+
+	if (!dc_inited)
+	{
+		if (!Init_DC())
+		{
+			printf("ERROR: Failed to initialize DC\n");
+			return;
+		}
+	}
+
+	if (!dc_reseted)
+	{
+		printf("Performing initial reset...\n");
+		if (!Reset_DC(false))
+		{
+			printf("ERROR: Failed to reset DC\n");
+			return;
+		}
+	}
+
+	if (ExecuteEmulatorCommand(EMU_CPU_START) != RV_OK)
+	{
+		printf("ERROR: Failed to start CPU\n");
+		return;
+	}
+
+	printf("Dreamcast emulator started\n");
 }
+
+/**
+ * Stop the Dreamcast emulator
+ */
 void Stop_DC()
 {
-	if (dc_inited)//sh4_cpu may not be inited ;)
+	if (!dc_inited)
+		return;
+
+	if (sh4_cpu.IsCpuRunning())
 	{
-		if (sh4_cpu.IsCpuRunning())
-		{
-			sh4_cpu.Stop();
-			emu_rtc(EMU_NOP);
-		}
+		printf("Stopping Dreamcast emulator...\n");
+		sh4_cpu.Stop();
+		ExecuteEmulatorCommand(EMU_NOP);
+		printf("Dreamcast emulator stopped\n");
 	}
 }
 
+/**
+ * Check if DC is initialized
+ * @return true if initialized, false otherwise
+ */
 bool IsDCInited()
 {
 	return dc_inited;
 }
 
+/**
+ * Check if DC is running
+ * @return true if running, false otherwise
+ */
+bool IsDCRunning()
+{
+	return dc_running;
+}
