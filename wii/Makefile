@@ -39,6 +39,13 @@ CXXFLAGS += -g -O0 # for debugging on dolphin using addr2line
 
 LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(TARGET).map
 
+# Enable link-time optimization for cross-module inlining (pvrLock optimization)
+# (compilation didnt worked but keeping for now for info)
+# CFLAGS += -flto
+# LDFLAGS += -flto
+# Optional: More aggressive optimization
+# CFLAGS += -O3 -fomit-frame-pointer
+
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
