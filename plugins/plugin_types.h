@@ -16,8 +16,8 @@
 	#define BUILD_DREAMCAST 1
 	
 	//DC : 16 mb ram, 8 mb vram, 2 mb aram, 2 mb bios, 128k flash
-	#define RAM_SIZE (16*1024*1024)
-	#define VRAM_SIZE (8*1024*1024)
+	#define RAM_SIZE (16*1024*1024) // 16MB RAM
+	#define VRAM_SIZE (8*1024*1024) // 8MB VRAM
 	#define ARAM_SIZE (2*1024*1024)
 	#define BIOS_SIZE (2*1024*1024)
 
@@ -26,12 +26,12 @@
 #endif
 
 #define RAM_MASK	(RAM_SIZE-1)
-#define VRAM_MASK	(VRAM_SIZE-1)
+#define VRAM_MASK	(VRAM_SIZE-1) // 0x7FFFFF
 #define ARAM_MASK	(ARAM_SIZE-1)
 #define BIOS_MASK	(BIOS_SIZE-1)
 #define FLASH_MASK	(FLASH_SIZE-1)
 
-#define SH4_CLOCK (200*1000*1000)
+#define SH4_CLOCK (200*1000*1000) // 200 Mhz
 
 enum ndc_error_codes
 {
