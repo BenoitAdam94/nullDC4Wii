@@ -212,6 +212,10 @@ Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 
 All together, let's Cast the Dream.
 
+### Special no thanks
+
+To all people not believing in this project
+
 
 
 
