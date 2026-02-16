@@ -11,6 +11,20 @@
 #include <time.h>
 #include <gccore.h> // needed, or VScode will show errors
 
+// ============================================================================
+// GLOBAL EMULATOR ACCURACY
+// ============================================================================
+// Global variable to store user's FPU accuracy choice
+int g_accuracy_mode = 2; // 0=Fast, 1=Normal, 2=Accurate (default)
+
+// These will be used by sh4_fpu.cpp ... (put additional files here)
+extern "C" {
+  int get_accuracy_mode() {
+    return g_accuracy_mode;
+  }
+}
+// ============================================================================
+
 // Global variables
 struct FileEntry
 {
@@ -149,6 +163,86 @@ void listFilesInDirectory(const char *dirPath)
   }
 }
 
+// ============================================================================
+// ACCURACY SELECTION MENU
+// ============================================================================
+void displayAccuracyMenu()
+{
+  int selectedOption = g_accuracy_mode; // Start with current setting
+  
+  while (true)
+  {
+    printf("\033[2J\033[H"); // Clear Screen
+    printf("          FPU ACCURACY SETTINGS - NullDC4Wii               \n");
+    printf(" \n");
+    printf("Select accuracy mode:\n\n");
+    // Option 0: FAST
+    if (selectedOption == 0)
+      printf(" > ");
+    else
+      printf("   ");
+    printf("FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
+    
+    // Option 1: NORMAL
+    if (selectedOption == 1)
+      printf(" > ");
+    else
+      printf("   ");
+    printf("NORMAL - Balanced : \n");
+    
+    // Option 2: ACCURATE
+    if (selectedOption == 2)
+      printf(" > ");
+    else
+      printf("   ");
+    printf("ACCURATE - Maximum Accuracy (closest to real hardware) \n");
+    printf(" \n");
+    printf("Current setting: ");
+    switch(g_accuracy_mode) {
+      case 0: printf("FAST\n"); break;
+      case 1: printf("NORMAL\n"); break;
+      case 2: printf("ACCURATE\n"); break;
+    }
+
+    printf(" \n");
+    printf(" \n");
+    printf(" \n");
+    printf(" \n");
+    
+    printf("UP/DOWN: Select option | A: Confirm | B: Back\n");
+    printf("\nNote: This global accuracy.\n");
+    printf("      Change only if you experience issues or need more speed.\n");
+    
+    WPAD_ScanPads();
+    u32 pressed = WPAD_ButtonsDown(0);
+    
+    if (pressed & WPAD_BUTTON_UP)
+    {
+      if (selectedOption > 0)
+        selectedOption--;
+    }
+    else if (pressed & WPAD_BUTTON_DOWN)
+    {
+      if (selectedOption < 2)
+        selectedOption++;
+    }
+    else if (pressed & WPAD_BUTTON_A)
+    {
+      // Save selection and exit
+      g_accuracy_mode = selectedOption;
+      return;
+    }
+    else if (pressed & WPAD_BUTTON_B)
+    {
+      // Cancel and exit without saving
+      return;
+    }
+    
+    usleep(20000);
+    VIDEO_WaitVSync();
+  }
+}
+
 // Function to display menu and allow selection with Wiimote
 int displayMenuAndSelectFile()
 {
@@ -160,7 +254,16 @@ int displayMenuAndSelectFile()
     printf("\033[2J\033[H"); // Clear Screen
     printf("\nNullDC4Wii - Alpha 0.06\n");
     printf("Current directory: %s\n", currentPath);
-    printf("Select a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n\n");
+    printf("Select a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n");
+    
+    // Display current FPU accuracy setting
+    printf("FPU Accuracy: ");
+    switch(g_accuracy_mode) {
+      case 0: printf("FAST"); break;
+      case 1: printf("NORMAL"); break;
+      case 2: printf("ACCURATE"); break;
+    }
+    printf(" (Press 2 to change)\n\n");
 
     // Calculate pagination
     int totalPages = (fileCount + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
@@ -200,6 +303,13 @@ int displayMenuAndSelectFile()
     if (pressed & WPAD_BUTTON_1)
     {
       return -2; // Boot to BIOS
+    }
+    if (pressed & WPAD_BUTTON_2)
+    {
+      // Open FPU accuracy menu
+      displayAccuracyMenu();
+      // After returning, continue showing file menu
+      continue;
     }
     if (pressed & WPAD_BUTTON_UP)
     {
@@ -369,6 +479,12 @@ int main(int argc, wchar *argv[])
       // Boot to BIOS (button 1 pressed)
       printf("\x1b[2J\x1b[H"); // Clear Screen
       printf("Booting to BIOS (no disc)...\n");
+      printf("FPU Accuracy: ");
+      switch(g_accuracy_mode) {
+        case 0: printf("FAST\n"); break;
+        case 1: printf("NORMAL\n"); break;
+        case 2: printf("ACCURATE\n"); break;
+      }
       strcpy(selectedFilePath, ""); // No File
     }
     else if (selectedIndex >= 0)
@@ -377,6 +493,12 @@ int main(int argc, wchar *argv[])
       strcpy(selectedFilePath, fileList[selectedIndex].fullPath);
       printf("\x1b[2J\x1b[H"); // Clear Screen
       printf("Selected file: %s\n", selectedFilePath);
+      printf("FPU Accuracy: ");
+      switch(g_accuracy_mode) {
+        case 0: printf("FAST\n"); break;
+        case 1: printf("NORMAL\n"); break;
+        case 2: printf("ACCURATE\n"); break;
+      }
     }
     else
     {
