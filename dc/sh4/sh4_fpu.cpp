@@ -1,5 +1,5 @@
 /*
-Second step of optimisation after first step with Claude AI
+Third step of optimisation
 
 Future Optimization Opportunities:
   Paired Singles: Wii's PowerPC has paired-single instructions that could accelerate vector ops
@@ -8,7 +8,18 @@ Future Optimization Opportunities:
 
 */
 
-int emulator_accuracy = 0; // 0 == FAST / 1 == NORMAL / 2 == ACCURATE
+// ============================================================================
+// RUNTIME - ACCURACY SELECTION
+// ============================================================================
+
+// External function to get the user's selected accuracy mode
+// This is defined in main.cpp
+extern "C" int get_accuracy_mode();
+
+// Helper macros to check current accuracy mode
+#define FAST() (get_accuracy_mode() == 0)
+#define NORMAL() (get_accuracy_mode() == 1)
+#define ACCURATE() (get_accuracy_mode() == 2)
 
 #include "types.h"
 #include <math.h>
@@ -513,28 +524,35 @@ sh4op(i1111_nnmm_1110_1101)
 
   if (fpscr.PR == 0)
   {
-    if (emulator_accuracy == 0 || emulator_accuracy == 1)
+    if (ACCURATE())
     {
-      // Original code
-      float idp;
-      idp = fr[n + 0] * fr[m + 0];
-      idp += fr[n + 1] * fr[m + 1];
-      idp += fr[n + 2] * fr[m + 2];
-      idp += fr[n + 3] * fr[m + 3];
-
-      CHECK_FPU_32(idp);
-      fr[n + 3] = idp;
-    }
-
-    if (emulator_accuracy == 2)
-    {
-      // Use double precision for intermediate calculations (Flycast improvement)
+      // ACCURATE mode: Use double precision for intermediate calculations
       double idp = (double)fr[n + 0] * fr[m + 0];
       idp += (double)fr[n + 1] * fr[m + 1];
       idp += (double)fr[n + 2] * fr[m + 2];
       idp += (double)fr[n + 3] * fr[m + 3];
 
       fr[n + 3] = fixNaN((float)idp);
+    }
+    else if (NORMAL())
+    {
+      // NORMAL mode: Use double precision with NaN fixing
+      double idp = (double)fr[n + 0] * fr[m + 0];
+      idp += (double)fr[n + 1] * fr[m + 1];
+      idp += (double)fr[n + 2] * fr[m + 2];
+      idp += (double)fr[n + 3] * fr[m + 3];
+
+      fr[n + 3] = fixNaN((float)idp);
+    }
+    else // FAST mode
+    {
+      // FAST mode: Use float only for maximum speed
+      float idp = fr[n + 0] * fr[m + 0];
+      idp += fr[n + 1] * fr[m + 1];
+      idp += fr[n + 2] * fr[m + 2];
+      idp += fr[n + 3] * fr[m + 3];
+
+      fr[n + 3] = idp;
     }
   }
   else
@@ -722,31 +740,62 @@ sh4op(i1111_nn01_1111_1101)
 
   if (fpscr.PR == 0)
   {
-    // Flycast improvement: Use double precision for intermediate calculations
-    double v1 = (double)xf[0] * fr[n + 0] +
-                (double)xf[4] * fr[n + 1] +
-                (double)xf[8] * fr[n + 2] +
-                (double)xf[12] * fr[n + 3];
+    if (ACCURATE() || NORMAL())
+    {
+      // ACCURATE/NORMAL mode: Use double precision for intermediate calculations
+      double v1 = (double)xf[0] * fr[n + 0] +
+                  (double)xf[4] * fr[n + 1] +
+                  (double)xf[8] * fr[n + 2] +
+                  (double)xf[12] * fr[n + 3];
 
-    double v2 = (double)xf[1] * fr[n + 0] +
-                (double)xf[5] * fr[n + 1] +
-                (double)xf[9] * fr[n + 2] +
-                (double)xf[13] * fr[n + 3];
+      double v2 = (double)xf[1] * fr[n + 0] +
+                  (double)xf[5] * fr[n + 1] +
+                  (double)xf[9] * fr[n + 2] +
+                  (double)xf[13] * fr[n + 3];
 
-    double v3 = (double)xf[2] * fr[n + 0] +
-                (double)xf[6] * fr[n + 1] +
-                (double)xf[10] * fr[n + 2] +
-                (double)xf[14] * fr[n + 3];
+      double v3 = (double)xf[2] * fr[n + 0] +
+                  (double)xf[6] * fr[n + 1] +
+                  (double)xf[10] * fr[n + 2] +
+                  (double)xf[14] * fr[n + 3];
 
-    double v4 = (double)xf[3] * fr[n + 0] +
-                (double)xf[7] * fr[n + 1] +
-                (double)xf[11] * fr[n + 2] +
-                (double)xf[15] * fr[n + 3];
+      double v4 = (double)xf[3] * fr[n + 0] +
+                  (double)xf[7] * fr[n + 1] +
+                  (double)xf[11] * fr[n + 2] +
+                  (double)xf[15] * fr[n + 3];
 
-    fr[n + 0] = fixNaN((float)v1);
-    fr[n + 1] = fixNaN((float)v2);
-    fr[n + 2] = fixNaN((float)v3);
-    fr[n + 3] = fixNaN((float)v4);
+      fr[n + 0] = fixNaN((float)v1);
+      fr[n + 1] = fixNaN((float)v2);
+      fr[n + 2] = fixNaN((float)v3);
+      fr[n + 3] = fixNaN((float)v4);
+    }
+    else // FAST mode
+    {
+      // FAST mode: Use float only
+      float v1 = xf[0] * fr[n + 0] +
+                 xf[4] * fr[n + 1] +
+                 xf[8] * fr[n + 2] +
+                 xf[12] * fr[n + 3];
+
+      float v2 = xf[1] * fr[n + 0] +
+                 xf[5] * fr[n + 1] +
+                 xf[9] * fr[n + 2] +
+                 xf[13] * fr[n + 3];
+
+      float v3 = xf[2] * fr[n + 0] +
+                 xf[6] * fr[n + 1] +
+                 xf[10] * fr[n + 2] +
+                 xf[14] * fr[n + 3];
+
+      float v4 = xf[3] * fr[n + 0] +
+                 xf[7] * fr[n + 1] +
+                 xf[11] * fr[n + 2] +
+                 xf[15] * fr[n + 3];
+
+      fr[n + 0] = v1;
+      fr[n + 1] = v2;
+      fr[n + 2] = v3;
+      fr[n + 3] = v4;
+    }
   }
   else
     iNimp("FTRV in dp mode");
