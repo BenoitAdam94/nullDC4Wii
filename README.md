@@ -16,7 +16,6 @@ a fork from https://github.com/skmp/nullDCe
 - Player 3/4 Gamecube/Wiimote (2nd step)
 - Wii U gamepad support like WiiStation ?
 - Fishing Rod/USB Keyboard/Lightgun/Maracas support
-- Configuration adjustement for performance (FAST or ACCURATE)
 - Put external config file for controllers (controls.cfg)
 - Clean Clean Clean
 - Optimize Optimize Optimize
@@ -24,9 +23,12 @@ a fork from https://github.com/skmp/nullDCe
 
 ### Developer (Hard)
 
+- Coding routine adjustement for performance (FAST/BALANCED/ACCURATE)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
+- 50/60 ips for PAL/NTSC ?
+- 4/3 and fullscreen support
 - Sound implementation
 
 ## Installation
@@ -211,6 +213,12 @@ Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 - Welcome to the IA-age guys and good luck everyone.
 
 All together, let's Cast the Dream.
+
+### Special no thanks
+
+To all people not believing in this project
+
+
 
 
 
