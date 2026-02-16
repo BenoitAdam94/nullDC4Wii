@@ -260,7 +260,9 @@ u32 GX_TexOffs(u32 x, u32 y, u32 w)
 
   return (y * w + x) * 16 + (ys * 4 + xs);
 }
-/*
+
+// converts Dreamcast "twiddled" textures to Wii GX block format.
+// this section was previously commented
 void fastcall texture_TW(u8* p_out,u8* p_in,u32 Width,u32 Height)
 {
   u16* dst=(u16*)p_out;
@@ -280,39 +282,8 @@ void fastcall texture_TW(u8* p_out,u8* p_in,u32 Width,u32 Height)
     }
   }
 }
-*/
-/*
-void SetTextureParams(PolyParam* mod)
-{
-  //whuzz!
-  GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
-  u32 tex_addr=(mod->tcw.NO_PAL.TexAddr<<3)&VRAM_MASK;
-  u32* ptex=(u32*)&params.vram[tex_addr];
-  TextureCacheDesc* pbuff=((TextureCacheDesc*)&vram_buffer[tex_addr*2])-1;
 
-  if (*ptex!=0xDEADBEEF || pbuff->addr!=tex_addr)
-  {
-    u32* dst=(u32*)&pbuff[1];
-    u32 sz=(8<<mod->tsp.TexU) * (8<<mod->tsp.TexV)*2;
-
-    if (mod->tcw.NO_PAL.ScanOrder)
-      memcpy(dst,ptex,sz);
-    else
-      texture_TW((u8*)dst,(u8*)ptex,8<<mod->tsp.TexU,8<<mod->tsp.TexV);
-
-    //setup ..
-    GX_InitTexObj(&pbuff->tex,dst,8<<mod->tsp.TexU,8<<mod->tsp.TexV
-      ,PVR2GX[mod->tcw.NO_PAL.PixelFmt],GX_REPEAT,GX_REPEAT,GX_FALSE);
-
-    printf("Texture:%d %d %dx%d %08X --> %08X\n",mod->tcw.NO_PAL.PixelFmt,mod->tcw.NO_PAL.ScanOrder,8<<mod->tsp.TexU,8<<mod->tsp.TexV,tex_addr,dst);
-    pbuff->addr=tex_addr;
-    *ptex=0xDEADBEEF;
-  }
-
-  GX_LoadTexObj(&pbuff->tex,GX_TEXMAP0);
-}
-*/
 
 // Macros for extracting color channels from Dreamcast-specific pixel formats.
 #define ABGR4444_A(x) ((x) >> 12)
@@ -1012,8 +983,20 @@ static void SetTextureParams(PolyParam *mod)
     //			sceGuTexImage(0, w>512?512:w, h>512?512:h, w,
     //				params.vram + sa );
 
+    // Init Text Object
     GX_InitTexObj(&pbuff->tex, dst, w, h, FMT, TexUV(mod->tsp.FlipU, mod->tsp.ClampU),
                   TexUV(mod->tsp.FlipV, mod->tsp.ClampV), GX_FALSE);
+    // Init Text Object LOD (Level Of Detail)
+    GX_InitTexObjLOD(&pbuff->tex,
+                 GX_LINEAR,      // minification filter
+                 GX_LINEAR,      // magnification filter  
+                 0.0f,           // min LOD
+                 0.0f,           // max LOD
+                 0.0f,           // LOD bias: negative = sharper
+                 GX_DISABLE,     // bias clamp
+                 GX_DISABLE,     // edge LOD
+                 GX_ANISO_1);    // anisotropic filtering 1 FAST 2 NORMAL 4 ACCURATE
+                  
     *ptex = 0xDEADBEEF;
     printf("Texture:%d %d %dx%d %08X --> %08X\n", mod->tcw.NO_PAL.PixelFmt, mod->tcw.NO_PAL.ScanOrder, 8 << mod->tsp.TexU, 8 << mod->tsp.TexV, tex_addr, (u32)dst);
   }
