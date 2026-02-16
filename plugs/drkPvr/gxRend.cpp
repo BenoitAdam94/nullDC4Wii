@@ -6,19 +6,24 @@
 #include <malloc.h>
 #include "regs.h"
 
+// The FIFO is the command buffer for the GX hardware. 
+// 256KB is a standard size for most homebrew applications.
 #define DEFAULT_FIFO_SIZE (256 * 1024)
 
 using namespace TASplitter;
 
 u8 *vram_buffer;
 
+// Double buffering setup: frameBuffer[0] and [1] prevent screen tearing.
 static void *frameBuffer[2] = {NULL, NULL};
 static GXRModeObj *rmode;
 static u8 gp_fifo[DEFAULT_FIFO_SIZE] __attribute__((aligned(32)));
-static int fb = 0; // ADD THIS LINE!
+static int fb = 0; // Current framebuffer index
 
+// Macro to convert ABGR (standard for some PC/PVR formats) to RGBA/Other
 #define ABGR8888(x) ((x & 0xFF00FF00) | ((x >> 16) & 0xFF) | ((x & 0xFF) << 16))
 /*
+  Texture Format Conversion Notes:
   FMT: 1555 DTP    -> RGB5A3 DP
      4444 DTP    -> RGB5A3 DP
 
@@ -28,13 +33,16 @@ static int fb = 0; // ADD THIS LINE!
 
 */
 
+// Vertex structure used to feed the Wii's GX pipeline.
 struct Vertex
 {
-  float u, v;
-  unsigned int col;
-  float x, y, z;
+  float u, v;        // Texture coordinates
+  unsigned int col;  // Vertex color
+  float x, y, z;     // 3D coordinates
 };
 
+// Structures to manage the internal drawing lists and state 
+// passed from the Dreamcast's Tile Accelerator.
 struct VertexList
 {
   union
@@ -60,8 +68,11 @@ struct TextureCacheDesc
   u32 addr;
   bool has_pal;
 };
+
 void VBlank() {}
 
+// Static arrays for vertex data to avoid frequent heap allocations.
+// Limited by the Wii's MEM1/MEM2 availability.
 Vertex ALIGN16 vertices[42 * 1024]; // 42*1024 = Wii memory limit
 VertexList ALIGN16 lists[8 * 1024];
 PolyParam ALIGN16 listModes[8 * 1024];
@@ -91,12 +102,15 @@ union _ISP_BACKGND_T_type
   };
   u32 full;
 };
+
 union _ISP_BACKGND_D_type
 {
   u32 i;
   f32 f;
 };
-// Inline VRAM conversion for maximum performance
+
+// Conversion logic to translate Dreamcast VRAM addressing (32-bit interleaved)
+// into a linear 64-bit bank structure compatible with the emulator's memory map.
 static INLINE u32 fast_ConvOffset32toOffset64(u32 offset32)
 {
   offset32 &= VRAM_MASK;
@@ -106,6 +120,7 @@ static INLINE u32 fast_ConvOffset32toOffset64(u32 offset32)
   return addr_shifted | bank | lower;
 }
 
+// Helpers to read float/int values directly from the virtualized PVR VRAM.
 f32 vrf(u32 addr)
 {
   return *(f32 *)&params.vram[fast_ConvOffset32toOffset64(addr)];
@@ -115,11 +130,15 @@ u32 vri(u32 addr)
 {
   return *(u32 *)&params.vram[fast_ConvOffset32toOffset64(addr)];
 }
+
+// Converts 16-bit PVR UV coordinates to 32-bit floats.
 static f32 CVT16UV(u32 uv)
 {
   uv <<= 16;
   return *(f32 *)&uv;
 }
+
+// Primary decoder that translates raw PVR vertex data into the 'Vertex' struct.
 void decode_pvr_vertex(u32 base, u32 ptr, Vertex *cv)
 {
   // ISP
@@ -135,6 +154,7 @@ void decode_pvr_vertex(u32 base, u32 ptr, Vertex *cv)
   (void)tsp;
   (void)tcw; // Currently unused but may be needed later
 
+  // Read coordinates: PVR positions are typically already transformed.
   // XYZ
   // UV
   // Base Col
@@ -148,6 +168,7 @@ void decode_pvr_vertex(u32 base, u32 ptr, Vertex *cv)
   cv->z = vrf(ptr);
   ptr += 4;
 
+  // Handle Texture Coordinates (UVs)
   if (isp.Texture)
   { // Do texture , if any
     if (isp.UV_16b)
@@ -166,19 +187,20 @@ void decode_pvr_vertex(u32 base, u32 ptr, Vertex *cv)
     }
   }
 
-  // Color
+  // Handle Vertex Color
   u32 col = vri(ptr);
   ptr += 4;
   cv->col = col; // ABGR8888(col);
   if (isp.Offset)
   {
-    // Intesity color (can be missing too ;p)
+    // Skip offset color for now (used for specular-like highlights)
     (void)vri(ptr);
     ptr += 4;
-    //	vert_packed_color_(cv->spc,col);
+     //	vert_packed_color_(cv->spc,col);
   }
 }
 
+// Resets internal pointers for the next frame's vertex list.
 void reset_vtx_state()
 {
   curVTX = vertices;
@@ -192,6 +214,8 @@ void reset_vtx_state()
 #define VTX_TFX(x) (x)
 #define VTX_TFY(y) (y)
 
+// The Dreamcast uses "Twiddled" (Morton Order) textures to improve cache locality.
+// This function converts linear X/Y coordinates into the twiddled memory address.
 // input : address in the yyyyyxxxxx format
 // output : address in the xyxyxyxy format
 // U : x resolution , V : y resolution
@@ -199,7 +223,6 @@ void reset_vtx_state()
 u32 fastcall twop(u32 x, u32 y, u32 x_sz, u32 y_sz)
 {
   u32 rv = 0;
-
   u32 sh = 0;
   x_sz >>= 1;
   y_sz >>= 1;
@@ -209,7 +232,6 @@ u32 fastcall twop(u32 x, u32 y, u32 x_sz, u32 y_sz)
     {
       u32 temp = y & 1;
       rv |= temp << sh;
-
       y_sz >>= 1;
       y >>= 1;
       sh++;
@@ -218,7 +240,6 @@ u32 fastcall twop(u32 x, u32 y, u32 x_sz, u32 y_sz)
     {
       u32 temp = x & 1;
       rv |= temp << sh;
-
       x_sz >>= 1;
       x >>= 1;
       sh++;
@@ -227,8 +248,8 @@ u32 fastcall twop(u32 x, u32 y, u32 x_sz, u32 y_sz)
   return rv;
 }
 
-// hanlder functions
-
+// Handler functions
+// Calculates the offset for a Wii texture in TPL/GX block format.
 u32 GX_TexOffs(u32 x, u32 y, u32 w)
 {
   w /= 4;
@@ -293,6 +314,7 @@ void SetTextureParams(PolyParam* mod)
 }
 */
 
+// Macros for extracting color channels from Dreamcast-specific pixel formats.
 #define ABGR4444_A(x) ((x) >> 12)
 #define ABGR4444_R(x) ((x >> 8) & 0xF)
 #define ABGR4444_G(x) ((x >> 4) & 0xF)
@@ -306,7 +328,6 @@ void SetTextureParams(PolyParam* mod)
 #define ABGR1555_R(x) ((x >> 10) & 0x1F)
 #define ABGR1555_G(x) ((x >> 5) & 0x1F)
 #define ABGR1555_B(x) ((x) & 0x1F)
-
 #define MAKE_555A3
 
 #define MAKE_565(r, g, b, a)
@@ -326,6 +347,7 @@ void SetTextureParams(PolyParam* mod)
       val = hi;                \
   }
 
+// Converts YUV422 data to RGB565 for Wii compatibility.
 u32 YUV422(s32 Y, s32 Yu, s32 Yv)
 {
   s32 B = (76283 * (Y - 16) + 132252 * (Yu - 128)) >> (16 + 3);                     // 5
@@ -339,7 +361,7 @@ u32 YUV422(s32 Y, s32 Yu, s32 Yv)
   return (B << 11) | (G << 5) | (R);
 }
 
-// pixel convertors !
+// Infrastructure for fast pixel conversion routines using static polymorphism/templates.
 #define pixelcvt_start(name, xa, yb)                                                     \
   struct name                                                                            \
   {                                                                                      \
@@ -376,10 +398,8 @@ inline void pb_prel(u16 *dst, u32 pbw, u32 x, u32 y, u32 col)
 }
 
 // ===============
-// PIXEL CVT START
+// Pixel Converters for Non-Twiddled (Planar) textures.
 // ===============
-
-// Non twiddled
 pixelcvt_start(conv565_PL, 4, 1)
 {
   // convert 4x1 565 to 4x1 8888
@@ -434,7 +454,7 @@ pixelcvt_next(convYUV_PL, 4, 1)
   // 1,0
   pb_prel(pb, pbw, x + 1, y, YUV422(Y1, Yu, Yv));
 
-  // next 4 bytes
+   // next 4 bytes
   p_in += 1;
 
   Y0 = (p_in[0] >> 8) & 255;  //
@@ -448,10 +468,11 @@ pixelcvt_next(convYUV_PL, 4, 1)
   pb_prel(pb, pbw, x + 3, y, YUV422(Y1, Yu, Yv));
 }
 pixelcvt_end;
-// twiddled
+
+// Pixel Converters for Twiddled textures.
 pixelcvt_start(conv565_TW, 2, 2)
 {
-  // convert 4x1 565 to 4x1 8888
+    // convert 4x1 565 to 4x1 8888
   u16 *p_in = (u16 *)data;
   // 0,0
   pb_prel(pb, pbw, x + 0, y + 0, ABGR0565(p_in[0]));
@@ -493,7 +514,7 @@ pixelcvt_next(convYUV422_TW, 2, 2)
   // convert 4x1 4444 to 4x1 8888
   u16 *p_in = (u16 *)data;
 
-  s32 Y0 = (p_in[0] >> 8) & 255; //
+ s32 Y0 = (p_in[0] >> 8) & 255; //
   s32 Yu = (p_in[0] >> 0) & 255; // p_in[0]
   s32 Y1 = (p_in[2] >> 8) & 255; // p_in[3]
   s32 Yv = (p_in[2] >> 0) & 255; // p_in[2]
@@ -511,13 +532,15 @@ pixelcvt_next(convYUV422_TW, 2, 2)
   Y1 = (p_in[3] >> 8) & 255; // p_in[3]
   Yv = (p_in[3] >> 0) & 255; // p_in[2]
 
-  // 0,1
+ // 0,1
   pb_prel(pb, pbw, x + 0, y + 1, YUV422(Y0, Yu, Yv));
   // 1,1
   pb_prel(pb, pbw, x + 1, y + 1, YUV422(Y1, Yu, Yv));
 }
 pixelcvt_end;
-// VQ PAL Stuff
+
+// VQ (Vector Quantization) Palette Converters. 
+// These handle PVR's compressed texture formats by averaging or selecting colors from the codebook.
 pixelcvt_startVQ(conv565_VQ, 2, 2)
 {
   u32 R = ABGR0565_R(data[0]) + ABGR0565_R(data[1]) + ABGR0565_R(data[2]) + ABGR0565_R(data[3]);
@@ -542,7 +565,7 @@ pixelcvt_nextVQ(conv1555_VQ, 2, 2)
 
   return R | (G << 5) | (B << 10) | (A << 15);
 
-  // return ABGR1555(data[0]);
+    // return ABGR1555(data[0]);
   /*
   //convert 4x1 1555 to 4x1 8888
   u16* p_in=(u16*)data;
@@ -586,7 +609,7 @@ pixelcvt_nextVQ(convYUV422_VQ, 2, 2)
 {
   // convert 4x1 4444 to 4x1 8888
   u16 *p_in = (u16 *)data;
-
+  
   s32 Y0 = (p_in[0] >> 8) & 255; //
   s32 Yu = (p_in[0] >> 0) & 255; // p_in[0]
   s32 Y1 = (p_in[2] >> 8) & 255; // p_in[3]
@@ -617,7 +640,7 @@ pixelcvt_endVQ;
 // input : address in the yyyyyxxxxx format
 // output : address in the xyxyxyxy format
 // U : x resolution , V : y resolution
-// twidle works on 64b words
+// Redefinition of twiddle for local use. (64b words)
 u32 fastcall twiddle_razi(u32 x, u32 y, u32 x_sz, u32 y_sz)
 {
   // u32 rv2=twiddle_optimiz3d(raw_addr,U);
@@ -634,19 +657,13 @@ u32 fastcall twiddle_razi(u32 x, u32 y, u32 x_sz, u32 y_sz)
     {
       u32 temp = y & 1;
       rv |= temp << sh;
-
-      y_sz >>= 1;
-      y >>= 1;
-      sh++;
+      y_sz >>= 1; y >>= 1; sh++;
     }
     if (x_sz)
     {
       u32 temp = x & 1;
       rv |= temp << sh;
-
-      x_sz >>= 1;
-      x >>= 1;
-      sh++;
+      x_sz >>= 1; x >>= 1; sh++;
     }
   }
   return rv;
@@ -654,7 +671,8 @@ u32 fastcall twiddle_razi(u32 x, u32 y, u32 x_sz, u32 y_sz)
 
 #define twop twiddle_razi
 u8 *VramWork;
-// hanlder functions
+
+// Texture untwiddling and conversion template. (Handler)
 template <class PixelConvertor>
 void fastcall texture_TW(u8 *p_in, u32 Width, u32 Height)
 {
@@ -680,6 +698,7 @@ void fastcall texture_TW(u8 *p_in, u32 Width, u32 Height)
   memcpy(p_in, VramWork, Width * Height * 2);
 }
 
+// Vector Quantization texture conversion template.
 template <class PixelConvertor>
 void fastcall texture_VQ(u8 *p_in, u32 Width, u32 Height, u8 *vq_codebook)
 {
@@ -692,7 +711,6 @@ void fastcall texture_VQ(u8 *p_in, u32 Width, u32 Height, u8 *vq_codebook)
   for (u32 palidx = 0; palidx < 256; palidx++)
   {
     pal_cb[palidx] = PixelConvertor::Convert(&pal_cb[palidx * 4]);
-    ;
   }
   // Height/=PixelConvertor::ypp;
   // Width/=PixelConvertor::xpp;
@@ -720,6 +738,7 @@ void fastcall texture_VQ(u8 *p_in, u32 Width, u32 Height, u8 *vq_codebook)
   memcpy(p_in, VramWork, Width * Height / divider);
 }
 
+// Planar (Linear) texture conversion.
 template <int type>
 void Plannar(u8 *praw, u32 w, u32 h)
 {
@@ -762,7 +781,7 @@ void Plannar(u8 *praw, u32 w, u32 h)
 }
 
 // =========================
-// SETUP PALETTE FOR TEXTURE
+// Palette management for indexed textures.
 // =========================
 
 void SetupPaletteForTexture(u32 palette_index, u32 sz)
@@ -773,10 +792,11 @@ void SetupPaletteForTexture(u32 palette_index, u32 sz)
   if (fmtpal < 3)
     palette_index >>= 1;
 
-  // sceGuClutMode(PalFMT[fmtpal],0,0xFF,0);//or whatever
-  // sceGuClutLoad(sz/8,&palette_lut[palette_index]);
+    // sceGuClutMode(PalFMT[fmtpal],0,0xFF,0);//or whatever
+    // sceGuClutLoad(sz/8,&palette_lut[palette_index]);
 }
 
+// PVR Mipmap offsets (Dreamcast specific).
 const u32 MipPoint[8] =
     {
         0x00006, // 8
@@ -788,6 +808,8 @@ const u32 MipPoint[8] =
         0x05556, // 512
         0x15556  // 1024
 };
+
+// Macro to encapsulate the logic for twiddled textures (VQ or standard).
 #define twidle_tex(format)                                                                \
   if (mod->tcw.NO_PAL.VQ_Comp)                                                            \
   {                                                                                       \
@@ -795,7 +817,7 @@ const u32 MipPoint[8] =
     tex_addr += 256 * 4 * 2;                                                              \
     if (mod->tcw.NO_PAL.MipMapped)                                                        \
     { /*int* p=0;*p=4;*/                                                                  \
-      tex_addr += MipPoint[mod->tsp.TexU];                                                \
+      tex_addr += MipPoint[mod->tsp.TexU];                                                  \
     }                                                                                     \
     texture_VQ<conv##format##_VQ> /**/ ((u8 *)&params.vram[tex_addr], w, h, vq_codebook); \
     texVQ = 1;                                                                            \
@@ -812,13 +834,14 @@ const u32 MipPoint[8] =
     w = 512;                     \
   Plannar<format>((u8 *)&params.vram[tex_addr], w, h);
 
-/*u32 sr;\
+  /*u32 sr;\
 if (mod->tcw.NO_PAL.StrideSel)\
   {sr=(TEXT_CONTROL&31)*32;}\
         else\
   {sr=w;}\
   format((u8*)&params.vram[tex_addr],sr,h);*/
 
+// Maps Dreamcast texture wrap/clamp modes to Wii GX constants.
 int TexUV(u32 flip, u32 clamp)
 {
   if (clamp)
@@ -830,7 +853,7 @@ int TexUV(u32 flip, u32 clamp)
 }
 
 // ========================
-// SET TEXTURE PARAMS
+// Processes the Dreamcast's TCW (Texture Control Word) to initialize Wii TexObjects.
 // ========================
 
 static void SetTextureParams(PolyParam *mod)
@@ -851,7 +874,7 @@ static void SetTextureParams(PolyParam *mod)
   // OLD CODE (Use later for FAST preset ?)
   // ======================================
 
-#if 0 // old code
+  #if 0 // old code
 		if (*ptex!=0xDEADBEEF || pbuff->addr!=tex_addr)
 		{
 			u32* dst=(u32*)&pbuff[1];
@@ -870,6 +893,8 @@ static void SetTextureParams(PolyParam *mod)
 		}
 #endif
 
+
+  // Only re-process texture if it has changed (marked by DEADBEEF sentinel).
   if (*ptex != 0xDEADBEEF || pbuff->addr != tex_addr || (mod->tcw.NO_PAL.StrideSel && mod->tcw.NO_PAL.ScanOrder))
   {
     u32 *dst = (u32 *)&pbuff[1];
@@ -883,7 +908,7 @@ static void SetTextureParams(PolyParam *mod)
     case 7:
       // 0	1555 value: 1 bit; RGB values: 5 bits each
       // 7	Reserved	Regarded as 1555
-      if (mod->tcw.NO_PAL.ScanOrder)
+     if (mod->tcw.NO_PAL.ScanOrder)
       {
         // verify(tcw.NO_PAL.VQ_Comp==0);
         norm_text(1555);
@@ -897,8 +922,9 @@ static void SetTextureParams(PolyParam *mod)
       break;
 
       // redo_argb:
-      // 1	565	 R value: 5 bits; G value: 6 bits; B value: 5 bits
+
     case 1:
+      // 565 Format  R value: 5 bits; G value: 6 bits; B value: 5 bits
       if (mod->tcw.NO_PAL.ScanOrder)
       {
         // verify(tcw.NO_PAL.VQ_Comp==0);
@@ -913,8 +939,9 @@ static void SetTextureParams(PolyParam *mod)
       FMT = GX_TF_RGB565;
       break;
 
-      // 2	4444 value: 4 bits; RGB values: 4 bits each
+      
     case 2:
+      // 4444 Format: 4 bits; RGB values: 4 bits each
       if (mod->tcw.NO_PAL.ScanOrder)
       {
         // verify(tcw.NO_PAL.VQ_Comp==0);
@@ -927,8 +954,9 @@ static void SetTextureParams(PolyParam *mod)
       }
       FMT = GX_TF_RGB5A3;
       break;
-      // 3	YUV422 32 bits per 2 pixels; YUYV values: 8 bits each
+      
     case 3:
+      // YUV422 Format 32 bits per 2 pixels; YUYV values: 8 bits each
       if (mod->tcw.NO_PAL.ScanOrder)
       {
         norm_text(422);
@@ -955,7 +983,7 @@ static void SetTextureParams(PolyParam *mod)
       FMT = GX_TF_I4; // wha? the ?
       break;
     case 6:
-    {
+      {
       // 6	8 BPP Palette	Palette texture with 8 bits/pixel
       verify(mod->tcw.PAL.VQ_Comp == 0);
       if (mod->tcw.NO_PAL.MipMapped)
@@ -965,7 +993,7 @@ static void SetTextureParams(PolyParam *mod)
 
       FMT = GX_TF_I8; // wha? the ? FUCK!
     }
-    break;
+      break;
     default:
       printf("Unhandled texture\n");
       // memset(temp_tex_buffer,0xFFEFCFAF,w*h*4);
@@ -997,20 +1025,20 @@ static void SetTextureParams(PolyParam *mod)
 }
 
 // ============================
-// DOING RENDERING
+// The main rendering loop. Executes GX commands to draw the stored vertex lists.
 // ============================
 
 void DoRender()
 {
-  float dc_width, dc_height;
-  dc_width = 640;
-  dc_height = 480;
+  float dc_width = 640;
+  float dc_height = 480;
 
   VIDEO_SetBlack(FALSE);
   GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
   GX_InvVtxCache();
   GX_InvalidateTexAll();
 
+  // Define the vertex format for the GX pipeline.
   GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
   GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
   GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
@@ -1027,7 +1055,7 @@ void DoRender()
 
   GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 
-  //--BG poly
+  // Background polygon handling
   u32 param_base = PARAM_BASE & 0xF00000;
   _ISP_BACKGND_D_type bg_d;
   _ISP_BACKGND_T_type bg_t;
@@ -1057,6 +1085,7 @@ void DoRender()
 
   decode_pvr_vertex(strip_base, vertex_ptr, &BGTest);
 
+  // Use the background vertex color as the EFB clear color.
   GX_SetCopyClear((GXColor &)BGTest.col, 0x00000000);
 
   GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
@@ -1102,7 +1131,9 @@ void DoRender()
 */
 
   // sanitise values
-  if (vtx_min_Z <= 0.001)
+  // Coordinate Projection Logic: Converts Dreamcast 1/W into Wii depth.
+
+    if (vtx_min_Z <= 0.001)
     vtx_min_Z = 0.001;
   if (vtx_max_Z < 0 || vtx_max_Z > 128 * 1024)
     vtx_max_Z = 1;
@@ -1143,6 +1174,7 @@ void DoRender()
   GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
   GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 
+  // Process opaque and then translucent lists.
   for (; drawLST != crLST; drawLST++)
   {
     if (drawLST == TransLST)
@@ -1156,7 +1188,7 @@ void DoRender()
     s32 count = drawLST->count;
     if (count < 0)
     {
-      if (drawMod->pcw.Texture)
+            if (drawMod->pcw.Texture)
       {
 
         SetTextureParams(drawMod);
@@ -1196,7 +1228,7 @@ void DoRender()
   VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 
   VIDEO_Flush();
-  VIDEO_WaitVSync(); // Needed, because otherwise Dreamcast logo goes too fast in O3 mode
+  VIDEO_WaitVSync();  // Needed for O3 mode (else Dreamcast logo take 5 seconds instead of 9)
 }
 
 // ============================
@@ -1219,12 +1251,13 @@ void StartRender()
 
   FrameCount++;
 }
-void EndRender()
-{
-}
+
+void EndRender() {}
+
+
 
 // ============================
-// Vertex Decoding-Converting
+// VertexDecoder struct: Handles the accumulation of vertex data into strips.
 // ============================
 
 struct VertexDecoder
@@ -1235,9 +1268,7 @@ struct VertexDecoder
     if (ListType == ListType_Translucent)
       TransLST = curLST;
   }
-  __forceinline static void EndList(u32 ListType)
-  {
-  }
+  __forceinline static void EndList(u32 ListType) {}
 
   static u32 FLCOL(float *col)
   {
@@ -1321,6 +1352,7 @@ struct VertexDecoder
     curLST++;
   }
 
+// Standard vertex projection macro. PVR 'Z' is actually 1/W.
 #define vert_base(dst, _x, _y, _z) /*VertexCount++;*/ \
   float W = 1.0f / _z;                                \
   curVTX[dst].x = VTX_TFX(_x) * W;                    \
@@ -1334,6 +1366,7 @@ struct VertexDecoder
   // Poly Vertex handlers
 #define vert_cvt_base vert_base(0, vtx->xyz[0], vtx->xyz[1], vtx->xyz[2])
 
+  // Handlers for various PVR vertex types (Packed color, Float color, Intensity, etc.)
   //(Non-Textured, Packed Color)
   __forceinline static void AppendPolyVertex0(TA_Vertex0 *vtx)
   {
@@ -1534,9 +1567,11 @@ static void AppendSpriteVertex0B(TA_Sprite0B* sv)
 #define sprite_uv(indx, u_name, v_name) \
   curVTX[indx].u = CVT16UV(sv->u_name); \
   curVTX[indx].v = CVT16UV(sv->v_name);
+
+  // Sprites are converted to 4-vertex triangle strips.
   __forceinline static void AppendSpriteVertexA(TA_Sprite1A *sv)
   {
-
+    
     StartPolyStrip();
     curVTX[0].col = 0xFFFFFFFF;
     curVTX[1].col = 0xFFFFFFFF;
@@ -1636,7 +1671,7 @@ void SetFpsText(char *text)
 }
 
 // ============================
-// INIT RENDERING
+// Initialize the Wii Video and GX subsystem.
 // ============================
 
 bool InitRenderer()
@@ -1645,6 +1680,7 @@ bool InitRenderer()
   // This will correspond to the settings in the Wii menu
   rmode = VIDEO_GetPreferredMode(NULL);
 
+  // Adjust video mode based on region.
   switch (rmode->viTVMode >> 2)
   {
   case VI_NTSC: // 480 lines (NTSC 60hz)
@@ -1666,7 +1702,7 @@ bool InitRenderer()
   // allocate 2 framebuffers for double buffering
   frameBuffer[0] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
   frameBuffer[1] = MEM_K0_TO_K1(SYS_AllocateFramebuffer(rmode));
-
+  
   // Set up the video registers with the chosen mode (devkit wii example)
   VIDEO_Configure(rmode);
   // Tell the video hardware where our display memory is (devkit wii example)
@@ -1688,10 +1724,11 @@ bool InitRenderer()
 
   GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
 
-  // clears the bg to color and clears the z buffer
+    // clears the bg to color and clears the z buffer
   // GX_SetCopyClear(background, 0x00ffffff);
 
   // other gx setup
+  // Standard GX display/copy settings.
   GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
   f32 yscale = GX_GetYScaleFactor(rmode->efbHeight, rmode->xfbHeight);
   u32 xfbHeight = GX_SetDispCopyYScale(yscale);
@@ -1775,7 +1812,7 @@ void VramLockedWrite(vram_block *bl)
 using namespace std;
 
 // ==============
-// GET FILE (boot.cdi)
+// Attempts to find and boot a 'boot.cdi' image from the SD/USB root.
 // ==============
 
 int GetFile(char *szFileName, char *szParse = 0, u32 flags = 0)
