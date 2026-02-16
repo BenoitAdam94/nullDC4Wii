@@ -173,7 +173,7 @@ void displayAccuracyMenu()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
-    printf("          FPU ACCURACY SETTINGS - NullDC4Wii               \n");
+    printf("          ACCURACY SETTINGS - NullDC4Wii               \n");
     printf(" \n");
     printf("Select accuracy mode:\n\n");
     // Option 0: FAST
@@ -210,8 +210,7 @@ void displayAccuracyMenu()
     printf(" \n");
     
     printf("UP/DOWN: Select option | A: Confirm | B: Back\n");
-    printf("\nNote: This global accuracy.\n");
-    printf("      Change only if you experience issues or need more speed.\n");
+    printf("\nNote: Change only if you experience issues or need more speed.\n");
     
     WPAD_ScanPads();
     u32 pressed = WPAD_ButtonsDown(0);
