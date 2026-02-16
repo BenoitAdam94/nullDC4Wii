@@ -1,8 +1,9 @@
+// Wii Rendering
+
 #pragma once
 #include "drkPvr.h"
 #include "Renderer_if.h"
 
-#if REND_API == REND_WII
 
 bool InitRenderer();
 void TermRenderer();
@@ -38,5 +39,3 @@ void SetFpsText(char* text);
 #define rend_set_fps_text SetFpsText
 #define rend_set_render_rect(rect,sht)
 #define rend_set_fb_scale(x,y)
-#endif
-
