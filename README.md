@@ -27,6 +27,8 @@ a fork from https://github.com/skmp/nullDCe
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation
+- 50/60 ips for PAL/NTSC ?
+- 4/3 and fullscreen support
 - Sound implementation
 
 ## Installation
@@ -215,6 +217,7 @@ All together, let's Cast the Dream.
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
