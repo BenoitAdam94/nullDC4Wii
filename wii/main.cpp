@@ -15,12 +15,12 @@
 // GLOBAL EMULATOR ACCURACY
 // ============================================================================
 // Global variable to store user's FPU accuracy choice
-int g_accuracy_mode = 2; // 0=Fast, 1=Normal, 2=Accurate (default)
+int g_accuracy_preset = 2; // 0=Fast, 1=Balanced, 2=Accurate (default)
 
 // These will be used by sh4_fpu.cpp ... (put additional files here)
 extern "C" {
-  int get_accuracy_mode() {
-    return g_accuracy_mode;
+  int get_accuracy_preset() {
+    return g_accuracy_preset;
   }
 }
 // ============================================================================
@@ -168,14 +168,14 @@ void listFilesInDirectory(const char *dirPath)
 // ============================================================================
 void displayAccuracyMenu()
 {
-  int selectedOption = g_accuracy_mode; // Start with current setting
+  int selectedOption = g_accuracy_preset; // Start with current setting
   
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
     printf("          ACCURACY SETTINGS - NullDC4Wii               \n");
     printf(" \n");
-    printf("Select accuracy mode:\n\n");
+    printf("Select accuracy preset:\n\n");
     // Option 0: FAST
     if (selectedOption == 0)
       printf(" > ");
@@ -183,12 +183,12 @@ void displayAccuracyMenu()
       printf("   ");
     printf("FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
     
-    // Option 1: NORMAL
+    // Option 1: BALANCED
     if (selectedOption == 1)
       printf(" > ");
     else
       printf("   ");
-    printf("NORMAL - Balanced : \n");
+    printf("BALANCED - Good Balance \n");
     
     // Option 2: ACCURATE
     if (selectedOption == 2)
@@ -198,9 +198,9 @@ void displayAccuracyMenu()
     printf("ACCURATE - Maximum Accuracy (closest to real hardware) \n");
     printf(" \n");
     printf("Current setting: ");
-    switch(g_accuracy_mode) {
+    switch(g_accuracy_preset) {
       case 0: printf("FAST\n"); break;
-      case 1: printf("NORMAL\n"); break;
+      case 1: printf("BALANCED\n"); break;
       case 2: printf("ACCURATE\n"); break;
     }
 
@@ -228,7 +228,7 @@ void displayAccuracyMenu()
     else if (pressed & WPAD_BUTTON_A)
     {
       // Save selection and exit
-      g_accuracy_mode = selectedOption;
+      g_accuracy_preset = selectedOption;
       return;
     }
     else if (pressed & WPAD_BUTTON_B)
@@ -257,9 +257,9 @@ int displayMenuAndSelectFile()
     
     // Display current FPU accuracy setting
     printf("FPU Accuracy: ");
-    switch(g_accuracy_mode) {
+    switch(g_accuracy_preset) {
       case 0: printf("FAST"); break;
-      case 1: printf("NORMAL"); break;
+      case 1: printf("BALANCED"); break;
       case 2: printf("ACCURATE"); break;
     }
     printf(" (Press 2 to change)\n\n");
@@ -479,9 +479,9 @@ int main(int argc, wchar *argv[])
       printf("\x1b[2J\x1b[H"); // Clear Screen
       printf("Booting to BIOS (no disc)...\n");
       printf("FPU Accuracy: ");
-      switch(g_accuracy_mode) {
+      switch(g_accuracy_preset) {
         case 0: printf("FAST\n"); break;
-        case 1: printf("NORMAL\n"); break;
+        case 1: printf("BALANCED\n"); break;
         case 2: printf("ACCURATE\n"); break;
       }
       strcpy(selectedFilePath, ""); // No File
@@ -493,9 +493,9 @@ int main(int argc, wchar *argv[])
       printf("\x1b[2J\x1b[H"); // Clear Screen
       printf("Selected file: %s\n", selectedFilePath);
       printf("FPU Accuracy: ");
-      switch(g_accuracy_mode) {
+      switch(g_accuracy_preset) {
         case 0: printf("FAST\n"); break;
-        case 1: printf("NORMAL\n"); break;
+        case 1: printf("BALANCED\n"); break;
         case 2: printf("ACCURATE\n"); break;
       }
     }
