@@ -201,10 +201,16 @@ Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 
 ## Credits
 
-NullDC team for the emulator  
-skmp  
-Joseph Jordan - libiso  
-Xale00 (also know as Benoit Adam) - 2026 recompilation
+- skmp (original NullDC creator)
+- NullDC team for the emulator  
+- Joseph Jordan - libiso  
+- Xale00 (also know as Benoit Adam) - 2026 recompilation  
+- Flyinghead/Flycast Team  
+- AI because this project would have never existed otherwise lol
+- Probably Reicast Team also who knows
+- Welcome to the IA-age guys and good luck everyone.
+
+All together, let's Cast the Dream.
 
 
 
