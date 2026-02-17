@@ -12,9 +12,9 @@
 #include <gccore.h> // needed, or VScode will show errors
 
 // ============================================================================
-// GLOBAL EMULATOR ACCURACY
+// GLOBAL EMULATOR PRESET
 // ============================================================================
-// Global variable to store user's FPU accuracy choice
+// Global variable to store user's calculations (CPU, FPU, GPU...) accuracy choice
 int g_accuracy_preset = 2; // 0=Fast, 1=Balanced, 2=Accurate (default)
 
 // These will be used by sh4_fpu.cpp ... (put additional files here)
@@ -23,6 +23,25 @@ extern "C" {
     return g_accuracy_preset;
   }
 }
+
+int g_graphism_preset = 0; // 0=Low (default), 1=Normal, 2=High
+
+// These will be used by gxRend.cpp ... (put additional files here)
+extern "C" {
+  int get_graphism_preset() {
+    return g_graphism_preset;
+  }
+}
+
+int g_ratio_preset = 1; // 0=Original (4/3), 1=Fullscreen
+
+// These will be used by ?? (gxRend ?)
+extern "C" {
+  int get_ratio_preset() {
+    return g_ratio_preset;
+  }
+}
+
 // ============================================================================
 
 // Global variables
@@ -173,44 +192,45 @@ void displayAccuracyMenu()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
-    printf("          ACCURACY SETTINGS - NullDC4Wii               \n");
+    printf("                  INFO - NullDC4Wii               \n");
     printf(" \n");
-    printf("Select accuracy preset:\n\n");
-    // Option 0: FAST
-    if (selectedOption == 0)
-      printf(" > ");
-    else
-      printf("   ");
-    printf("FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
-    
-    // Option 1: BALANCED
-    if (selectedOption == 1)
-      printf(" > ");
-    else
-      printf("   ");
-    printf("BALANCED - Good Balance \n");
-    
-    // Option 2: ACCURATE
-    if (selectedOption == 2)
-      printf(" > ");
-    else
-      printf("   ");
-    printf("ACCURATE - Maximum Accuracy (closest to real hardware) \n");
+    printf("Information about preset :\n\n");
+
+    printf("Calculations Accuracy (can lead to bugs if not AVERAGE):\n");  
+    printf("= FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
+    printf("= BALANCED - Good Balance \n");
+    printf("= ACCURATE - Maximum Accuracy (closest to real hardware) \n\n");
+
+    printf("Graphical settings (not implemented for now) \n");
+    printf("= LOW - No anisotropic filter (Wii) \n");
+    printf("= NORMAL - Anisotropic filter x2 \n");
+    printf("= HIGH - Anisotropic filter x4 (WiiU) \n\n");
+
+    printf("Original Ratio (4/3) / FULLSCREEN (not implemented for now)\n");
+    printf("= ORIGINAL - 4/3 ratio\n");
+    printf("= FULLSCREEN \n");
+
     printf(" \n");
-    printf("Current setting: ");
+    printf("Current setting: \n");
     switch(g_accuracy_preset) {
-      case 0: printf("FAST\n"); break;
-      case 1: printf("BALANCED\n"); break;
-      case 2: printf("ACCURATE\n"); break;
+      case 0: printf("FAST - "); break;
+      case 1: printf("BALANCED - "); break;
+      case 2: printf("ACCURATE - "); break;
+    }
+    switch(g_graphism_preset) {
+      case 0: printf("LOW - "); break;
+      case 1: printf("NORMAL -"); break;
+      case 2: printf("HIGH - "); break;
+    }
+    switch(g_ratio_preset) {
+      case 0: printf("ORIGINAL - "); break;
+      case 1: printf("FULLSCREEN\n"); break;
     }
 
     printf(" \n");
-    printf(" \n");
-    printf(" \n");
-    printf(" \n");
     
     printf("UP/DOWN: Select option | A: Confirm | B: Back\n");
-    printf("\nNote: Change only if you experience issues or need more speed.\n");
+    printf("\nNote: Change settings if you experience issues or need more speed.\n");
     
     WPAD_ScanPads();
     u32 pressed = WPAD_ButtonsDown(0);
@@ -251,18 +271,25 @@ int displayMenuAndSelectFile()
   while (true)
   {
     printf("\033[2J\033[H"); // Clear Screen
-    printf("\nNullDC4Wii - Alpha 0.06\n");
+    printf("\nNullDC4Wii - Alpha 0.06   ");
     printf("Current directory: %s\n", currentPath);
-    printf("Select a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n");
-    
-    // Display current FPU accuracy setting
-    printf("FPU Accuracy: ");
+    // Display current GRAPHISM preset (cycled with Minus)
+    printf("(-) GRAPHICS: ");
+    switch(g_graphism_preset) {
+      case 0: printf("LOW    "); break;
+      case 1: printf("NORMAL "); break;
+      case 2: printf("HIGH   "); break;
+    }
+    // Display current ACCURACY preset (cycled with Plus)
+    printf("  (+) ACCURACY: ");
     switch(g_accuracy_preset) {
-      case 0: printf("FAST"); break;
+      case 0: printf("FAST    "); break;
       case 1: printf("BALANCED"); break;
       case 2: printf("ACCURATE"); break;
     }
-    printf(" (Press 2 to change)\n\n");
+    printf("\nSelect a game file: (GDI Works, maybe CDI/ISO/NRG/MDS/BIN/CUE/ELF)\n\n");
+    
+    
 
     // Calculate pagination
     int totalPages = (fileCount + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE;
@@ -293,12 +320,22 @@ int displayMenuAndSelectFile()
     printf("Contact & bug report : xalegamingchannel@gmail.com\n");
     printf("HELP ME ON THE COMPATIBILITY LIST !!\n");
     printf("Compatibility WIKI : https://wiibrew.org/wiki/NullDC4Wii/Compatibility\n\n");
-    printf("UP/DOWN/LEFT/RIGHT: Navigate | A: Select | B: Back | 1: BIOS | HOME: Exit\n");
+    printf("A: Select | B: Back | 1: BIOS | 2: More Info | HOME: Exit\n");
     printf("INGAME : Press (-) and (+) simultaneously to Exit \n");
 
     WPAD_ScanPads();
     u32 pressed = WPAD_ButtonsDown(0);
 
+    if (pressed & WPAD_BUTTON_MINUS)
+    {
+      // Cycle GRAPHISM preset: LOW -> NORMAL -> HIGH -> LOW
+      g_graphism_preset = (g_graphism_preset + 1) % 3;
+    }
+    if (pressed & WPAD_BUTTON_PLUS)
+    {
+      // Cycle ACCURACY preset: FAST -> BALANCED -> ACCURATE -> FAST
+      g_accuracy_preset = (g_accuracy_preset + 1) % 3;
+    }
     if (pressed & WPAD_BUTTON_1)
     {
       return -2; // Boot to BIOS
