@@ -24,7 +24,7 @@ extern "C" {
   }
 }
 
-int g_graphism_preset = 0; // 0=Low (default), 1=Normal, 2=High
+int g_graphism_preset = 0; // 0=Low (default), 1=Normal, 2=High, 3=Extra
 
 // These will be used by gxRend.cpp ... (put additional files here)
 extern "C" {
@@ -202,9 +202,10 @@ void displayAccuracyMenu()
     printf("= ACCURATE - Maximum Accuracy (closest to real hardware) \n\n");
 
     printf("Graphical settings (not implemented for now) \n");
-    printf("= LOW - No anisotropic filter (Wii) \n");
-    printf("= NORMAL - Anisotropic filter x2 \n");
-    printf("= HIGH - Anisotropic filter x4 (WiiU) \n\n");
+    printf("= LOW - (Wii) \n");
+    printf("= NORMAL - (Wii) \n");
+    printf("= HIGH - Anisotropic x2 (WiiU) \n");
+    printf("= EXTRA - Anisotropic x4 (WiiU) \n\n");
 
     printf("Original Ratio (4/3) / FULLSCREEN (not implemented for now)\n");
     printf("= ORIGINAL - 4/3 ratio\n");
@@ -221,6 +222,7 @@ void displayAccuracyMenu()
       case 0: printf("LOW - "); break;
       case 1: printf("NORMAL -"); break;
       case 2: printf("HIGH - "); break;
+      case 3: printf("EXTRA - "); break;
     }
     switch(g_ratio_preset) {
       case 0: printf("ORIGINAL - "); break;
@@ -279,6 +281,7 @@ int displayMenuAndSelectFile()
       case 0: printf("LOW    "); break;
       case 1: printf("NORMAL "); break;
       case 2: printf("HIGH   "); break;
+      case 3: printf("EXTRA   "); break;
     }
     // Display current ACCURACY preset (cycled with Plus)
     printf("  (+) ACCURACY: ");
@@ -328,8 +331,8 @@ int displayMenuAndSelectFile()
 
     if (pressed & WPAD_BUTTON_MINUS)
     {
-      // Cycle GRAPHISM preset: LOW -> NORMAL -> HIGH -> LOW
-      g_graphism_preset = (g_graphism_preset + 1) % 3;
+      // Cycle GRAPHISM preset: LOW -> NORMAL -> HIGH -> EXTRA -> LOW 
+      g_graphism_preset = (g_graphism_preset + 1) % 4;
     }
     if (pressed & WPAD_BUTTON_PLUS)
     {

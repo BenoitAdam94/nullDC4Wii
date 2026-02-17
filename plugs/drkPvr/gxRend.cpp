@@ -32,6 +32,7 @@ extern "C" int get_graphism_preset();
 #define LOW() (get_graphism_preset() == 0)
 #define NORMAL() (get_graphism_preset() == 1)
 #define HIGH() (get_graphism_preset() == 2)
+#define EXTRA() (get_graphism_preset() == 3)
 
 #include "config.h"
 #include "gxRend.h"
@@ -54,7 +55,7 @@ static u8 gp_fifo[DEFAULT_FIFO_SIZE] __attribute__((aligned(32)));
 static int fb = 0; // Current framebuffer index
 
 // Macro to convert ABGR (standard for some PC/PVR formats) to RGBA/Other
-#define ABGR8888(x) ((x & 0xFF00FF00) | ((x >> 16) & 0xFF) | ((x & 0xFF) << 16))
+// #define ABGR8888(x) ((x & 0xFF00FF00) | ((x >> 16) & 0xFF) | ((x & 0xFF) << 16)) // already defined elsewhere
 /*
   Texture Format Conversion Notes:
   FMT: 1555 DTP    -> RGB5A3 DP
@@ -1040,15 +1041,64 @@ static void SetTextureParams(PolyParam *mod)
     GX_InitTexObj(&pbuff->tex, dst, w, h, FMT, TexUV(mod->tsp.FlipU, mod->tsp.ClampU),
                   TexUV(mod->tsp.FlipV, mod->tsp.ClampV), GX_FALSE);
     // Init Text Object LOD (Level Of Detail)
-    GX_InitTexObjLOD(&pbuff->tex,
-                 GX_LINEAR,      // minification filter
-                 GX_LINEAR,      // magnification filter  
-                 0.0f,           // min LOD
-                 0.0f,           // max LOD
-                 0.0f,           // LOD bias: negative = sharper
-                 GX_DISABLE,     // bias clamp
-                 GX_DISABLE,     // edge LOD
-                 GX_ANISO_1);    // anisotropic filtering 1 FAST 2 NORMAL 4 ACCURATE
+    // Get the preset once
+    int preset = get_graphism_preset();
+
+    // Temporary variables to hold settings
+    u8 min_filt, mag_filt, bias_clamp, edge_lod, aniso;
+    f32 lod_bias;
+
+    switch (preset) {
+        case 0: // LOW
+            printf("Setting profile: LOW\n");
+            min_filt = GX_NEAR;
+            mag_filt = GX_NEAR;
+            lod_bias = 0.0f;
+            bias_clamp = GX_DISABLE;
+            edge_lod = GX_DISABLE;
+            aniso = GX_ANISO_1;
+            break;
+
+        case 1: // NORMAL
+            printf("Setting profile: NORMAL\n");
+            min_filt = GX_LINEAR;
+            mag_filt = GX_LINEAR;
+            lod_bias = 0.0f;
+            bias_clamp = GX_DISABLE;
+            edge_lod = GX_DISABLE;
+            aniso = GX_ANISO_1;
+            break;
+
+        case 2: // HIGH
+            printf("Setting profile: HIGH\n");
+            min_filt = GX_LINEAR;
+            mag_filt = GX_LINEAR;
+            lod_bias = -0.5f;
+            bias_clamp = GX_ENABLE;
+            edge_lod = GX_ENABLE;
+            aniso = GX_ANISO_2;
+            break;
+
+        case 3: // EXTRA
+            printf("Setting profile: EXTRA\n");
+            min_filt = GX_LINEAR;
+            mag_filt = GX_LINEAR;
+            lod_bias = -1.0f;
+            bias_clamp = GX_ENABLE;
+            edge_lod = GX_ENABLE;
+            aniso = GX_ANISO_4;
+            break;
+
+        default:
+            printf("Warning: Unknown preset %d, using DEFAULT\n", preset);
+            min_filt = GX_LINEAR;
+            mag_filt = GX_LINEAR;
+            lod_bias = 0.0f;
+            bias_clamp = GX_DISABLE;
+            edge_lod = GX_DISABLE;
+            aniso = GX_ANISO_1;
+            break;
+    }
                   
     *ptex = 0xDEADBEEF;
     printf("Texture:%d %d %dx%d %08X --> %08X\n", mod->tcw.NO_PAL.PixelFmt, mod->tcw.NO_PAL.ScanOrder, 8 << mod->tsp.TexU, 8 << mod->tsp.TexV, tex_addr, (u32)dst);
