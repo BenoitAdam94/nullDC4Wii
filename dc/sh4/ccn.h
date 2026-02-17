@@ -2,28 +2,39 @@
 
 #include "types.h"
 
-//Init/Res/Term
+// ============================================================
+// CCN: SH4 Cache and TLB Controller
+// Emulates the on-chip MMU and cache control registers
+// of the Hitachi SH7091 (SH4) processor used in the Dreamcast.
+// ============================================================
+
 void ccn_Init();
 void ccn_Reset(bool Manual);
 void ccn_Term();
 
+// PTEH — Page Table Entry High (0xFF000000)
+//   VPN : Virtual Page Number (bits 31-10)
+//   ASID: Address Space Identifier (bits 7-0)
 union CCN_PTEH_type
 {
-	struct
-	{
-#if HOST_ENDIAN==ENDIAN_LITTLE
-		u32 ASID:8; //0-7 ASID
-		u32 res:2;  //8,9 reserved
-		u32 VPN:22; //10-31 VPN
+    struct {
+#if HOST_ENDIAN == ENDIAN_LITTLE
+        u32 ASID : 8;   // bits  7- 0 — Address Space ID
+        u32 res  : 2;   // bits  9- 8 — reserved
+        u32 VPN  : 22;  // bits 31-10 — Virtual Page Number
 #else
-		u32 VPN:22; //10-31 VPN
-		u32 res:2;  //8,9 reserved
-		u32 ASID:8; //0-7 ASID
+        u32 VPN:22; //10-31 VPN
+        u32 res:2;  //8,9 reserved
+		    u32 ASID:8; //0-7 ASID
 #endif
-	};
-	u32 reg_data;
+    };
+    u32 reg_data;
 };
 
+// PTEL — Page Table Entry Low (0xFF000004)
+//   PPN: Physical Page Number (bits 28-10)
+//   PR : Protection bits, SZ: page size, C: cacheable,
+//   D  : dirty, SH: shared, WT: write-through, V: valid
 union CCN_PTEL_type
 {
 	struct
@@ -61,6 +72,12 @@ union CCN_PTEL_type
 	u32 reg_data;
 };
 
+// MMUCR — MMU Control Register (0xFF000010)
+//   AT  : Address Translation enable (0=off, 1=on)
+//   TI  : TLB Invalidate — self-clearing on write
+//   SV  : Single Virtual mode
+//   SQMD: Store Queue Mode
+//   URC/URB/LRUI: TLB replacement control
 union CCN_MMUCR_type
 {
 	struct
@@ -107,6 +124,12 @@ union CCN_PTEA_type
 	u32 reg_data;
 };
 
+// CCR — Cache Control Register (0xFF00001C)
+//   OCE/ICE : Operand/Instruction cache enable
+//   OCI/ICI : Cache Invalidate — self-clearing on write
+//   ORA     : OC used as RAM
+//   OIX/IIX : Index mode selectors
+//   WT/CB   : Write-through / Copy-back
 union CCN_CCR_type
 {
 	struct
