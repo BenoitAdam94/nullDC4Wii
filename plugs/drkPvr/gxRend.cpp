@@ -1,5 +1,18 @@
 // Wii Rendering
 
+/*
+Now without this code this has better colors :
+- Dreamcast Logo
+- Konami Logo (2D)
+- Castlevania Logo (2D)
+- The tiny ape (3D object) in Sega Tetris has the good color
+
+What still doesn't looks good :
+- Sonia Belmont in Castlevania resurrection
+- Most textures in Castlevania resurrection and Sega Tetris
+
+*/
+
 #include "config.h"
 #include "gxRend.h"
 #include <gccore.h>
@@ -262,26 +275,11 @@ u32 GX_TexOffs(u32 x, u32 y, u32 w)
 }
 
 // converts Dreamcast "twiddled" textures to Wii GX block format.
-// this section was previously commented
-void fastcall texture_TW(u8* p_out,u8* p_in,u32 Width,u32 Height)
-{
-  u16* dst=(u16*)p_out;
-  const u32 divider=2*2;
+// NOTE: This simple version is NOT USED - see texture_TW<class> template at line ~665
+// which properly handles color conversion through pixel converter classes.
+// Kept here for reference only.
 
-  for (u32 y=0;y<Height;y+=2)
-  {
-    for (u32 x=0;x<Width;x+=2)
-    {
-      u8* p = &p_in[((twop(x,y,Width,Height)/divider)<<3)];
-      u16* src=(u16*)p;
 
-      dst[GX_TexOffs(x,y,Width)]=(src[1]);
-      dst[GX_TexOffs(x+1,y,Width)]=(src[0]);
-      dst[GX_TexOffs(x,y+1,Width)]=(src[3]);
-      dst[GX_TexOffs(x+1,y+1,Width)]=(src[2]);
-    }
-  }
-}
 
 
 
@@ -305,10 +303,11 @@ void fastcall texture_TW(u8* p_out,u8* p_in,u32 Width,u32 Height)
 #define MAKE_1555(r, g, b, a)
 #define MAKE_4444(r, g, b, a)
 
-#define ABGR8888(x) ((x & 0xFF00FF00) | ((x >> 16) & 0xFF) | ((x & 0xFF) << 16))
-#define ABGR4444(x) ((x & 0xF0F0) | ((x >> 8) & 0xF) | ((x & 0xF) << 8))
-#define ABGR0565(x) ((x & (0x3F << 5)) | ((x >> 11) & 0x1F) | ((x & 0x1F) << 11))
-#define ABGR1555(x) ((x & 0x83E0) | ((x >> 10) & 0x1F) | ((x & 0x1F) << 10))
+#define ABGR8888(x) (x)  // TEST: No conversion
+#define ABGR4444(x) (x)  // TEST: No conversion
+#define ABGR0565(x) (x)  // TEST: No conversion  
+#define ABGR1555(x) (x)  // TEST: No conversion
+
 
 #define colclamp(low, hi, val) \
   {                            \
@@ -329,7 +328,7 @@ u32 YUV422(s32 Y, s32 Yu, s32 Yv)
   colclamp(0, 0x3F, G);
   colclamp(0, 0x1F, R);
 
-  return (B << 11) | (G << 5) | (R);
+  return (R << 11) | (G << 5) | (B);  // RGB565 format
 }
 
 // Infrastructure for fast pixel conversion routines using static polymorphism/templates.
@@ -855,6 +854,7 @@ static void SetTextureParams(PolyParam *mod)
 				memcpy(dst,ptex,sz);
 			else
 				texture_TW((u8*)dst,(u8*)ptex,8<<mod->tsp.TexU,8<<mod->tsp.TexV);
+        // texture_TW<1555>((u8*)dst, (u8*)ptex, 8<<mod->tsp.TexU, 8<<mod->tsp.TexV); // AI Claude suggestion
 
 			//setup ..
 
