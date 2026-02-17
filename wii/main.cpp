@@ -197,19 +197,19 @@ void displayAccuracyMenu()
     printf("Information about preset :\n\n");
 
     printf("Calculations Accuracy (can lead to bugs if not AVERAGE):\n");  
-    printf("= FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
-    printf("= BALANCED - Good Balance \n");
-    printf("= ACCURATE - Maximum Accuracy (closest to real hardware) \n\n");
+    printf("> FAST - Maximum Speed (Use if you need more FPS (Framerate))\n");
+    printf("> BALANCED - Good Balance \n");
+    printf("> ACCURATE - Maximum Accuracy (closest to real hardware) \n\n");
 
-    printf("Graphical settings (not implemented for now) \n");
-    printf("= LOW - (Wii) \n");
-    printf("= NORMAL - (Wii) \n");
-    printf("= HIGH - Anisotropic x2 (WiiU) \n");
-    printf("= EXTRA - Anisotropic x4 (WiiU) \n\n");
+    printf("Graphical settings \n");
+    printf("> LOW    = GX_NEAR -   lod0 - GX_DISABLE (Wii) \n");
+    printf("> NORMAL = GX_LINEAR - lod0 - GX_DISABLE (Wii) \n");
+    printf("> HIGH   = GX_LINEAR - lodH - GX_ENABLE - Anisotropic x2 (WiiU) \n");
+    printf("> EXTRA  = GX_LINEAR - lodE - GX_ENABLE - Anisotropic x4 (WiiU) \n\n");
 
     printf("Original Ratio (4/3) / FULLSCREEN (not implemented for now)\n");
-    printf("= ORIGINAL - 4/3 ratio\n");
-    printf("= FULLSCREEN \n");
+    printf("> ORIGINAL - 4/3 ratio\n");
+    printf("> FULLSCREEN \n");
 
     printf(" \n");
     printf("Current setting: \n");
