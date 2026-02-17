@@ -13,6 +13,26 @@ What still doesn't looks good :
 
 */
 
+// ============================================================================
+// RUNTIME - PRESET SELECTION
+// ============================================================================
+
+// This is defined in main.cpp
+extern "C" int get_accuracy_preset();
+
+// Helper macros to check current accuracy mode
+#define FAST() (get_accuracy_preset() == 0)
+#define BALANCED() (get_accuracy_preset() == 1)
+#define ACCURATE() (get_accuracy_preset() == 2)
+
+// This is defined in main.cpp
+extern "C" int get_graphism_preset();
+
+// Helper macros to check current graphism mode
+#define LOW() (get_graphism_preset() == 0)
+#define NORMAL() (get_graphism_preset() == 1)
+#define HIGH() (get_graphism_preset() == 2)
+
 #include "config.h"
 #include "gxRend.h"
 #include <gccore.h>
@@ -278,7 +298,13 @@ u32 GX_TexOffs(u32 x, u32 y, u32 w)
 // NOTE: This simple version is NOT USED - see texture_TW<class> template at line ~665
 // which properly handles color conversion through pixel converter classes.
 // Kept here for reference only.
-
+/*
+template<int pixel_format>
+void fastcall texture_TW_UNUSED(u8* p_out, u8* p_in, u32 Width, u32 Height)
+{
+  ... removed to avoid compilation errors ...
+}
+*/
 
 
 
@@ -513,6 +539,8 @@ pixelcvt_end;
 // These handle PVR's compressed texture formats by averaging or selecting colors from the codebook.
 pixelcvt_startVQ(conv565_VQ, 2, 2)
 {
+  // Just use first pixel, no averaging (TEST) : no change with return data[0];
+  // return data[0]; // Delete above and keep this. ACCURACY Opportunity ?
   u32 R = ABGR0565_R(data[0]) + ABGR0565_R(data[1]) + ABGR0565_R(data[2]) + ABGR0565_R(data[3]);
   u32 G = ABGR0565_G(data[0]) + ABGR0565_G(data[1]) + ABGR0565_G(data[2]) + ABGR0565_G(data[3]);
   u32 B = ABGR0565_B(data[0]) + ABGR0565_B(data[1]) + ABGR0565_B(data[2]) + ABGR0565_B(data[3]);
@@ -522,8 +550,11 @@ pixelcvt_startVQ(conv565_VQ, 2, 2)
 
   return R | (G << 5) | (B << 11);
 }
+
 pixelcvt_nextVQ(conv1555_VQ, 2, 2)
 {
+  // Just use first pixel, no averaging (TEST) : no change with return data[0];
+  // return data[0]; // Delete above and keep this. ACCURACY Opportunity ?
   u32 R = ABGR1555_R(data[0]) + ABGR1555_R(data[1]) + ABGR1555_R(data[2]) + ABGR1555_R(data[3]);
   u32 G = ABGR1555_G(data[0]) + ABGR1555_G(data[1]) + ABGR1555_G(data[2]) + ABGR1555_G(data[3]);
   u32 B = ABGR1555_B(data[0]) + ABGR1555_B(data[1]) + ABGR1555_B(data[2]) + ABGR1555_B(data[3]);
@@ -551,6 +582,9 @@ pixelcvt_nextVQ(conv1555_VQ, 2, 2)
 }
 pixelcvt_nextVQ(conv4444_VQ, 2, 2)
 {
+  // Just use first pixel, no averaging (TEST) : no change with return data[0];
+  // return data[0]; // Delete above and keep this. ACCURACY Opportunity ?
+
   u32 R = ABGR4444_R(data[0]) + ABGR4444_R(data[1]) + ABGR4444_R(data[2]) + ABGR4444_R(data[3]);
   u32 G = ABGR4444_G(data[0]) + ABGR4444_G(data[1]) + ABGR4444_G(data[2]) + ABGR4444_G(data[3]);
   u32 B = ABGR4444_B(data[0]) + ABGR4444_B(data[1]) + ABGR4444_B(data[2]) + ABGR4444_B(data[3]);
@@ -674,10 +708,19 @@ void fastcall texture_VQ(u8 *p_in, u32 Width, u32 Height, u8 *vq_codebook)
 {
   // p_in+=256*4*2;
   //		u32 p=0;
+  // VQ codebook to palette conversion
+  // Codebook: 256 entries × 4 pixels (2x2 blocks) = 1024 pixels
+  // Palette: 256 entries (one averaged/selected pixel per entry)
+
   u8 *pb = VramWork;
   // pb->amove(0,0);
   // Convert VQ cb to PAL8
   u16 *pal_cb = (u16 *)vq_codebook;
+
+  // Convert codebook entries to palette - write to BEGINNING of codebook
+  // This works because we read 4 pixels (entries 0-3) to make palette[0],
+  // then read 4 pixels (entries 4-7) to make palette[1], etc.
+  // So we're always reading ahead of where we're writing
   for (u32 palidx = 0; palidx < 256; palidx++)
   {
     pal_cb[palidx] = PixelConvertor::Convert(&pal_cb[palidx * 4]);
@@ -685,6 +728,12 @@ void fastcall texture_VQ(u8 *p_in, u32 Width, u32 Height, u8 *vq_codebook)
   // Height/=PixelConvertor::ypp;
   // Width/=PixelConvertor::xpp;
   const u32 divider = PixelConvertor::xpp * PixelConvertor::ypp;
+    // In texture_VQ, after the for loop at line ~662:
+    // if g_debug = 1 (need implementation)
+    // printf("First 16 palette entries:\n");
+    // for (int i = 0; i < 16; i++) {
+    //   printf("  [%d] = %04X\n", i, pal_cb[i]);
+    // }
 
   for (u32 y = 0; y < Height; y += PixelConvertor::ypp)
   {
@@ -972,6 +1021,10 @@ static void SetTextureParams(PolyParam *mod)
 
     if (texVQ)
     {
+      // TEST: Try RGB5A3 palette format
+      // if g_test = 1 (to be implemented)
+      // GX_InitTlutObj(&pbuff->pal, vq_codebook, GX_TF_RGB5A3, 256);
+      // printf("VQ Texture: Using palette format RGB5A3\n");
       GX_InitTlutObj(&pbuff->pal, vq_codebook, FMT, 256);
       FMT = GX_TF_I8;
       w >>= 1;
