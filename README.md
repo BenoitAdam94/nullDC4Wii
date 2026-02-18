@@ -14,7 +14,7 @@ a fork from https://github.com/skmp/nullDCe
 - Clean Warning/notes during compilation I guess
 - Player 2 Gamecube/Wiimote (1rst step)
 - Player 3/4 Gamecube/Wiimote (2nd step)
-- Wii U gamepad support like WiiStation ?
+- Wii U gamepad support like WiiStation ? ( https://github.com/FIX94/libwiidrc )
 - Fishing Rod/USB Keyboard/Lightgun/Maracas support
 - Put external config file for controllers (controls.cfg)
 - Clean Clean Clean
@@ -221,6 +221,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
