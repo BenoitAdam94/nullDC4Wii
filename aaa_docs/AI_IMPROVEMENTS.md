@@ -32,7 +32,7 @@
 |------|----------|---------|----------------|
 | sh4_cpu.cpp | SH4 CPU core implementation | 0.05 | improved with ClaudeAI |
 | sh4_interpreter.cpp | SH4 instruction interpreter | | |
-| sh4_fpu.cpp | SH4 floating point unit | | |
+| sh4_fpu.cpp | SH4 floating point unit | 0.06 | Improved with ClaudeAI (+accuracy preset added) |
 | sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
 | sh4_opcode_list.cpp | SH4 opcode definitions | 0.05 | Improved with ClaudeAI |
 | sh4_registers.cpp | SH4 register definitions | | |
@@ -44,8 +44,8 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| bsc.cpp | Bus State Controller | | |
-| ccn.cpp | Cache Control | | |
+| bsc.cpp | Bus State Controller | 0.06 | Improved with ClaudeAI. Still can be improved. See docs |
+| ccn.cpp | Cache Control | 0.06 | Improved with ClaudeAI |
 | cpg.cpp | Clock Pulse Generator | | |
 | dmac.cpp | DMA Controller | | |
 | intc.cpp | Interrupt Controller | | |
@@ -71,12 +71,11 @@
 | pvr_if.cpp | PVR interface layer | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvr_sb_regs.cpp | PVR system bus registers | 0.04 | Improved by ClaudeAI (no notable change) |
 | pvrLock.cpp | PVR synchronization mechanisms | 0.05 |Improved by ClaudeAI (gxRend.cpp also updated) - Makefile flto suggested |
-| drkPvr.cpp | PVR renderer backend | | |
-| Renderer_if.cpp | Renderer abstraction interface | | |
+| drkPvr.cpp | PVR renderer backend | 0.06 | Improved by Claude AI |
+| Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
 | regs.cpp | PVR register definitions | | |
 | SPG.cpp | Sync Pulse Generator | | |
 | ta.cpp | Tile Accelerator | | |
-| tex_decode.cpp | Texture decoding logic | | |
 
 ## Rendering Backends
 
@@ -134,5 +133,5 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| wii_driver.cpp | Wii hardware driver | | |
-| wii_types.cpp | Wii-specific type definitions | | |
+| wii_driver.cpp | Wii hardware driver | | 2nd attemp, black screen (see archives) |
+| wii_types.cpp | Wii-specific type definitions | | 2nd attemp, black screen (see archives) |
