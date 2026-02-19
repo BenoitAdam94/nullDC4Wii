@@ -9,7 +9,7 @@
 #include "blockmanager.h"
 
 
-#define CODE_SIZE   (6*1024*1024)
+#define CODE_SIZE   (6291456) // =(6*1024*1024) // 4 or 6 MB for Wii ?
 
 
 #if HOST_OS==OS_LINUX
