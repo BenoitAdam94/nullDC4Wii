@@ -177,10 +177,12 @@ void bm_AddCode(u32 addr, DynarecCodeEntry* code)
 		new_block.addr = addr;
 		new_block.lookups = 0;
 		block_list.push_back(new_block);
+		// Point cache at the new block immediately - it was just compiled
+		// so it will almost certainly be needed right away.
+		cache[idx] = &block_list.back();
 	}
-	
-	// Reset cache for this bucket to allow new block to compete
-	cache[idx] = &empty_block;
+	// NOTE: do NOT reset cache to empty_block here when evicting.
+	// The eviction path already handles cache invalidation above.
 }
 
 // Remove a specific block (useful for invalidation)
