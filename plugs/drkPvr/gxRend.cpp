@@ -133,7 +133,7 @@ PolyParam ALIGN16 listModes[8 * 1024];
 Vertex *curVTX = vertices;
 VertexList *curLST = lists;
 VertexList *TransLST = 0;
-PolyParam *curMod = listModes - 1;
+PolyParam *curMod = listModes;
 bool global_regd;
 float vtx_min_Z;
 float vtx_max_Z;
@@ -258,7 +258,7 @@ void reset_vtx_state()
 {
   curVTX = vertices;
   curLST = lists;
-  curMod = listModes - 1;
+  curMod = listModes;
   global_regd = false;
   vtx_min_Z = 128 * 1024; // if someone uses more, i realy realy dont care
   vtx_max_Z = 0;          // lower than 0 is invalid for pvr .. i wonder if SA knows that.
@@ -1351,8 +1351,6 @@ struct VertexDecoder
 #define glob_param_bdc                 \
   if ((curVTX - vertices) > 38 * 1024) \
     reset_vtx_state();                 \
-  if (!global_regd)                    \
-    curMod++;                          \
   global_regd = true;                  \
   curMod->pcw = pp->pcw;               \
   curMod->isp = pp->isp;               \
@@ -1400,6 +1398,7 @@ struct VertexDecoder
     {
       curLST->count |= 0x80000000;
       global_regd = false;
+      curMod++;
     }
     curLST++;
   }
@@ -1663,6 +1662,7 @@ static void AppendSpriteVertex0B(TA_Sprite0B* sv)
     {
       curLST->count |= 0x80000000;
       global_regd = false;
+      curMod++;
     }
     curLST++;
   }
