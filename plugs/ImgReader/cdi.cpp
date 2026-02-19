@@ -4,6 +4,9 @@
 #define DWORD u32
 //#include "pfctoc.h"
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 //PfcFreeTocFP* PfcFreeToc;
 //PfcGetTocFP*  PfcGetToc;
 
@@ -59,7 +62,10 @@ void cdi_ReadSSect(u8* p_out,u32 sector,u32 secsz)
 }
 void cdi_DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
-	//printf("GDR->Read : Sector %d , size %d , mode %d \n",StartSector,SectorCount,secsz);
+  // DOLPHIN ERROR LOOP
+  if(get_debug_loop() == 1){
+	  printf("GDR(CDI)->Read : Sector %d , size %d , mode %d \n",StartSector,SectorCount,secsz);
+  }
 	while(SectorCount--)
 	{
 		cdi_ReadSSect(buff,StartSector,secsz);

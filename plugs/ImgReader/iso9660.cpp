@@ -5,6 +5,9 @@ bool inbios=true;
 FILE* f_1=0;
 FILE* f_2=0;
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 u8 isotemshit[5000];
 struct file_TrackInfo
 {
@@ -71,7 +74,11 @@ void rss(u8* buff,u32 ss,FILE* file)
 }
 void iso_DriveReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
-	printf("GDR->Read : Sector %d , size %d , mode %d \n",StartSector,SectorCount,secsz);
+
+  // DOLPHIN ERROR LOOP
+  if(get_debug_loop() == 1){
+	  printf("GDR(ISO)->Read : Sector %d , size %d , mode %d \n",StartSector,SectorCount,secsz);
+  }
 	if (StartSector>150)
 		StartSector-=150;
 	while(SectorCount--)

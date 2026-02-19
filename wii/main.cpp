@@ -43,6 +43,31 @@ extern "C" {
 }
 
 // ============================================================================
+// DEBUG MODE
+// ============================================================================
+
+// Debug for messages that are looped
+int g_debug_loop = 0; // 0= no debug 1=Debug
+
+extern "C" {
+  int get_debug_loop() {
+    return g_debug_loop;
+  }
+}
+
+
+// Debug for messages that are print once
+int g_debug_message = 0; // 0= no debug 1=Debug
+
+extern "C" {
+  int get_debug_message() {
+    return g_debug_message;
+  }
+}
+
+
+
+// ============================================================================
 
 // Global variables
 struct FileEntry
@@ -554,7 +579,7 @@ int main(int argc, wchar *argv[])
     printf("Booting to BIOS...\n");
   }
 
-  int rv = EmuMain(argc, argv);
+  int rv = EmuMain(argc, argv); // Launching the Emulator (nullDC.cpp)
 
   return rv;
 }

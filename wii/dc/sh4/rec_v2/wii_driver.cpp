@@ -44,6 +44,9 @@
 const ppc_freg ppc_finvalid = (ppc_freg)-1;  // or a out of range value (ex: 32+)
 const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // or a out of range value (ex: 32+)
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 // ppc_li: Loads a 32-bit immediate value into a PowerPC register.
 void ppc_li(u32 D,u32 imm)
 {
@@ -435,7 +438,10 @@ void ngen_End(DecodedBlock* block)
 
 	case BET_StaticCall:
 	case BET_StaticJump:
-		printf("Static 0x%08X!\n",block->BranchBlock);
+    // DOLPHIN ERROR LOOP
+    if(get_debug_loop() == 1){
+		  printf("Static 0x%08X!\n",block->BranchBlock);
+    }
 		DoStatic(block->BranchBlock);
 		break;
 
