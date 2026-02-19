@@ -54,6 +54,25 @@ static GXRModeObj *rmode;
 static u8 gp_fifo[DEFAULT_FIFO_SIZE] __attribute__((aligned(32)));
 static int fb = 0; // Current framebuffer index
 
+// Set once at startup or when preset changes
+static u8 min_filt, mag_filt, bias_clamp, edge_lod, aniso;
+static f32 lod_bias;
+
+void ApplyGraphismPreset() {
+  switch (get_graphism_preset()) {
+    case 0: min_filt = GX_NEAR; mag_filt = GX_NEAR; lod_bias = 0.0f;
+            bias_clamp = GX_DISABLE; edge_lod = GX_DISABLE; aniso = GX_ANISO_1; break;
+    case 1: min_filt = GX_LINEAR; mag_filt = GX_LINEAR; lod_bias = 0.0f;
+            bias_clamp = GX_DISABLE; edge_lod = GX_DISABLE; aniso = GX_ANISO_1; break;
+    case 2: min_filt = GX_LINEAR; mag_filt = GX_LINEAR; lod_bias = -0.5f;
+            bias_clamp = GX_ENABLE; edge_lod = GX_ENABLE; aniso = GX_ANISO_2; break;
+    case 3: min_filt = GX_LINEAR; mag_filt = GX_LINEAR; lod_bias = -1.0f;
+            bias_clamp = GX_ENABLE; edge_lod = GX_ENABLE; aniso = GX_ANISO_4; break;
+    default: min_filt = GX_LINEAR; mag_filt = GX_LINEAR; lod_bias = 0.0f;
+              bias_clamp = GX_DISABLE; edge_lod = GX_DISABLE; aniso = GX_ANISO_1; break;
+  }
+}
+
 // Macro to convert ABGR (standard for some PC/PVR formats) to RGBA/Other
 // #define ABGR8888(x) ((x & 0xFF00FF00) | ((x >> 16) & 0xFF) | ((x & 0xFF) << 16)) // already defined elsewhere
 /*
@@ -912,7 +931,7 @@ static void SetTextureParams(PolyParam *mod)
 			pbuff->addr=tex_addr;
 			*ptex=0xDEADBEEF;
 		}
-#endif
+  #endif
 
 
   // Only re-process texture if it has changed (marked by DEADBEEF sentinel).
@@ -1040,65 +1059,12 @@ static void SetTextureParams(PolyParam *mod)
     // Init Text Object
     GX_InitTexObj(&pbuff->tex, dst, w, h, FMT, TexUV(mod->tsp.FlipU, mod->tsp.ClampU),
                   TexUV(mod->tsp.FlipV, mod->tsp.ClampV), GX_FALSE);
-    // Init Text Object LOD (Level Of Detail)
-    // Get the preset once
-    int preset = get_graphism_preset();
-
-    // Temporary variables to hold settings
-    u8 min_filt, mag_filt, bias_clamp, edge_lod, aniso;
-    f32 lod_bias;
-
-    switch (preset) {
-        case 0: // LOW
-            printf("Setting profile: LOW\n");
-            min_filt = GX_NEAR;
-            mag_filt = GX_NEAR;
-            lod_bias = 0.0f;
-            bias_clamp = GX_DISABLE;
-            edge_lod = GX_DISABLE;
-            aniso = GX_ANISO_1;
-            break;
-
-        case 1: // NORMAL
-            printf("Setting profile: NORMAL\n");
-            min_filt = GX_LINEAR;
-            mag_filt = GX_LINEAR;
-            lod_bias = 0.0f;
-            bias_clamp = GX_DISABLE;
-            edge_lod = GX_DISABLE;
-            aniso = GX_ANISO_1;
-            break;
-
-        case 2: // HIGH
-            printf("Setting profile: HIGH\n");
-            min_filt = GX_LINEAR;
-            mag_filt = GX_LINEAR;
-            lod_bias = -0.5f;
-            bias_clamp = GX_ENABLE;
-            edge_lod = GX_ENABLE;
-            aniso = GX_ANISO_2;
-            break;
-
-        case 3: // EXTRA
-            printf("Setting profile: EXTRA\n");
-            min_filt = GX_LINEAR;
-            mag_filt = GX_LINEAR;
-            lod_bias = -1.0f;
-            bias_clamp = GX_ENABLE;
-            edge_lod = GX_ENABLE;
-            aniso = GX_ANISO_4;
-            break;
-
-        default:
-            printf("Warning: Unknown preset %d, using DEFAULT\n", preset);
-            min_filt = GX_LINEAR;
-            mag_filt = GX_LINEAR;
-            lod_bias = 0.0f;
-            bias_clamp = GX_DISABLE;
-            edge_lod = GX_DISABLE;
-            aniso = GX_ANISO_1;
-            break;
-    }
+    
+    // Values from Apply Graphism Preset (LOW/NORMAL/HIGH/EXTRA)
+    GX_InitTexObjLOD(&pbuff->tex, min_filt, mag_filt,
+                  0.0f, 10.0f, lod_bias,
+                  bias_clamp, edge_lod, aniso);
+    
                   
     *ptex = 0xDEADBEEF;
     printf("Texture:%d %d %dx%d %08X --> %08X\n", mod->tcw.NO_PAL.PixelFmt, mod->tcw.NO_PAL.ScanOrder, 8 << mod->tsp.TexU, 8 << mod->tsp.TexV, tex_addr, (u32)dst);
@@ -1809,6 +1775,7 @@ bool InitRenderer()
   memset(gp_fifo, 0, DEFAULT_FIFO_SIZE);
 
   GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
+  ApplyGraphismPreset();  // LOW/NORMAL/HIGH/EXTRA
 
     // clears the bg to color and clears the z buffer
   // GX_SetCopyClear(background, 0x00ffffff);
