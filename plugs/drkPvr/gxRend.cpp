@@ -1057,8 +1057,10 @@ static void SetTextureParams(PolyParam *mod)
     //				params.vram + sa );
 
     // Init Text Object
+    bool use_mips = (mod->tcw.NO_PAL.MipMapped && get_graphism_preset() >= 2) ? GX_TRUE : GX_FALSE;
     GX_InitTexObj(&pbuff->tex, dst, w, h, FMT, TexUV(mod->tsp.FlipU, mod->tsp.ClampU),
-                  TexUV(mod->tsp.FlipV, mod->tsp.ClampV), GX_FALSE);
+                  TexUV(mod->tsp.FlipV, mod->tsp.ClampV), use_mips);
+
     
     // Values from Apply Graphism Preset (LOW/NORMAL/HIGH/EXTRA)
     GX_InitTexObjLOD(&pbuff->tex, min_filt, mag_filt,
