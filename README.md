@@ -14,7 +14,7 @@ a fork from https://github.com/skmp/nullDCe
 - Clean Warning/notes during compilation I guess
 - Player 2 Gamecube/Wiimote (1rst step)
 - Player 3/4 Gamecube/Wiimote (2nd step)
-- Wii U gamepad support like WiiStation ?
+- Wii U gamepad support like WiiStation ? ( https://github.com/FIX94/libwiidrc )
 - Fishing Rod/USB Keyboard/Lightgun/Maracas support
 - Put external config file for controllers (controls.cfg)
 - Clean Clean Clean
@@ -23,10 +23,11 @@ a fork from https://github.com/skmp/nullDCe
 
 ### Developer (Hard)
 
+- Improve Gxrend.cpp = main file about specific rendering for Wii
 - Coding routine adjustement for performance (FAST/BALANCED/ACCURATE)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
-- Full Dynarec implementation
+- Full Dynarec implementation (AI seems to know about this)
 - 50/60 ips for PAL/NTSC ?
 - 4/3 and fullscreen support
 - Sound implementation
@@ -221,6 +222,8 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
+
 
 
 

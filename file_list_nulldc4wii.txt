@@ -206,18 +206,13 @@ C:\devkitPro\nullDC4Wii\plugs\ImgReader\ui.cpp
 C:\devkitPro\nullDC4Wii\plugs\ImgReader\ui.h
 C:\devkitPro\nullDC4Wii\plugs\ImgReader\UI.rc
 C:\devkitPro\nullDC4Wii\plugs\nullExtDev\nullExtDev.cpp
-C:\devkitPro\nullDC4Wii\repomix\repomix-output-BenoitAdam94-nullDC4Wii.xml
-C:\devkitPro\nullDC4Wii\wii\boot.dol
-C:\devkitPro\nullDC4Wii\wii\boot.elf
+
 C:\devkitPro\nullDC4Wii\wii\iso.cpp
 C:\devkitPro\nullDC4Wii\wii\iso.h
 C:\devkitPro\nullDC4Wii\wii\main.cpp
 C:\devkitPro\nullDC4Wii\wii\Makefile
 C:\devkitPro\nullDC4Wii\wii\multi.cmd
 C:\devkitPro\nullDC4Wii\wii\ndce.log
-C:\devkitPro\nullDC4Wii\wii\vs_clean.bat
-C:\devkitPro\nullDC4Wii\wii\vs_make.bat
-C:\devkitPro\nullDC4Wii\wii\vs_rebuild.bat
 C:\devkitPro\nullDC4Wii\wii\wii_types.cpp
 
 C:\devkitPro\nullDC4Wii\wii\dc\sh4\rec_v2\wii_driver.cpp
