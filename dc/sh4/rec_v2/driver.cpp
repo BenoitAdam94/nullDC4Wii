@@ -44,6 +44,9 @@
 
 #ifndef HOST_NO_REC
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 // Performance monitoring (can be disabled in release builds)
 // #define ENABLE_PERF_MONITORING
 
@@ -64,11 +67,9 @@ void recSh4_ClearCache();
 
 extern volatile bool sh4_int_bCpuRun;
 
-// Code cache configuration for Wii
-// Reduced from default to fit Wii's memory constraints
-#ifndef CODE_SIZE
-#define CODE_SIZE (4*1024*1024)  // 4 MB instead of 6 MB for Wii
-#endif
+// CODE_SIZE is defined in ngen.h as 6MB - do not redefine here.
+// The previous 4MB redefinition caused bounds checks to fire at 4MB
+// while the actual array was 6MB, triggering premature cache clears.
 
 // Wii-specific: align code cache to 32-byte cache line
 #if HOST_OS == OS_WII
@@ -249,7 +250,7 @@ DynarecCodeEntry* rdv_CompileBlock(u32 bpc)
 {
 	// Check if we're running low on cache space
 	u32 free_space = emit_FreeSpace();
-	if (free_space < 4096)  // Less than 4 KB free
+	if (free_space < 65536)  // Less than 64 KB free - 4KB was too aggressive
 	{
 		printf("WARNING: Low code cache space (%u bytes), clearing...\n", free_space);
 		recSh4_ClearCache();
@@ -340,14 +341,19 @@ DynarecCodeEntry* rdv_CompilePC()
 	
 	bm_AddCode(pc, rv);
 	
-	// Check if we're booting - reset cache after boot to free up memory
-	if ((pc & 0xFFFFFF) == 0x08300 || (pc & 0xFFFFFF) == 0x10000)
-	{
-		printf("Boot detected at %08X, scheduling cache reset\n", pc);
-		// **NOTE** The block must still be valid after this
-		// We clear the cache but the current block remains valid
-		recSh4_ClearCache();
-	}
+	// NOTE: boot detection cache clear in debug only
+  // it's clearing the cache immediately after adding a block, invalidating the block we just compiled.
+	// This is a major source of rdv_FailedToFindBlock spam and poor performance.
+  if(get_debug_loop() == 1){
+   // Check if we're booting - reset cache after boot to free up memory
+    if ((pc & 0xFFFFFF) == 0x08300 || (pc & 0xFFFFFF) == 0x10000)
+    {
+      printf("Boot detected at %08X, scheduling cache reset\n", pc);
+      // **NOTE** The block must still be valid after this
+      // We clear the cache but the current block remains valid
+      recSh4_ClearCache();
+    }
+  }
 	
 	return rv;
 }
@@ -356,7 +362,10 @@ DynarecCodeEntry* rdv_FailedToFindBlock()
 {
 	next_pc = rdv_FailedToFindBlock_pc;
 	
-	printf("rdv_FailedToFindBlock ~ %08X\n", next_pc);
+  // DOLPHIN ERROR LOOP
+  if(get_debug_loop() == 1){
+	  printf("rdv_FailedToFindBlock ~ %08X\n", next_pc);
+    }
 	
 	return rdv_CompilePC();
 }
