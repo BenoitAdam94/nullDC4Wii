@@ -24,7 +24,8 @@ a fork from https://github.com/skmp/nullDCe
 ### Developer (Hard)
 
 - Improve Gxrend.cpp = main file about specific rendering for Wii
-- Coding routine adjustement for performance (FAST/BALANCED/ACCURATE)
+- Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
+- Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation (AI seems to know about this)
@@ -222,6 +223,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
