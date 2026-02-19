@@ -7,7 +7,7 @@ a fork from https://github.com/skmp/nullDCe
 ### Simple
 
 - Test current state with every game and report compatibility (see "compatibility" below)
-- Fowarder for Wii Menu
+- Fowarder for Wii Menu (planned for alpha 0.06)
 
 ### Developer (Easy)
 
@@ -222,6 +222,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
