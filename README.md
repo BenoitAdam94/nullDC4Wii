@@ -31,6 +31,7 @@ a fork from https://github.com/skmp/nullDCe
 - Full Dynarec implementation (AI seems to know about this)
 - 50/60 ips for PAL/NTSC ?
 - 4/3 and fullscreen support
+- Splitting GxRend in multiple files ? (beware this is more tricky than it look)
 - Sound implementation
 
 ## Installation
@@ -223,6 +224,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
