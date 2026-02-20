@@ -23,7 +23,8 @@ a fork from https://github.com/skmp/nullDCe
 
 ### Developer (Hard)
 
-- Improve Gxrend.cpp = main file about specific rendering for Wii
+- Improve gxRend.cpp = main file about specific rendering for Wii
+- Splitting gxRend.cpp in multiple files ? (beware this is more tricky than it look)
 - Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
 - Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
@@ -31,7 +32,6 @@ a fork from https://github.com/skmp/nullDCe
 - Full Dynarec implementation (AI seems to know about this)
 - 50/60 ips for PAL/NTSC ?
 - 4/3 and fullscreen support
-- Splitting GxRend in multiple files ? (beware this is more tricky than it look)
 - Sound implementation
 
 ## Installation
@@ -224,6 +224,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
