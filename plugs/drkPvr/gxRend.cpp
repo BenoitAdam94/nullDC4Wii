@@ -34,6 +34,9 @@ extern "C" int get_graphism_preset();
 #define HIGH() (get_graphism_preset() == 2)
 #define EXTRA() (get_graphism_preset() == 3)
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 #include "config.h"
 #include "gxRend.h"
 #include <gccore.h>
@@ -1069,7 +1072,10 @@ static void SetTextureParams(PolyParam *mod)
     
                   
     *ptex = 0xDEADBEEF;
-    printf("Texture:%d %d %dx%d %08X --> %08X\n", mod->tcw.NO_PAL.PixelFmt, mod->tcw.NO_PAL.ScanOrder, 8 << mod->tsp.TexU, 8 << mod->tsp.TexV, tex_addr, (u32)dst);
+
+    if(get_debug_loop() == 1){
+      printf("Texture:%d %d %dx%d %08X --> %08X\n", mod->tcw.NO_PAL.PixelFmt, mod->tcw.NO_PAL.ScanOrder, 8 << mod->tsp.TexU, 8 << mod->tsp.TexV, tex_addr, (u32)dst);
+    }
   }
 
   GX_LoadTexObj(&pbuff->tex, GX_TEXMAP0);
@@ -1779,7 +1785,9 @@ bool InitRenderer()
   GX_Init(gp_fifo, DEFAULT_FIFO_SIZE);
   ApplyGraphismPreset();  // LOW/NORMAL/HIGH/EXTRA
 
-    // clears the bg to color and clears the z buffer
+  printf("vram_buffer: %08X\n", (u32)vram_buffer);
+
+  // clears the bg to color and clears the z buffer
   // GX_SetCopyClear(background, 0x00ffffff);
 
   // other gx setup
@@ -1804,6 +1812,13 @@ bool InitRenderer()
 
   // setup the vertex descriptor
   // tells the flipper to expect direct data
+
+  printf("MEM1 free: %.2f MB\n", ((unat)SYS_GetArena1Hi() - (unat)SYS_GetArena1Lo()) / 1024.f / 1024);
+  printf("MEM2 free: %.2f MB\n", ((unat)SYS_GetArena2Hi() - (unat)SYS_GetArena2Lo()) / 1024.f / 1024.f);
+
+  printf("sizeof TextureCacheDesc: %d\n", sizeof(TextureCacheDesc));
+  printf("sizeof GXTexObj: %d\n", sizeof(GXTexObj));
+  printf("sizeof GXTlutObj: %d\n", sizeof(GXTlutObj));
 
   return TileAccel.Init();
 }
