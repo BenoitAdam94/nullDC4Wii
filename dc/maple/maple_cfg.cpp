@@ -4,77 +4,100 @@
 #include "maple_devs.h"
 #include "maple_cfg.h"
 
-/*
-bus_x=0{p0=1{config};p1=2{config};config;}
-Plugins:
-	Input Source
-		EventMap -- 'Raw' interface, source_name[seid]:mode
-		KeyMap -- translated chars ( no re-mapping possible)
-	Output
-		Image
-		
-*/
-/*
-	MapleConfig:
-		InputUpdate(&fmt);
-		ImageUpdate(data);
-*/
 void UpdateInputState(u32 port);
 
 extern u16 kcode[4];
 extern u32 vks[4];
-extern s8 joyx[4],joyy[4];
-extern u8 rt[4],lt[4];
+extern s8  joyx[4], joyy[4];
+extern u8  rt[4], lt[4];
 
-u8 GetBtFromSgn(s8 val)
+// ----------------------------------------------------------------------------
+// Helper: convert signed axis value [-128..127] to unsigned byte [0..255]
+// Center (0) maps to 0x80.
+// ----------------------------------------------------------------------------
+static inline u8 SignedToByte(s8 val)
 {
-	return val+128;
+	return static_cast<u8>(static_cast<s32>(val) + 128);
 }
 
+// ----------------------------------------------------------------------------
+// MapleConfigMap
+// Bridges the platform's raw input globals into the PlainJoystickState format
+// expected by the Maple device layer.
+// ----------------------------------------------------------------------------
 struct MapleConfigMap : IMapleConfigMap
 {
 	maple_device* dev;
 
-	MapleConfigMap(maple_device* dev)
-	{
-		this->dev=dev;
-	}
+	explicit MapleConfigMap(maple_device* dev) : dev(dev) {}
 
-	void GetInput(PlainJoystickState* pjs)
+	void GetInput(PlainJoystickState* pjs) override
 	{
+		if (!pjs || !dev)
+			return;
+
 		UpdateInputState(dev->bus_id);
 
-		pjs->kcode=kcode[dev->bus_id] | 0xF901;
-		pjs->joy[PJAI_X1]=GetBtFromSgn(joyx[dev->bus_id]);
-		pjs->joy[PJAI_Y1]=GetBtFromSgn(joyy[dev->bus_id]);
-		pjs->trigger[PJTI_R]=rt[dev->bus_id];
-		pjs->trigger[PJTI_L]=lt[dev->bus_id];
+		// kcode is active-low; bits 0 and 8 and 11-15 are reserved by the
+		// Maple protocol. OR them in so they always read as "not pressed".
+		// Bit layout: F901 = 1111 1001 0000 0001
+		pjs->kcode = kcode[dev->bus_id] | 0xF901;
+
+		pjs->joy[PJAI_X1] = SignedToByte(joyx[dev->bus_id]);
+		pjs->joy[PJAI_Y1] = SignedToByte(joyy[dev->bus_id]);
+		// X2/Y2 not driven by this source; leave them centered (set in ctor).
+
+		pjs->trigger[PJTI_R] = rt[dev->bus_id];
+		pjs->trigger[PJTI_L] = lt[dev->bus_id];
 	}
-	void SetImage(void* img)
+
+	void SetImage(void* /*img*/) override
 	{
-		//?
+		// VMU screen image upload — not implemented for Wii input backend
 	}
 };
 
-void mcfg_Create(MapleDeviceType type,u32 bus,u32 port)
+// ----------------------------------------------------------------------------
+// Device factory helpers
+// ----------------------------------------------------------------------------
+
+// Creates a single Maple device, wires up its config map, and registers it.
+// Returns false if creation fails.
+static bool mcfg_Create(MapleDeviceType type, u32 bus, u32 port)
 {
-	maple_device* dev=maple_Create(type);
-	dev->Setup(maple_GetAddress(bus,port));
+	maple_device* dev = maple_Create(type);
+	if (!dev)
+	{
+		// Failed to allocate device — log or assert here if your platform supports it
+		return false;
+	}
+
+	dev->Setup(maple_GetAddress(bus, port));
 	dev->config = new MapleConfigMap(dev);
 	dev->OnSetup();
-	MapleDevices[bus][port]=dev;
+	MapleDevices[bus][port] = dev;
+	return true;
 }
 
 void mcfg_CreateDevices()
 {
-	mcfg_Create(MDT_SegaController,0,5);
-	mcfg_Create(MDT_SegaVMU,0,0);
-	mcfg_Create(MDT_SegaVMU,0,1);
+	// Port 0: Sega Controller on main slot, two VMUs on sub-slots
+	mcfg_Create(MDT_SegaController, 0, 5);
+	mcfg_Create(MDT_SegaVMU,        0, 0);
+	mcfg_Create(MDT_SegaVMU,        0, 1);
 }
 
 void mcfg_DestroyDevices()
 {
-	for (int i=0;i<3;i++)
-		for (int j=0;j<5;j++)
-			delete MapleDevices[i][j];
+	for (int bus = 0; bus < 4; bus++)
+	{
+		for (int port = 0; port < 6; port++)
+		{
+			if (MapleDevices[bus][port])
+			{
+				delete MapleDevices[bus][port];
+				MapleDevices[bus][port] = nullptr;
+			}
+		}
+	}
 }
