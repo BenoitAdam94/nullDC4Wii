@@ -74,7 +74,7 @@
 | drkPvr.cpp | PVR renderer backend | 0.06 | Improved by Claude AI |
 | Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
 | regs.cpp | PVR register definitions | | |
-| SPG.cpp | Sync Pulse Generator | | |
+| SPG.cpp | Sync Pulse Generator | 0.06 | Improved by AI (faster loading ?) |
 | ta.cpp | Tile Accelerator | | |
 
 ## Rendering Backends
