@@ -103,6 +103,7 @@ void FASTCALL libGDR_GetSessionInfo(u8* out,u8 ses)
 */
 void FASTCALL libGDR_ReadSector(u8 * buff,u32 StartSector,u32 SectorCount,u32 secsz)
 {
+	printf("[GDR] libGDR_ReadSector FAD=%u count=%u secsz=%u\n", StartSector, SectorCount, secsz);
 	if (CurrDrive)
 		CurrDrive->ReadSector(buff,StartSector,SectorCount,secsz);
 }
