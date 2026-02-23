@@ -47,8 +47,8 @@ fsca-table.bin
 #### Optional BIOS files in SD:/data/
 
 dc_flash_wb.bin (this is the dc_flash but already saved)  
-syscalls.bin  
-IP.bin  
+syscalls.bin (for non-GDI file)
+IP.bin  (for non-GDI file)
 
 dc_nvmem.bin  
 vmu_default.bin  
@@ -57,7 +57,8 @@ vmu_default.bin
 
 Put your folders with GDI in this directory
 
-Might work for ISO / CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
+Might work for ISO / CDI / BIN / CUE / NRG / MDS / ELF, but you probably need IP.bin/syscalls.bin (take IP.TMPL from bootdreams)
+
 
 ## Configuration
 
@@ -224,6 +225,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
