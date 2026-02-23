@@ -40,15 +40,15 @@ a fork from https://github.com/skmp/nullDCe
 
 #### Mandatory BIOS files in SD:/data/
 
-dc_boot.bin  
-dc_flash.bin  
-fsca-table.bin  
+- dc_boot.bin  
+- dc_flash.bin  
+- fsca-table.bin (included)
 
 #### Optional BIOS files in SD:/data/
 
-dc_flash_wb.bin (this is the dc_flash but already saved)  
-syscalls.bin (for non-GDI file)
-IP.bin  (for non-GDI file)
+- dc_flash_wb.bin (this is the dc_flash but already saved)  
+- syscalls.bin (for non-GDI file)
+- IP.bin  (for non-GDI file)
 
 dc_nvmem.bin  
 vmu_default.bin  
@@ -225,6 +225,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
