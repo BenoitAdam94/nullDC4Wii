@@ -57,7 +57,9 @@ vmu_default.bin
 
 Put your folders with GDI in this directory
 
-Might work for ISO / CDI / BIN / CUE / NRG / MDS
+CDI doesn't work now
+
+Might work for ISO / BIN / CUE / NRG / MDS
 
 BIN/CUE/ELF, but you probably need IP.bin/syscalls.bin (take IP.TMPL from bootdreams and rename it IP.Bin)
 
@@ -227,6 +229,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
