@@ -1,7 +1,7 @@
 // Wii Rendering
 
 /*
-Now without this code this has better colors :
+Now with this code this has better colors :
 - Dreamcast Logo
 - Konami Logo (2D)
 - Castlevania Logo (2D)
@@ -36,6 +36,10 @@ extern "C" int get_graphism_preset();
 
 // This is defined in main.cpp
 extern "C" int get_debug_loop();
+
+// This is defined in nullDC.cpp
+extern int g_current_frameskip; // 0 = no skip, 1 = skip 1 frame, 2 = skip 2 frame
+extern int g_frame_counter;
 
 #include "config.h"
 #include "gxRend.h"

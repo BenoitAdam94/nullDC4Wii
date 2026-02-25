@@ -11,12 +11,16 @@
 #include "plugins/plugin_manager.h"
 #include "cl/cl.h"
 
+// Frameskipping (preparation : working on it)
+int g_current_frameskip = 0; // 0 = no skip, 1 = skip 1 frame, 2 = skip 2 frame
+int g_frame_counter = 0;
+
 
 __settings settings;
 
 //mainloop
 int RunDC()
-{
+{ 
 
 	if(settings.dynarec.Enable)
 	{
