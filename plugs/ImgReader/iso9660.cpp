@@ -1,12 +1,14 @@
 #include "iso9660.h"
 #include <unistd.h> // For usleep
 
+// This is defined in main.cpp
+extern "C" int get_debug_loop();
+
 bool inbios=true;
 FILE* f_1=0;
 FILE* f_2=0;
 
-// This is defined in main.cpp
-extern "C" int get_debug_loop();
+
 
 u8 isotemshit[5000];
 struct file_TrackInfo
@@ -160,8 +162,6 @@ bool load_gdi(char* file_)
 		return false;
 
 	printf("\nGDI : %d tracks\n",iso_tc);
-  printf("-- Waiting 2 seconds -- (this will be removed in beta version");
-  usleep(2000000); // Wait a bit 2 seconds (or 2000 milliseconds)
 
 	char temp[512];
 	char path[512];
