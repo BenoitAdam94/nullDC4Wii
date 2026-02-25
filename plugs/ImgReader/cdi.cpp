@@ -539,16 +539,22 @@ static bool cdi_ParseHeader(FILE* f, u32 version, long file_size, u32 hdr_offset
     cdi_toc.LeadOut.Session = 0;
 
     // ── Build SessionInfo ─────────────────────────────────────────────────────
-    cdi_ses.SessionCount    = 1;
+    // MIL-CD selfboot: 2 sessions. BIOS uses Session2 FAD to find IP.BIN.
+    // SessionStart[n] = first track number in that session (1-based).
+    // Both our synthetic sessions point to track 1 at FAD 150 (the data track).
+    cdi_ses.SessionCount    = 2;
     cdi_ses.SessionsEndFAD  = cdi_leadout_fad;
-    cdi_ses.SessionStart[0] = 1;
-    cdi_ses.SessionFAD[0]   = cdi_tracks[0].FAD;
+    cdi_ses.SessionStart[0] = 1;   // session 1 first track = 1
+    cdi_ses.SessionFAD[0]   = cdi_tracks[0].FAD;  // FAD 150
+    cdi_ses.SessionStart[1] = 1;   // session 2 first track = 1 (same data track)
+    cdi_ses.SessionFAD[1]   = cdi_tracks[0].FAD;  // FAD 150 (BIOS reads IP.BIN here)
 
     printf("[CDI] TOC: %u tracks FistTrack=%u LastTrack=%u LeadOutFAD=%u\n",
            cdi_track_count, cdi_toc.FistTrack, cdi_toc.LastTrack, cdi_toc.LeadOut.FAD);
-    printf("[CDI] Ses: count=%u endFAD=%u start[0]=%u FAD[0]=%u\n",
+    printf("[CDI] Ses: count=%u endFAD=%u start[0]=%u FAD[0]=%u start[1]=%u FAD[1]=%u\n",
            cdi_ses.SessionCount, cdi_ses.SessionsEndFAD,
-           cdi_ses.SessionStart[0], cdi_ses.SessionFAD[0]);
+           cdi_ses.SessionStart[0], cdi_ses.SessionFAD[0],
+           cdi_ses.SessionStart[1], cdi_ses.SessionFAD[1]);
     printf("********************************END********************************\n\n");
     return true;
 }
