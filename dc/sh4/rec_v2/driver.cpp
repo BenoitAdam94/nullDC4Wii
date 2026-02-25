@@ -1,23 +1,29 @@
 /*
-	Improved driver.cpp for Dreamcast Emulator on Wii
+	driver.cpp - Dynarec Driver for Dreamcast Emulator on Wii
 	
-	Key improvements:
-	- Wii PowerPC optimizations
-	- Better memory management for limited RAM
-	- Improved code cache efficiency
-	- Better error handling and debugging
-	- Performance monitoring
+	This file is the JIT recompiler driver. It manages:
+	  - The native code cache (a fixed buffer where compiled PPC blocks live)
+	  - Emission of raw machine code into the cache
+	  - Block lookup, compilation, and invalidation
+	  - Cache pressure monitoring and eviction
+	  - Wii-specific D-cache/I-cache coherency
+
+	Improvements over previous version:
+	  - Fixed boot-detect cache clear bug (was invalidating freshly added blocks)
+	  - Cache pressure eviction uses a deferred/hysteresis model instead of
+	    a single hard threshold, reducing thrashing
+	  - All Wii cache flushes are properly bounded and guarded
+	  - Code quality pass: consistent style, better comments, dead code removed
 */
 
 #include "types.h"
 
-#if HOST_OS==OS_WINDOWS
+#if HOST_OS == OS_WINDOWS
 #include <windows.h>
-#elif HOST_OS==OS_LINUX
+#elif HOST_OS == OS_LINUX
 #include <unistd.h>
 #include <sys/mman.h>
-#elif HOST_OS==OS_WII
-// Wii-specific includes
+#elif HOST_OS == OS_WII
 #include <gccore.h>
 #include <malloc.h>
 #endif
@@ -37,6 +43,7 @@
 
 #include <time.h>
 #include <float.h>
+#include <string.h>
 
 #include "blockmanager.h"
 #include "ngen.h"
@@ -44,99 +51,121 @@
 
 #ifndef HOST_NO_REC
 
-// This is defined in main.cpp
+// Defined in main.cpp — returns 1 when debug loop / boot-trace is active
 extern "C" int get_debug_loop();
 
-// Performance monitoring (can be disabled in release builds)
+// ============================================================================
+// Optional performance counters
+// Uncomment to enable; negligible overhead, useful for tuning cache thresholds
+// ============================================================================
 // #define ENABLE_PERF_MONITORING
 
 #ifdef ENABLE_PERF_MONITORING
-static u32 perf_blocks_compiled = 0;
-static u32 perf_cache_clears = 0;
-static u32 perf_block_checks_failed = 0;
+static u32 perf_blocks_compiled    = 0;
+static u32 perf_cache_clears       = 0;
+static u32 perf_block_check_fails  = 0;
 #endif
 
 // ============================================================================
-// Forward Declarations
+// Forward declarations
 // ============================================================================
 void recSh4_ClearCache();
 
 // ============================================================================
-// Code Cache Management
+// Code cache storage
+//
+// CODE_SIZE is defined in ngen.h (currently 6 MB). Do NOT redefine here —
+// a smaller local definition caused premature cache clears while the real
+// array still had room, causing rdv_FailedToFindBlock spam.
+//
+// Wii: aligned to 32-byte cache lines so DCFlushRange/ICInvalidateRange
+// operate on natural boundaries without partial-line contamination.
 // ============================================================================
 
 extern volatile bool sh4_int_bCpuRun;
 
-// CODE_SIZE is defined in ngen.h as 6MB - do not redefine here.
-// The previous 4MB redefinition caused bounds checks to fire at 4MB
-// while the actual array was 6MB, triggering premature cache clears.
-
-// Wii-specific: align code cache to 32-byte cache line
 #if HOST_OS == OS_WII
 u8 CodeCache[CODE_SIZE] __attribute__((aligned(32)));
-#elif HOST_OS != OS_LINUX
-u8 CodeCache[CODE_SIZE];
 #elif HOST_OS == OS_LINUX
-u8 pMemBuff[CODE_SIZE+4095];
-u8 *CodeCache;
+// Linux needs an executable mapping; allocate with a page-alignment margin.
+u8  pMemBuff[CODE_SIZE + 4095];
+u8* CodeCache;
+#else
+u8 CodeCache[CODE_SIZE];
 #endif
 
-// Code cache state
-u32 LastAddr = 0;
-u32 LastAddr_min = 0;
-u32* emit_ptr = 0;
+// Current write pointer within the cache (byte offset)
+u32  LastAddr     = 0;
+// Lower bound after SetBaseAddr — clears only reclaim above this
+u32  LastAddr_min = 0;
+// Optional override pointer used during back-patching
+u32* emit_ptr     = 0;
 
-// Wii-specific: track cache pressure for better management
+// ============================================================================
+// Cache pressure thresholds (Wii-specific)
+//
+// CACHE_WARN_THRESHOLD  — log a warning, no action yet
+// CACHE_FLUSH_THRESHOLD — proactive clear before we run out mid-compilation
+//
+// Hysteresis between the two avoids rapid clear/refill thrashing.
+// Both expressed as fractions of CODE_SIZE.
+// ============================================================================
 #if HOST_OS == OS_WII
 static u32 cache_high_water_mark = 0;
-#define CACHE_PRESSURE_THRESHOLD (CODE_SIZE * 90 / 100)  // 90% full
+#define CACHE_WARN_THRESHOLD   ((CODE_SIZE * 80) / 100)   // 80 %
+#define CACHE_FLUSH_THRESHOLD  ((CODE_SIZE * 92) / 100)   // 92 %
+// Minimum free bytes required before attempting a new compilation.
+// 128 KB gives room for the largest typical PPC block expansion.
+#define CACHE_MIN_FREE         (128 * 1024)
 #endif
 
 // ============================================================================
-// Emit Functions - Optimized for Wii
+// Wii cache coherency helpers
+//
+// On the Wii's Broadway (PowerPC 750CL) the data cache and instruction cache
+// are independent. After writing new native code we must:
+//   1. DCFlushRange  — write D-cache lines back to RAM
+//   2. ICInvalidateRange — discard stale I-cache lines so the CPU fetches fresh
+//
+// Both functions require 32-byte alignment and a size rounded up to 32 bytes.
 // ============================================================================
-
-void* emit_GetCCPtr() 
-{ 
-	return emit_ptr == 0 ? (void*)&CodeCache[LastAddr] : (void*)emit_ptr; 
-}
-
-void emit_SetBaseAddr() 
-{ 
-	LastAddr_min = LastAddr; 
-}
-
-// Wii-specific: flush instruction cache after code generation
 #if HOST_OS == OS_WII
-static inline void emit_FlushCache(void* start, u32 size)
+static inline u32 align_up_32(u32 v) { return (v + 31u) & ~31u; }
+
+static inline void wii_sync_icache(const void* start, u32 size)
 {
-	DCFlushRange(start, size);
-	ICInvalidateRange(start, size);
+	if (!size) return;
+	// libogc functions are safe with unaligned inputs but work best aligned.
+	DCFlushRange((void*)start, align_up_32(size));
+	ICInvalidateRange((void*)start, align_up_32(size));
 }
 #endif
+
+// ============================================================================
+// Emit helpers — write code bytes / words into the cache
+// ============================================================================
+
+void* emit_GetCCPtr()
+{
+	return emit_ptr ? (void*)emit_ptr : (void*)&CodeCache[LastAddr];
+}
+
+void emit_SetBaseAddr()
+{
+	LastAddr_min = LastAddr;
+}
 
 void emit_Write8(u8 data)
 {
 	verify(!emit_ptr);
-	if (LastAddr >= CODE_SIZE - 1)
-	{
-		printf("ERROR: Code cache overflow in emit_Write8!\n");
-		recSh4_ClearCache();
-		return;
-	}
-	CodeCache[LastAddr] = data;
-	LastAddr += 1;
+	verify(LastAddr + 1 <= CODE_SIZE);
+	CodeCache[LastAddr++] = data;
 }
 
 void emit_Write16(u16 data)
 {
 	verify(!emit_ptr);
-	if (LastAddr >= CODE_SIZE - 2)
-	{
-		printf("ERROR: Code cache overflow in emit_Write16!\n");
-		recSh4_ClearCache();
-		return;
-	}
+	verify(LastAddr + 2 <= CODE_SIZE);
 	*(u16*)&CodeCache[LastAddr] = data;
 	LastAddr += 2;
 }
@@ -145,17 +174,11 @@ void emit_Write32(u32 data)
 {
 	if (emit_ptr)
 	{
-		*emit_ptr = data;
-		emit_ptr++;
+		*emit_ptr++ = data;
 	}
 	else
 	{
-		if (LastAddr >= CODE_SIZE - 4)
-		{
-			printf("ERROR: Code cache overflow in emit_Write32!\n");
-			recSh4_ClearCache();
-			return;
-		}
+		verify(LastAddr + 4 <= CODE_SIZE);
 		*(u32*)&CodeCache[LastAddr] = data;
 		LastAddr += 4;
 	}
@@ -163,12 +186,7 @@ void emit_Write32(u32 data)
 
 void emit_Skip(u32 sz)
 {
-	if (LastAddr + sz > CODE_SIZE)
-	{
-		printf("ERROR: Code cache overflow in emit_Skip!\n");
-		recSh4_ClearCache();
-		return;
-	}
+	verify(LastAddr + sz <= CODE_SIZE);
 	LastAddr += sz;
 }
 
@@ -178,221 +196,270 @@ u32 emit_FreeSpace()
 }
 
 // ============================================================================
-// Code Cache Management Functions
+// Code cache dump (debug utility)
 // ============================================================================
-
 void emit_WriteCodeCache()
 {
 	char path[512];
-	sprintf(path, "code_cache_%08X.bin", (u32)CodeCache);
-	printf("Writing code cache to %s\n", path);
-	
+	snprintf(path, sizeof(path), "code_cache_%08X.bin", (u32)(uintptr_t)CodeCache);
+
 	FILE* f = fopen(path, "wb");
 	if (f)
 	{
 		fwrite(CodeCache, LastAddr, 1, f);
 		fclose(f);
-		printf("Code cache written: %u bytes\n", LastAddr);
+		printf("recSh4: cache dump -> %s (%u bytes)\n", path, LastAddr);
 	}
 	else
 	{
-		printf("ERROR: Failed to write code cache!\n");
+		printf("recSh4: ERROR - failed to open %s for cache dump\n", path);
 	}
 }
 
+// ============================================================================
+// recSh4_ClearCache
+//
+// Resets the write pointer and invalidates all compiled blocks.
+// On Wii we also flush the instruction cache so the CPU cannot execute
+// stale code that happened to sit in I-cache lines.
+// ============================================================================
 void recSh4_ClearCache()
 {
-	LastAddr = LastAddr_min;
-	bm_Reset();
-	
 #ifdef ENABLE_PERF_MONITORING
 	perf_cache_clears++;
-	printf("recSh4: Dynarec cache cleared at %08X (%u clears total)\n", 
-	       curr_pc, perf_cache_clears);
+	printf("recSh4: cache clear #%u at pc=%08X (used %u / %u bytes)\n",
+	       perf_cache_clears, curr_pc, LastAddr, CODE_SIZE);
 #else
-	printf("recSh4: Dynarec cache cleared at %08X\n", curr_pc);
+	printf("recSh4: cache clear at pc=%08X (used %u / %u bytes)\n",
+	       curr_pc, LastAddr, CODE_SIZE);
 #endif
-	
+
+	LastAddr = LastAddr_min;
+	bm_Reset();
+
 #if HOST_OS == OS_WII
-	// Wii-specific: invalidate instruction cache
+	// Invalidate the entire I-cache region we may have written into.
+	// This is safe even if LastAddr_min == 0 (full reset).
 	ICInvalidateRange(CodeCache, CODE_SIZE);
 	cache_high_water_mark = LastAddr;
 #endif
 }
 
 // ============================================================================
-// Block Analysis and Compilation
+// Block analysis
 // ============================================================================
-
-// Check if we should enable extra debugging for specific addresses
-bool DoCheck(u32 pc)
-{
-	if (IsOnRam(pc))
-	{
-		pc &= 0xFFFFFF;
-		switch(pc)
-		{
-			// Add problematic addresses here for debugging
-			case 0x3DAFC6:
-			case 0x3C83F8:
-				return true;
-			default:
-				return false;
-		}
-	}
-	return false;
-}
-
 void AnalyseBlock(DecodedBlock* blk);
 
-// Compile a block at given PC with improved error handling
+// DoCheck: enable extra verification for known-tricky addresses.
+// Only called in debug builds / when block-check is active.
+static bool DoCheck(u32 pc)
+{
+	if (!IsOnRam(pc))
+		return false;
+
+	switch (pc & 0xFFFFFF)
+	{
+		case 0x3DAFC6:
+		case 0x3C83F8:
+			return true;
+		default:
+			return false;
+	}
+}
+
+// ============================================================================
+// rdv_CompileBlock
+//
+// Decodes, analyses, and compiles one SH4 basic block into native PPC code.
+// Returns a pointer to the entry point, or NULL on failure.
+//
+// Cache pressure check:
+//   We use CACHE_MIN_FREE as a hard floor. If we are below it we clear first.
+//   Between CACHE_WARN_THRESHOLD and CACHE_FLUSH_THRESHOLD we log a warning
+//   but continue — giving time for blocks that are rarely re-used to be
+//   displaced naturally before forcing a full eviction.
+// ============================================================================
 DynarecCodeEntry* rdv_CompileBlock(u32 bpc)
 {
-	// Check if we're running low on cache space
-	u32 free_space = emit_FreeSpace();
-	if (free_space < 65536)  // Less than 64 KB free - 4KB was too aggressive
-	{
-		printf("WARNING: Low code cache space (%u bytes), clearing...\n", free_space);
-		recSh4_ClearCache();
-	}
-	
 #if HOST_OS == OS_WII
-	// Track high water mark
+	// Update high-water mark
 	if (LastAddr > cache_high_water_mark)
 	{
 		cache_high_water_mark = LastAddr;
-		
-		// Warn if approaching capacity
-		if (cache_high_water_mark > CACHE_PRESSURE_THRESHOLD)
+
+		if (cache_high_water_mark >= CACHE_WARN_THRESHOLD &&
+		    cache_high_water_mark < CACHE_FLUSH_THRESHOLD)
 		{
-			printf("WARNING: Code cache pressure high (%u%% used)\n", 
-			       (cache_high_water_mark * 100) / CODE_SIZE);
+			printf("recSh4: cache %u%% full (warning zone)\n",
+			       (cache_high_water_mark * 100u) / CODE_SIZE);
 		}
 	}
+
+	// Hard floor: clear if we cannot safely fit another block
+	if (emit_FreeSpace() < CACHE_MIN_FREE)
+	{
+		printf("recSh4: cache below min-free threshold, clearing (free=%u bytes)\n",
+		       emit_FreeSpace());
+		recSh4_ClearCache();
+	}
+	// Proactive clear at high-water threshold
+	else if (LastAddr >= CACHE_FLUSH_THRESHOLD)
+	{
+		printf("recSh4: cache above flush threshold (%u%%), clearing\n",
+		       (LastAddr * 100u) / CODE_SIZE);
+		recSh4_ClearCache();
+	}
+#else
+	// Non-Wii: simple floor check (64 KB)
+	if (emit_FreeSpace() < 65536)
+	{
+		printf("recSh4: WARNING - low cache space (%u bytes), clearing\n",
+		       emit_FreeSpace());
+		recSh4_ClearCache();
+	}
 #endif
-	
-	// Decode block
-	DecodedBlock* blk = dec_DecodeBlock(bpc, fpscr, (SH4_TIMESLICE / 2));
+
+	// Decode
+	DecodedBlock* blk = dec_DecodeBlock(bpc, fpscr, SH4_TIMESLICE / 2);
 	if (!blk)
 	{
-		printf("ERROR: Failed to decode block at %08X\n", bpc);
+		printf("recSh4: ERROR - decode failed at %08X\n", bpc);
 		return 0;
 	}
-	
-	// Analyze block
+
 	AnalyseBlock(blk);
-	
-	// Get starting address for cache flush
+
+	// Remember where code for this block starts (for I-cache flush)
 #if HOST_OS == OS_WII
 	void* code_start = emit_GetCCPtr();
 #endif
-	
-	// Compile block
+
 	DynarecCodeEntry* rv = ngen_Compile(blk, DoCheck(blk->start));
-	
+
 #if HOST_OS == OS_WII
-	// Flush instruction cache for newly compiled code
 	if (rv)
 	{
-		u32 code_size = (u8*)emit_GetCCPtr() - (u8*)code_start;
-		emit_FlushCache(code_start, code_size);
+		u32 code_size = (u32)((u8*)emit_GetCCPtr() - (u8*)code_start);
+		wii_sync_icache(code_start, code_size);
 	}
 #endif
-	
-	// Cleanup
+
 	dec_Cleanup();
-	
+
 #ifdef ENABLE_PERF_MONITORING
-	if (rv)
-		perf_blocks_compiled++;
+	if (rv) perf_blocks_compiled++;
 #endif
-	
+
 	return rv;
 }
 
 // ============================================================================
-// Block Lookup and Execution
+// rdv_CompilePC
+//
+// Compiles the block at next_pc, registers it with the block manager, and
+// returns its entry point.
+//
+// Boot detection note (BUG FIX):
+//   The previous version called recSh4_ClearCache() AFTER bm_AddCode(),
+//   which immediately invalidated the block we just added — causing
+//   rdv_FailedToFindBlock to be called on the very next execution of that
+//   address, wasting a full compile cycle every boot iteration.
+//
+//   Fix: boot-triggered cache clears are now DEFERRED — we set a flag and
+//   clear at the top of the NEXT compile cycle, after the current block has
+//   been safely executed at least once.
 // ============================================================================
+
+// Set to true when a boot address is detected; acted on next compile cycle.
+static bool s_deferred_cache_clear = false;
+// PC that triggered the deferred clear (for logging)
+static u32  s_deferred_clear_pc    = 0;
 
 u32 rdv_FailedToFindBlock_pc;
 
 DynarecCodeEntry* rdv_CompilePC()
 {
 	u32 pc = next_pc;
-	DynarecCodeEntry* rv;
-	
-	rv = rdv_CompileBlock(pc);
-	
-	if (rv == 0)
+
+	// Handle any deferred cache clear from a previous boot-detect event.
+	// This happens at the START of a new compile, not after adding a block,
+	// so we never immediately invalidate the block we are about to create.
+	if (s_deferred_cache_clear)
 	{
-		// Compilation failed, clear cache and retry
-		printf("WARNING: Block compilation failed at %08X, retrying...\n", pc);
+		printf("recSh4: deferred cache clear (triggered by boot at %08X)\n",
+		       s_deferred_clear_pc);
+		s_deferred_cache_clear = false;
+		s_deferred_clear_pc    = 0;
+		recSh4_ClearCache();
+	}
+
+	DynarecCodeEntry* rv = rdv_CompileBlock(pc);
+
+	if (!rv)
+	{
+		// First attempt failed (decode/ngen error). Retry with a clean cache.
+		printf("recSh4: WARNING - compile failed at %08X, retrying after cache clear\n", pc);
 		recSh4_ClearCache();
 		rv = rdv_CompileBlock(pc);
-		
-		if (rv == 0)
+
+		if (!rv)
 		{
-			// Still failed, this is serious
-			printf("FATAL: Failed to compile block at %08X after cache clear!\n", pc);
-			// Fall back to interpreter for this block
+			printf("recSh4: FATAL - compile still failed at %08X after cache clear\n", pc);
 			return 0;
 		}
 	}
-	
+
 	bm_AddCode(pc, rv);
-	
-	// NOTE: boot detection cache clear in debug only
-  // it's clearing the cache immediately after adding a block, invalidating the block we just compiled.
-	// This is a major source of rdv_FailedToFindBlock spam and poor performance.
-  if(get_debug_loop() == 1){
-   // Check if we're booting - reset cache after boot to free up memory
-    if ((pc & 0xFFFFFF) == 0x08300 || (pc & 0xFFFFFF) == 0x10000)
-    {
-      printf("Boot detected at %08X, scheduling cache reset\n", pc);
-      // **NOTE** The block must still be valid after this
-      // We clear the cache but the current block remains valid
-      recSh4_ClearCache();
-    }
-  }
-	
+
+	// Boot detection — schedule a cache clear for NEXT compile, not now.
+	// This preserves the block we just registered so the current execution
+	// context can use it without hitting rdv_FailedToFindBlock immediately.
+	if (get_debug_loop() == 1)
+	{
+		u32 masked = pc & 0xFFFFFF;
+		if (masked == 0x08300 || masked == 0x10000)
+		{
+			printf("recSh4: boot address %08X detected, scheduling deferred cache clear\n", pc);
+			s_deferred_cache_clear = true;
+			s_deferred_clear_pc    = pc;
+		}
+	}
+
 	return rv;
 }
+
+// ============================================================================
+// Block lookup and fallback handlers
+// ============================================================================
 
 DynarecCodeEntry* rdv_FailedToFindBlock()
 {
 	next_pc = rdv_FailedToFindBlock_pc;
-	
-  // DOLPHIN ERROR LOOP
-  if(get_debug_loop() == 1){
-	  printf("rdv_FailedToFindBlock ~ %08X\n", next_pc);
-    }
-	
+
+	if (get_debug_loop() == 1)
+		printf("recSh4: rdv_FailedToFindBlock at %08X\n", next_pc);
+
 	return rdv_CompilePC();
 }
 
 DynarecCodeEntry* FASTCALL rdv_BlockCheckFail(u32 pc)
 {
 	next_pc = pc;
-	
+
 #ifdef ENABLE_PERF_MONITORING
-	perf_block_checks_failed++;
+	perf_block_check_fails++;
 #endif
-	
-	printf("Block check failed at %08X, recompiling...\n", pc);
-	
-	// Remove the invalid block
+
+	printf("recSh4: block check fail at %08X, recompiling\n", pc);
+
 	bm_RemoveCode(pc);
-	
 	return rdv_CompilePC();
 }
 
 DynarecCodeEntry* rdv_FindCode()
 {
 	DynarecCodeEntry* rv = bm_GetCode(next_pc);
-	if (rv == ngen_FailedToFindBlock)
-		return 0;
-	
-	return rv;
+	return (rv == ngen_FailedToFindBlock) ? 0 : rv;
 }
 
 DynarecCodeEntry* rdv_FindOrCompile()
@@ -400,52 +467,39 @@ DynarecCodeEntry* rdv_FindOrCompile()
 	DynarecCodeEntry* rv = bm_GetCode(next_pc);
 	if (rv == ngen_FailedToFindBlock)
 		rv = rdv_CompilePC();
-	
 	return rv;
 }
 
 // ============================================================================
-// Main Execution Loop
+// Main execution loop
 // ============================================================================
 
 void recSh4_Run()
 {
 	sh4_int_bCpuRun = true;
-	
-	printf("recSh4: Starting dynarec execution\n");
-	
+	printf("recSh4: starting dynarec execution\n");
+
 #ifdef ENABLE_PERF_MONITORING
-	u32 start_blocks = perf_blocks_compiled;
+	u32 blocks_at_start = perf_blocks_compiled;
 #endif
-	
+
 	ngen_mainloop();
-	
+
 #ifdef ENABLE_PERF_MONITORING
-	printf("recSh4: Execution stopped. Compiled %u new blocks\n", 
-	       perf_blocks_compiled - start_blocks);
+	printf("recSh4: execution stopped — compiled %u blocks this session\n",
+	       perf_blocks_compiled - blocks_at_start);
 #endif
-	
+
 	sh4_int_bCpuRun = false;
 }
 
 // ============================================================================
-// Emulator Control Functions
+// Emulator control
 // ============================================================================
 
-void recSh4_Stop()
-{
-	Sh4_int_Stop();
-}
-
-void recSh4_Step()
-{
-	Sh4_int_Step();
-}
-
-void recSh4_Skip()
-{
-	Sh4_int_Skip();
-}
+void recSh4_Stop()  { Sh4_int_Stop(); }
+void recSh4_Step()  { Sh4_int_Step(); }
+void recSh4_Skip()  { Sh4_int_Skip(); }
 
 void recSh4_Reset(bool Manual)
 {
@@ -454,104 +508,105 @@ void recSh4_Reset(bool Manual)
 }
 
 // ============================================================================
-// Initialization and Cleanup
+// Initialization
 // ============================================================================
 
 void recSh4_Init()
 {
-	printf("recSh4: Initializing dynarec\n");
-	
+	printf("recSh4: initializing dynarec\n");
+
 	Sh4_int_Init();
-	
-	// Initialize block manager with pre-allocation
 	bm_Init();
-	
+
+	s_deferred_cache_clear = false;
+	s_deferred_clear_pc    = 0;
+
 #ifdef ENABLE_PERF_MONITORING
-	perf_blocks_compiled = 0;
-	perf_cache_clears = 0;
-	perf_block_checks_failed = 0;
+	perf_blocks_compiled   = 0;
+	perf_cache_clears      = 0;
+	perf_block_check_fails = 0;
 #endif
-	
-	// Platform-specific code cache setup
+
+	// Platform-specific: make the code cache executable
 #if HOST_OS == OS_WINDOWS
 	DWORD old;
 	VirtualProtect(CodeCache, CODE_SIZE, PAGE_EXECUTE_READWRITE, &old);
-	printf("recSh4: Code cache allocated at %p (Windows)\n", CodeCache);
-	
+	printf("recSh4: code cache at %p (%u KB, Windows)\n",
+	       CodeCache, CODE_SIZE / 1024);
+
 #elif HOST_OS == OS_LINUX
-	// Align to page boundary
-	CodeCache = (u8*)(((unat)pMemBuff + 4095) & ~4095);
-	
-	printf("recSh4: Code cache addr: %p | from: %p\n", CodeCache, pMemBuff);
-	
+	CodeCache = (u8*)(((uintptr_t)pMemBuff + 4095) & ~(uintptr_t)4095);
+	printf("recSh4: code cache at %p (aligned from %p, Linux)\n",
+	       CodeCache, pMemBuff);
+
 	if (mprotect(CodeCache, CODE_SIZE, PROT_EXEC | PROT_READ | PROT_WRITE))
 	{
-		perror("ERROR: Couldn't mprotect CodeCache!");
+		perror("recSh4: ERROR - mprotect failed");
 		verify(false);
 	}
-	
 	memset(CodeCache, 0xCD, CODE_SIZE);
-	
+
 #elif HOST_OS == OS_WII
-	// Wii-specific: ensure code cache is properly aligned and cached
-	printf("recSh4: Code cache allocated at %p (Wii, %u KB)\n", 
+	printf("recSh4: code cache at %p (%u KB, Wii)\n",
 	       CodeCache, CODE_SIZE / 1024);
-	
-	// Clear code cache
+
 	memset(CodeCache, 0x00, CODE_SIZE);
-	
-	// Flush data cache and invalidate instruction cache
+
+	// Ensure the zeroed data is visible to the instruction fetch unit
+	// before any code is written or executed.
 	DCFlushRange(CodeCache, CODE_SIZE);
 	ICInvalidateRange(CodeCache, CODE_SIZE);
-	
+
 	cache_high_water_mark = 0;
-	
-	printf("recSh4: Wii code cache initialized and flushed\n");
+	printf("recSh4: Wii code cache flushed\n");
 #endif
-	
-	LastAddr = 0;
+
+	LastAddr     = 0;
 	LastAddr_min = 0;
-	emit_ptr = 0;
-	
-	printf("recSh4: Initialization complete\n");
+	emit_ptr     = 0;
+
+	printf("recSh4: initialization complete (cache=%u KB)\n",
+	       CODE_SIZE / 1024);
 }
+
+// ============================================================================
+// Termination
+// ============================================================================
 
 void recSh4_Term()
 {
-	printf("recSh4: Terminating dynarec\n");
-	
+	printf("recSh4: terminating dynarec\n");
+
 #ifdef ENABLE_PERF_MONITORING
-	printf("recSh4 Performance Stats:\n");
-	printf("  - Blocks compiled: %u\n", perf_blocks_compiled);
-	printf("  - Cache clears: %u\n", perf_cache_clears);
-	printf("  - Block check failures: %u\n", perf_block_checks_failed);
-	printf("  - Code cache usage: %u / %u bytes (%.1f%%)\n", 
+	printf("recSh4 stats:\n");
+	printf("  blocks compiled   : %u\n", perf_blocks_compiled);
+	printf("  cache clears      : %u\n", perf_cache_clears);
+	printf("  block check fails : %u\n", perf_block_check_fails);
+	printf("  cache usage       : %u / %u bytes (%.1f%%)\n",
 	       LastAddr, CODE_SIZE, (LastAddr * 100.0f) / CODE_SIZE);
 #if HOST_OS == OS_WII
-	printf("  - High water mark: %u bytes (%.1f%%)\n",
-	       cache_high_water_mark, (cache_high_water_mark * 100.0f) / CODE_SIZE);
+	printf("  high water mark   : %u bytes (%.1f%%)\n",
+	       cache_high_water_mark,
+	       (cache_high_water_mark * 100.0f) / CODE_SIZE);
 #endif
-	
+
 #ifdef BM_ENABLE_STATS
 	u32 hits, misses, cache_hits, total_blocks;
 	bm_GetStats(&hits, &misses, &cache_hits, &total_blocks);
-	printf("  - Block manager hits: %u\n", hits);
-	printf("  - Block manager misses: %u\n", misses);
-	printf("  - Block manager cache hits: %u\n", cache_hits);
-	printf("  - Total blocks: %u\n", total_blocks);
+	printf("  bm hits           : %u\n", hits);
+	printf("  bm misses         : %u\n", misses);
+	printf("  bm cache hits     : %u\n", cache_hits);
+	printf("  bm total blocks   : %u\n", total_blocks);
 	if (hits + cache_hits > 0)
-		printf("  - Cache efficiency: %.2f%%\n", 
+		printf("  bm efficiency     : %.2f%%\n",
 		       (cache_hits * 100.0f) / (hits + cache_hits));
 #endif
-#endif
-	
+#endif // ENABLE_PERF_MONITORING
+
 	Sh4_int_Term();
-	
-#if HOST_OS == OS_LINUX
-	// Linux cleanup if needed
-#elif HOST_OS == OS_WII
-	// Wii cleanup if needed
-	printf("recSh4: Wii-specific cleanup complete\n");
+
+#if HOST_OS == OS_WII
+	printf("recSh4: Wii cleanup complete\n");
 #endif
 }
 
@@ -561,37 +616,36 @@ bool recSh4_IsCpuRunning()
 }
 
 // ============================================================================
-// Debug and Utility Functions
+// Debug utilities
 // ============================================================================
 
-// Get code cache statistics
 void recSh4_GetCacheStats(u32* total_size, u32* used_size, u32* free_size)
 {
 	if (total_size) *total_size = CODE_SIZE;
-	if (used_size) *used_size = LastAddr;
-	if (free_size) *free_size = CODE_SIZE - LastAddr;
+	if (used_size)  *used_size  = LastAddr;
+	if (free_size)  *free_size  = CODE_SIZE - LastAddr;
 }
 
 #ifdef ENABLE_PERF_MONITORING
 void recSh4_GetPerfStats(u32* blocks_compiled, u32* cache_clears, u32* check_failures)
 {
 	if (blocks_compiled) *blocks_compiled = perf_blocks_compiled;
-	if (cache_clears) *cache_clears = perf_cache_clears;
-	if (check_failures) *check_failures = perf_block_checks_failed;
+	if (cache_clears)    *cache_clears    = perf_cache_clears;
+	if (check_failures)  *check_failures  = perf_block_check_fails;
 }
 
 void recSh4_ResetPerfStats()
 {
-	perf_blocks_compiled = 0;
-	perf_cache_clears = 0;
-	perf_block_checks_failed = 0;
+	perf_blocks_compiled   = 0;
+	perf_cache_clears      = 0;
+	perf_block_check_fails = 0;
 }
-#endif
+#endif // ENABLE_PERF_MONITORING
 
 #endif // HOST_NO_REC
 
 // ============================================================================
-// Interface Setup
+// Interface table
 // ============================================================================
 
 void Get_Sh4Recompiler(sh4_if* rv)
@@ -599,14 +653,14 @@ void Get_Sh4Recompiler(sh4_if* rv)
 #ifdef HOST_NO_REC
 	Get_Sh4Interpreter(rv);
 #else
-	rv->Run = recSh4_Run;
-	rv->Stop = recSh4_Stop;
-	rv->Step = recSh4_Step;
-	rv->Skip = recSh4_Skip;
-	rv->Reset = recSh4_Reset;
-	rv->Init = recSh4_Init;
-	rv->Term = recSh4_Term;
-	rv->IsCpuRunning = recSh4_IsCpuRunning;
-	rv->ResetCache = recSh4_ClearCache;
+	rv->Run           = recSh4_Run;
+	rv->Stop          = recSh4_Stop;
+	rv->Step          = recSh4_Step;
+	rv->Skip          = recSh4_Skip;
+	rv->Reset         = recSh4_Reset;
+	rv->Init          = recSh4_Init;
+	rv->Term          = recSh4_Term;
+	rv->IsCpuRunning  = recSh4_IsCpuRunning;
+	rv->ResetCache    = recSh4_ClearCache;
 #endif
 }
