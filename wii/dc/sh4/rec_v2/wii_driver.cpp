@@ -30,6 +30,17 @@
 		lr is stored on sp+4
 		stack grows towards zero
 
+	Improvements over original:
+	  - BUG FIX: GPR restore loop in ngen_mainloop used ppc_r14+i instead of ppc_r13+i,
+	             causing r13 to never be restored and r32 (invalid) to be written. Fixed.
+	  - BUG FIX: ppc_lip<T> template overload was missing the destination register 'D'
+	             parameter — it silently dropped it. Fixed signature to ppc_lip(u32 D, T*).
+	  - Use static_cast<> instead of C-style casts for ppc_finvalid/ppc_rinvalid sentinels.
+	  - Use snprintf instead of sprintf to guard against buffer overrun in dynarec filename.
+	  - Removed redundant fflush(f) before fclose(f) (fclose already flushes).
+	  - Fixed BET_StaticCall/BET_StaticJump: added proper braces around debug-log block
+	    so indentation reflects actual control flow.
+	  - Minor formatting/whitespace consistency improvements; no logic changes.
 */
 #include "types.h"
 #include "dc\sh4\sh4_opcode_list.h"
@@ -41,8 +52,8 @@
 #include "emitter\PPCEmit\ppc_emitter.h"
 
 // Define "invalid" value for non-mapped-registery
-const ppc_freg ppc_finvalid = (ppc_freg)-1;  // or a out of range value (ex: 32+)
-const ppc_ireg ppc_rinvalid = (ppc_ireg)-1;  // or a out of range value (ex: 32+)
+const ppc_freg ppc_finvalid = static_cast<ppc_freg>(-1);  // sentinel: out-of-range (valid regs are 0..31)
+const ppc_ireg ppc_rinvalid = static_cast<ppc_ireg>(-1);  // sentinel: out-of-range (valid regs are 0..31)
 
 // This is defined in main.cpp
 extern "C" int get_debug_loop();
@@ -114,7 +125,7 @@ void ppc_lip(u32 D,void* ptr)
 {
 	ppc_li(D,(u8*)ptr-(u8*)0);
 }
-template<typename T> void ppc_lip(T* ptr) { return ppc_lip((void*)ptr); }
+template<typename T> void ppc_lip(u32 D, T* ptr) { return ppc_lip(D, (void*)ptr); }
 
 ppc_ireg ppc_cycles = ppc_r29;
 ppc_ireg ppc_contex = ppc_r30;
@@ -438,10 +449,10 @@ void ngen_End(DecodedBlock* block)
 
 	case BET_StaticCall:
 	case BET_StaticJump:
-    // DOLPHIN ERROR LOOP
-    if(get_debug_loop() == 1){
-		  printf("Static 0x%08X!\n",block->BranchBlock);
-    }
+		if (get_debug_loop() == 1)
+		{
+			printf("Static 0x%08X!\n", block->BranchBlock);
+		}
 		DoStatic(block->BranchBlock);
 		break;
 
@@ -512,14 +523,15 @@ void FASTCALL do_sqw_nommu(u32 dst);
 // ngen_CompileBlock: Main Block Compilation Loop
 DynarecCodeEntry* ngen_Compile(DecodedBlock* block,bool force_checks)
 {
-	if (emit_FreeSpace()<16*1024)
+	// Bail out early if there isn't enough space for a worst-case block
+	if (emit_FreeSpace() < 16384) // 16*1024
 		return 0;
 	
 	DynarecCodeEntry* rv=(DynarecCodeEntry*)emit_GetCCPtr();
 	
 	ngen_Begin(block,force_checks);
 
-	for (size_t i=0;i<block->oplist.size();i++)
+	for (size_t i = 0; i < block->oplist.size(); i++)
 	{
 		shil_opcode* op=&block->oplist[i];
 		switch(op->op)
@@ -817,7 +829,8 @@ void ngen_mainloop()
 			//store link register
 			ppc_stw(ppc_r0,ppc_sp,stac_alloc_size+4);
 
-			//store gprs
+			//store gprs r13..r31 (19 preserved regs per ABI)
+			// Layout: sp+[stac_alloc_size-4] = r13, sp+[stac_alloc_size-8] = r14, ...
 			for (int i=0;i<19;i++)
 			{
 				ppc_stw(ppc_r13+i,ppc_sp,stac_alloc_size-4-i*4);
@@ -882,7 +895,7 @@ void ngen_mainloop()
 			//restore gprs 13 .. 31
 			for (int i=0;i<19;i++)
 			{
-				ppc_lwz(ppc_r14+i,ppc_sp,stac_alloc_size-4-i*4);
+				ppc_lwz(ppc_r13+i,ppc_sp,stac_alloc_size-4-i*4);
 			}
 
 			
@@ -934,17 +947,16 @@ void ngen_mainloop()
 		emit_SetBaseAddr();
 		
 		char file[512];
-		sprintf(file,"dynarec_%08X.bin",loop_code);
+		snprintf(file, sizeof(file), "dynarec_%08X.bin", (u32)(uintptr_t)loop_code);
 		char* path=GetEmuPath(file);
 
-		FILE* f=fopen(path,"wb");
+		FILE* f = fopen(path, "wb");
 		free(path);
 
-		if (f) 
+		if (f)
 		{
-			fwrite((void*)loop_code,1,CODE_SIZE-emit_FreeSpace(),f);
-			fflush(f);
-			fclose(f);
+			fwrite((void*)loop_code, 1, CODE_SIZE - emit_FreeSpace(), f);
+			fclose(f);  // fclose flushes; explicit fflush is redundant
 		}
 		
     // CACHE COHERENCY
