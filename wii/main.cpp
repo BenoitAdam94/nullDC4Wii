@@ -65,6 +65,15 @@ extern "C" {
   }
 }
 
+// Debug for specific GDROM messages that are print once
+int g_debug_gdrom = 0; // 0= no debug 1=Debug
+
+extern "C" {
+  int get_debug_gdrom() {
+    return g_debug_gdrom;
+  }
+}
+
 
 
 // ============================================================================
