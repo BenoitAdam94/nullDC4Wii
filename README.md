@@ -30,8 +30,9 @@ a fork from https://github.com/skmp/nullDCe
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation (AI seems to know about this)
-- 50/60 ips for PAL/NTSC ?
+- 50/60 ips for PAL/NTSC ? (should be ok)
 - 4/3 and fullscreen support
+- Frame Skipping
 - Sound implementation
 
 ## Installation
@@ -40,15 +41,15 @@ a fork from https://github.com/skmp/nullDCe
 
 #### Mandatory BIOS files in SD:/data/
 
-dc_boot.bin  
-dc_flash.bin  
-fsca-table.bin  
+- dc_boot.bin  
+- dc_flash.bin  
+- fsca-table.bin (included)
 
 #### Optional BIOS files in SD:/data/
 
-dc_flash_wb.bin (this is the dc_flash but already saved)  
-syscalls.bin  
-IP.bin  
+- dc_flash_wb.bin (this is the dc_flash but already saved)  
+- syscalls.bin (needed for elf/bin)
+- IP.bin  (needed for elf/bin)
 
 dc_nvmem.bin  
 vmu_default.bin  
@@ -57,7 +58,12 @@ vmu_default.bin
 
 Put your folders with GDI in this directory
 
-Might work for ISO / CDI / BIN / CUE / NRG / MDS / ELF, let me know please !
+CDI doesn't work now
+
+Might work for ISO / BIN / CUE / NRG / MDS
+
+BIN/CUE/ELF, but you probably need IP.bin/syscalls.bin (take IP.TMPL from bootdreams and rename it IP.Bin)
+
 
 ## Configuration
 
@@ -224,6 +230,11 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
+
+
+
+
 
 
 

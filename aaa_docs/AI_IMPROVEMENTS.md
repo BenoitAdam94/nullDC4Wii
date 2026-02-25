@@ -102,7 +102,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | maple_if.cpp | Maple bus interface | | |
-| maple_cfg.cpp | Maple device configuration | | |
+| maple_cfg.cpp | Maple device configuration | 0.06 | Claude AI improvements (structure & less potential bugs) |
 | maple_devs.cpp | Maple device definitions | | |
 | maple_helper.cpp | Maple helper utilities | | |
 | drkMapleDevices.cpp | Custom Maple device implementations | | |
