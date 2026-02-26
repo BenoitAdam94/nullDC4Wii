@@ -7,289 +7,259 @@
 
 #include "plugins/plugin_manager.h"
 
-#pragma warning( disable : 4127 /*4244*/)
-//Area 0 mem map
-//0x00000000- 0x001FFFFF	:MPX	System/Boot ROM
-//0x00200000- 0x0021FFFF	:Flash Memory
-//0x00400000- 0x005F67FF	:Unassigned
-//0x005F6800- 0x005F69FF	:System Control Reg.
-//0x005F6C00- 0x005F6CFF	:Maple i/f Control Reg.
-//0x005F7000- 0x005F70FF	:GD-ROM / NAOMI BD Reg.
-//0x005F7400- 0x005F74FF	:G1 i/f Control Reg.
-//0x005F7800- 0x005F78FF	:G2 i/f Control Reg.
-//0x005F7C00- 0x005F7CFF	:PVR i/f Control Reg.
-//0x005F8000- 0x005F9FFF	:TA / PVR Core Reg.
-//0x00600000- 0x006007FF	:MODEM
-//0x00600800- 0x006FFFFF	:G2 (Reserved)
-//0x00700000- 0x00707FFF	:AICA- Sound Cntr. Reg.
-//0x00710000- 0x0071000B	:AICA- RTC Cntr. Reg.
-//0x00800000- 0x00FFFFFF	:AICA- Wave Memory
-//0x01000000- 0x01FFFFFF	:Ext. Device
-//0x02000000- 0x03FFFFFF*	:Image Area*	2MB
 
+//=============================================================================
+// Area 0 Memory Map (Dreamcast SH4)
+//=============================================================================
+// 0x00000000 - 0x001FFFFF  : System/Boot ROM (MPX)
+// 0x00200000 - 0x0021FFFF  : Flash Memory
+// 0x00400000 - 0x005F67FF  : Unassigned
+// 0x005F6800 - 0x005F69FF  : System Control Reg.
+// 0x005F6C00 - 0x005F6CFF  : Maple i/f Control Reg.
+// 0x005F7000 - 0x005F70FF  : GD-ROM / NAOMI BD Reg.
+// 0x005F7400 - 0x005F74FF  : G1 i/f Control Reg.
+// 0x005F7800 - 0x005F78FF  : G2 i/f Control Reg.
+// 0x005F7C00 - 0x005F7CFF  : PVR i/f Control Reg.
+// 0x005F8000 - 0x005F9FFF  : TA / PVR Core Reg.
+// 0x00600000 - 0x006007FF  : MODEM
+// 0x00600800 - 0x006FFFFF  : G2 (Reserved)
+// 0x00700000 - 0x00707FFF  : AICA Sound Control Reg.
+// 0x00710000 - 0x0071000B  : AICA RTC Control Reg.
+// 0x00800000 - 0x00FFFFFF  : AICA Wave Memory
+// 0x01000000 - 0x01FFFFFF  : External Device
+// 0x02000000 - 0x03FFFFFF* : Image Area* (2MB mirror)
+//=============================================================================
 
-
-
-// (very) tmp (slow) swaps for test
-//
-/*
-inline static u16 bswap16(u16 v)
+// Helper: read T from byte array at addr, applying LE conversion
+template<u32 sz, class T>
+static inline T ReadMemArr(const u8* arr, u32 offset)
 {
-	u32 rv = ((v&255)<<8) | ((v>>8)&255) ;
-	return rv;
+	switch (sz)
+	{
+	case 1: return (T)arr[offset];
+	case 2: return (T)HOST_TO_LE16(*(const u16*)&arr[offset]);
+	case 4: return (T)HOST_TO_LE32(*(const u32*)&arr[offset]);
+	default: return (T)0;
+	}
 }
 
-inline static u32 bswap32(u32 v)
+// Helper: write T into byte array at addr
+template<u32 sz, class T>
+static inline void WriteMemArr(u8* arr, u32 offset, T data)
 {
-	u32 rv=0;
-	((u8*)&rv)[0] = ((u8*)&v)[3];
-        ((u8*)&rv)[1] = ((u8*)&v)[2];
-        ((u8*)&rv)[2] = ((u8*)&v)[1];
-        ((u8*)&rv)[3] = ((u8*)&v)[0];
-	return rv;
+	switch (sz)
+	{
+	case 1: arr[offset] = (u8)data; break;
+	case 2: *(u16*)&arr[offset] = HOST_TO_LE16((u16)data); break;
+	case 4: *(u32*)&arr[offset] = HOST_TO_LE32((u32)data); break;
+	}
 }
-*/
 
-
-
-
-
-//use unified size handler for registers
-//it realy makes no sense to use different size handlers on em -> especialy when we can use templates :p
-template<u32 sz, class T, u32 b_start,u32 b_end>
+//=============================================================================
+// Unified read handler (templated on access size)
+//=============================================================================
+template<u32 sz, class T, u32 b_start, u32 b_end>
 T FASTCALL ReadMem_area0(u32 addr)
 {
-	addr &= 0x01FFFFFF;//to get rid of non needed bits
-	const u32 base_start=addr>>16;//b_start & 0x01FF;
-	const u32 base_end=addr>>16;//b_end & 0x01FF;
-	//map 0x0000 to 0x01FF to Default handler
-	//mirror 0x0200 to 0x03FF , from 0x0000 to 0x03FFF
-	//map 0x0000 to 0x001F
-	if (/*(base_start>=0x0000) && */(base_end<= 0x001F))//	:MPX	System/Boot ROM
+	addr &= 0x01FFFFFF;  // Strip unused upper bits
+
+	// base is the 64KB page index (addr >> 16)
+	const u32 base = addr >> 16;
+
+	// --- Boot ROM: 0x000000 - 0x1FFFFF (pages 0x00-0x1F) ---
+	if (base <= 0x1F)
 	{
-		switch (sz)
+		return ReadMemArr<sz, T>(bios_b.data, addr);
+	}
+
+	// --- Flash Memory: 0x200000 - 0x21FFFF (pages 0x20-0x21) ---
+	if (base >= 0x20 && base <= 0x21)
+	{
+		return ReadMemArr<sz, T>(flash_b.data, addr - 0x00200000);
+	}
+
+	// --- 0x5F page ---
+	if (base == 0x5F)
+	{
+		// Unassigned: 0x400000 - 0x5F67FF
+		if (addr <= 0x005F67FF)
 		{
-		case 1:
-			return (T)bios_b[addr];
-		case 2:
-			return (T)HOST_TO_LE16(*(u16*)&bios_b[addr]);
-		case 4:
-			return (T)HOST_TO_LE32(*(u32*)&bios_b[addr]);
+			EMUERROR2("Read from unassigned area0 region, addr=%x", addr);
+			return (T)0;
 		}
 
-		//ReadMemArrRet(bios_b,addr,sz);
-		EMUERROR3("Read from [MPX	System/Boot ROM], addr=%x , sz=%d",addr,sz);
-	}
-	//map 0x0020 to 0x0021
-	else if ((base_start>= 0x0020) && (base_end<= 0x0021))		//	:Flash Memory
-	{
-		//ReadMemFromPtrRet(flashrom,adr-0x00200000,sz);
-		addr-=0x00200000;
-		//ReadMemArrRet(flash_b,addr-0x00200000,sz);
-        switch (sz)
-        {
-        case 1:
-                return (T)flash_b[addr];
-        case 2:
-                return (T)HOST_TO_LE16(*(u16*)&flash_b[addr]);
-        case 4:
-                return (T)HOST_TO_LE32(*(u32*)&flash_b[addr]);
-        }
+		// GD-ROM: 0x5F7000 - 0x5F70FF  (checked before the wider SB block)
+		if (addr >= 0x005F7000 && addr <= 0x005F70FF)
+		{
+			return (T)ReadMem_gdrom(addr, sz);
+		}
 
-		EMUERROR3("Read from [Flash Memory], addr=%x , sz=%d",addr,sz);
+		// All SB registers: 0x5F6800 - 0x5F7CFF
+		if (addr >= 0x005F6800 && addr <= 0x005F7CFF)
+		{
+			return (T)sb_ReadMem(addr, sz);
+		}
+
+		// TA / PVR Core: 0x5F8000 - 0x5F9FFF
+		if (addr >= 0x005F8000 && addr <= 0x005F9FFF)
+		{
+			return (T)pvr_readreg_TA(addr, sz);
+		}
+
+		EMUERROR2("Read from unmapped 0x5F area, addr=%x", addr);
+		return (T)0;
 	}
-	//map 0x005F to 0x005F
-	else if ((base_start >=0x005F) && (base_end <=0x005F) /*&& (addr>= 0x00400000)*/ && (addr<= 0x005F67FF))		//	:Unassigned
+
+	// --- MODEM: 0x600000 - 0x6007FF (page 0x60, low range) ---
+	if (base == 0x60 && addr <= 0x006007FF)
 	{
-		EMUERROR2("Read from area0_32 not implemented [Unassigned], addr=%x",addr);
+		return (T)libExtDevice_ReadMem_A0_006(addr, sz);
 	}
-	/*
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6800) && (addr<= 0x005F69FF))		//	:System Control Reg.
+
+	// --- G2 Reserved: 0x600800 - 0x6FFFFF (pages 0x60-0x6F, high range) ---
+	if (base >= 0x60 && base <= 0x6F && addr >= 0x00600800)
 	{
-		return (T)sb_ReadMem(addr,sz);
+		EMUERROR2("Read from G2 (Reserved), addr=%x", addr);
+		return (T)0;
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6C00) && (addr<= 0x005F6CFF)) //	:Maple i/f Control Reg.
+
+	// --- AICA Sound Control: 0x700000 - 0x707FFF (page 0x70) ---
+	if (base == 0x70 && addr <= 0x00707FFF)
 	{
-		return (T)sb_ReadMem(addr,sz);
+		return (T)ReadMem_aica_reg(addr, sz);
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7400) && (addr<=0x005F74FF)) //	:G1 i/f Control Reg.
+
+	// --- AICA RTC: 0x710000 - 0x71000B (page 0x71) ---
+	if (base == 0x71 && addr <= 0x0071000B)
 	{
-		return (T)sb_ReadMem(addr,sz);
+		return (T)ReadMem_aica_rtc(addr, sz);
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7800) && (addr<=0x005F78FF)) //	:G2 i/f Control Reg.
+
+	// --- AICA Wave Memory: 0x800000 - 0xFFFFFF (pages 0x80-0xFF) ---
+	if (base >= 0x80 && base <= 0xFF)
 	{
-		return (T)sb_ReadMem(addr,sz);
-	}*/
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7000) && (addr<= 0x005F70FF)) //	:GD-ROM
-	{
-		//EMUERROR3("Read from area0_32 not implemented [GD-ROM], addr=%x,size=%d",addr,sz);
-		return (T)ReadMem_gdrom(addr,sz);
+		return (T)libAICA_ReadMem_aica_ram(addr, sz);
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6800) && (addr<=0x005F7CFF)) //	/*:PVR i/f Control Reg.*/ -> ALL SB registers now
+
+	// --- External Device: 0x1000000 - 0x1FFFFFF (pages 0x100-0x1FF) ---
+	if (base >= 0x100 && base <= 0x1FF)
 	{
-		//EMUERROR2("Read from area0_32 not implemented [PVR i/f Control Reg], addr=%x",addr);
-		return (T)sb_ReadMem(addr,sz);
+		return (T)libExtDevice_ReadMem_A0_010(addr, sz);
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F8000) && (addr<=0x005F9FFF)) //	:TA / PVR Core Reg.
-	{
-		//EMUERROR2("Read from area0_32 not implemented [TA / PVR Core Reg], addr=%x",addr);
-		return (T)pvr_readreg_TA(addr,sz);
-	}
-	//map 0x0060 to 0x0060
-	else if ((base_start >=0x0060) && (base_end <=0x0060) /*&& (addr>= 0x00600000)*/ && (addr<= 0x006007FF)) //	:MODEM
-	{
-		return (T)libExtDevice_ReadMem_A0_006(addr,sz);
-		//EMUERROR2("Read from area0_32 not implemented [MODEM], addr=%x",addr);
-	}
-	//map 0x0060 to 0x006F
-	else if ((base_start >=0x0060) && (base_end <=0x006F) && (addr>= 0x00600800) && (addr<= 0x006FFFFF)) //	:G2 (Reserved)
-	{
-		EMUERROR2("Read from area0_32 not implemented [G2 (Reserved)], addr=%x",addr);
-	}
-	//map 0x0070 to 0x0070
-	else if ((base_start >=0x0070) && (base_end <=0x0070) /*&& (addr>= 0x00700000)*/ && (addr<=0x00707FFF)) //	:AICA- Sound Cntr. Reg.
-	{
-		//EMUERROR2("Read from area0_32 not implemented [AICA- Sound Cntr. Reg], addr=%x",addr);
-		return (T) ReadMem_aica_reg(addr,sz);//libAICA_ReadMem_aica_reg(addr,sz);
-	}
-	//map 0x0071 to 0x0071
-	else if ((base_start >=0x0071) && (base_end <=0x0071) /*&& (addr>= 0x00710000)*/ && (addr<= 0x0071000B)) //	:AICA- RTC Cntr. Reg.
-	{
-		//EMUERROR2("Read from area0_32 not implemented [AICA- RTC Cntr. Reg], addr=%x",addr);
-		return (T)ReadMem_aica_rtc(addr,sz);
-	}
-	//map 0x0080 to 0x00FF
-	else if ((base_start >=0x0080) && (base_end <=0x00FF) /*&& (addr>= 0x00800000) && (addr<=0x00FFFFFF)*/) //	:AICA- Wave Memory
-	{
-		//EMUERROR2("Read from area0_32 not implemented [AICA- Wave Memory], addr=%x",addr);
-		return (T)libAICA_ReadMem_aica_ram(addr,sz);
-	}
-	//map 0x0100 to 0x01FF
-	else if ((base_start >=0x0100) && (base_end <=0x01FF) /*&& (addr>= 0x01000000) && (addr<= 0x01FFFFFF)*/) //	:Ext. Device
-	{
-	//	EMUERROR2("Read from area0_32 not implemented [Ext. Device], addr=%x",addr);
-		return (T)libExtDevice_ReadMem_A0_010(addr,sz);
-	}
-	//rest of it ;P
-	/*else 
-	{
-		EMUERROR2("Read from area0_32 not mapped!!! , addr=%x",addr);
-	}*/
-	return 0;
+
+	// Unmapped
+	return (T)0;
 }
 
-template<u32 sz, class T, u32 b_start,u32 b_end>
-void  FASTCALL WriteMem_area0(u32 addr,T data)
+//=============================================================================
+// Unified write handler (templated on access size)
+//=============================================================================
+template<u32 sz, class T, u32 b_start, u32 b_end>
+void FASTCALL WriteMem_area0(u32 addr, T data)
 {
-	addr &= 0x01FFFFFF;//to get rid of non needed bits
+	addr &= 0x01FFFFFF;  // Strip unused upper bits
 
-	const u32 base_start=addr>>16;//b_start & 0x01FF;
-	const u32 base_end=addr>>16;//b_end & 0x01FF;
+	const u32 base = addr >> 16;
 
-	//map 0x0000 to 0x001F
-	if ((base_start >=0x0000) && (base_end <=0x001F) /*&& (addr<=0x001FFFFF)*/)//	:MPX	System/Boot ROM
+	// --- Boot ROM: read-only, writes are an error ---
+	if (base <= 0x1F)
 	{
-		//WriteMemFromPtrRet(bootfile,adr,sz);
-		EMUERROR4("Write to  [MPX	System/Boot ROM] is not possible, addr=%x,data=%x,size=%d",addr,data,sz);
-	}
-	//map 0x0020 to 0x0021
-	else if ((base_start >=0x0020) && (base_end <=0x0021) /*&& (addr>= 0x00200000) && (addr<= 0x0021FFFF)*/)		//	:Flash Memory
-	{
-		WriteMemArrRet(flash_b,addr-0x00200000,data,sz);
-		EMUERROR4("Write to [Flash Memory] , sz?!, addr=%x,data=%x,size=%d",addr,data,sz);
-	}
-	//map 0x0040 to 0x005F -> actualy , i'l olny map 0x005F to 0x005F , b/c the rest of it is unpammed (left to defalt handler)
-	//map 0x005F to 0x005F
-	else if ((base_start >=0x005F) && (base_end <=0x005F) /*&& (addr>= 0x00400000) */&& (addr<= 0x005F67FF))		//	:Unassigned
-	{
-		EMUERROR4("Write to area0_32 not implemented [Unassigned], addr=%x,data=%x,size=%d",addr,data,sz);
-	}/*
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6800) && (addr<= 0x005F69FF))		//	:System Control Reg.
-	{
-		//EMUERROR4("Write to area0_32 not implemented [System Control Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		sb_WriteMem(addr,data,sz);
+		EMUERROR4("Write to Boot ROM (read-only), addr=%x, data=%x, sz=%d", addr, data, sz);
 		return;
 	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6C00) && (addr<= 0x005F6CFF)) //	:Maple i/f Control Reg.
+
+	// --- Flash Memory: 0x200000 - 0x21FFFF ---
+	if (base >= 0x20 && base <= 0x21)
 	{
-		//EMUERROR4("Write to area0_32 not implemented [Maple i/f Control Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		sb_WriteMem(addr,data,sz);
-	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7400) && (addr<=0x005F74FF)) //	:G1 i/f Control Reg.
-	{
-		//EMUERROR4("Write to area0_32 not implemented [G1 i/f Control Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		sb_WriteMem(addr,data,sz);
-	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7800) && (addr<=0x005F78FF)) //	:G2 i/f Control Reg.
-	{
-		//EMUERROR4("Write to area0_32 not implemented [G2 i/f Control Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		sb_WriteMem(addr,data,sz);
-	}*/
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F7000) && (addr<= 0x005F70FF)) //	:GD-ROM
-	{
-		//EMUERROR4("Write to area0_32 not implemented [GD-ROM], addr=%x,data=%x,size=%d",addr,data,sz);
-		WriteMem_gdrom(addr,data,sz);
-	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F6800) && (addr<=0x005F7CFF)) //	/*:PVR i/f Control Reg.*/ -> ALL SB registers
-	{
-		//EMUERROR4("Write to area0_32 not implemented [PVR i/f Control Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		sb_WriteMem(addr,data,sz);
-	}
-	else if ((base_start >=0x005F) && (base_end <=0x005F) && (addr>= 0x005F8000) && (addr<=0x005F9FFF)) //	:TA / PVR Core Reg.
-	{
-		//EMUERROR4("Write to area0_32 not implemented [TA / PVR Core Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		pvr_writereg_TA(addr,data,sz);
+		// Flash writes are logged; on real hardware flash has erase/program
+		// cycles but for emulation we allow direct writes.
+		WriteMemArr<sz, T>(flash_b.data, addr - 0x00200000, data);
 		return;
 	}
-	//map 0x0060 to 0x0060
-	else if ((base_start >=0x0060) && (base_end <=0x0060) /*&& (addr>= 0x00600000)*/ && (addr<= 0x006007FF)) //	:MODEM
+
+	// --- 0x5F page ---
+	if (base == 0x5F)
 	{
-		//EMUERROR4("Write to area0_32 not implemented [MODEM], addr=%x,data=%x,size=%d",addr,data,sz);
-		libExtDevice_WriteMem_A0_006(addr,data,sz);
-	}
-	//map 0x0060 to 0x006F
-	else if ((base_start >=0x0060) && (base_end <=0x006F) && (addr>= 0x00600800) && (addr<= 0x006FFFFF)) //	:G2 (Reserved)
-	{
-		EMUERROR4("Write to area0_32 not implemented [G2 (Reserved)], addr=%x,data=%x,size=%d",addr,data,sz);
-	}
-	//map 0x0070 to 0x0070
-	else if ((base_start >=0x0070) && (base_end <=0x0070) /*&& (addr>= 0x00700000)*/ && (addr<=0x00707FFF)) //	:AICA- Sound Cntr. Reg.
-	{
-		//EMUERROR4("Write to area0_32 not implemented [AICA- Sound Cntr. Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		//aica_writereg(addr,data,sz);
-		//libAICA_WriteMem_aica_reg(addr,data,sz);
-		WriteMem_aica_reg(addr,data,sz);
+		// Unassigned: 0x400000 - 0x5F67FF
+		if (addr <= 0x005F67FF)
+		{
+			EMUERROR4("Write to unassigned area0 region, addr=%x, data=%x, sz=%d", addr, data, sz);
+			return;
+		}
+
+		// GD-ROM: 0x5F7000 - 0x5F70FF  (checked before the wider SB block)
+		if (addr >= 0x005F7000 && addr <= 0x005F70FF)
+		{
+			WriteMem_gdrom(addr, data, sz);
+			return;
+		}
+
+		// All SB registers: 0x5F6800 - 0x5F7CFF
+		if (addr >= 0x005F6800 && addr <= 0x005F7CFF)
+		{
+			sb_WriteMem(addr, data, sz);
+			return;
+		}
+
+		// TA / PVR Core: 0x5F8000 - 0x5F9FFF
+		if (addr >= 0x005F8000 && addr <= 0x005F9FFF)
+		{
+			pvr_writereg_TA(addr, data, sz);
+			return;
+		}
+
+		EMUERROR4("Write to unmapped 0x5F area, addr=%x, data=%x, sz=%d", addr, data, sz);
 		return;
 	}
-	//map 0x0071 to 0x0071
-	else if ((base_start >=0x0071) && (base_end <=0x0071) /*&& (addr>= 0x00710000)*/ && (addr<= 0x0071000B)) //	:AICA- RTC Cntr. Reg.
+
+	// --- MODEM: 0x600000 - 0x6007FF ---
+	if (base == 0x60 && addr <= 0x006007FF)
 	{
-		//EMUERROR4("Write to area0_32 not implemented [AICA- RTC Cntr. Reg], addr=%x,data=%x,size=%d",addr,data,sz);
-		WriteMem_aica_rtc(addr,data,sz);
+		libExtDevice_WriteMem_A0_006(addr, data, sz);
 		return;
 	}
-	//map 0x0080 to 0x00FF
-	else if ((base_start >=0x0080) && (base_end <=0x00FF) /*&& (addr>= 0x00800000) && (addr<=0x00FFFFFF)*/) //	:AICA- Wave Memory
+
+	// --- G2 Reserved: 0x600800 - 0x6FFFFF ---
+	if (base >= 0x60 && base <= 0x6F && addr >= 0x00600800)
 	{
-		//EMUERROR4("Write to area0_32 not implemented [AICA- Wave Memory], addr=%x,data=%x,size=%d",addr,data,sz);
-		//aica_writeram(addr,data,sz);
-		libAICA_WriteMem_aica_ram(addr,data,sz);
+		EMUERROR4("Write to G2 (Reserved), addr=%x, data=%x, sz=%d", addr, data, sz);
 		return;
 	}
-	//map 0x0100 to 0x01FF
-	else if ((base_start >=0x0100) && (base_end <=0x01FF) /*&& (addr>= 0x01000000) && (addr<= 0x01FFFFFF)*/) //	:Ext. Device
+
+	// --- AICA Sound Control: 0x700000 - 0x707FFF ---
+	if (base == 0x70 && addr <= 0x00707FFF)
 	{
-		//EMUERROR4("Write to area0_32 not implemented [Ext. Device], addr=%x,data=%x,size=%d",addr,data,sz);
-		libExtDevice_WriteMem_A0_010(addr,data,sz);
+		WriteMem_aica_reg(addr, data, sz);
+		return;
 	}
-	/*else
+
+	// --- AICA RTC: 0x710000 - 0x71000B ---
+	if (base == 0x71 && addr <= 0x0071000B)
 	{
-		EMUERROR4("Write to area0_32 not mapped!!! , addr=%x,data=%x,size=%d",addr,data,sz);
-	}*/
-	return;
+		WriteMem_aica_rtc(addr, data, sz);
+		return;
+	}
+
+	// --- AICA Wave Memory: 0x800000 - 0xFFFFFF ---
+	if (base >= 0x80 && base <= 0xFF)
+	{
+		libAICA_WriteMem_aica_ram(addr, data, sz);
+		return;
+	}
+
+	// --- External Device: 0x1000000 - 0x1FFFFFF ---
+	if (base >= 0x100 && base <= 0x1FF)
+	{
+		libExtDevice_WriteMem_A0_010(addr, data, sz);
+		return;
+	}
+
+	// Unmapped — silently ignore (matches original behaviour)
 }
 
-//Init/Res/Term
+//=============================================================================
+// Init / Reset / Term — delegate to System Bus
+//=============================================================================
 void sh4_area0_Init()
 {
 	sb_Init();
@@ -305,76 +275,31 @@ void sh4_area0_Term()
 	sb_Term();
 }
 
-
-//AREA 0
+//=============================================================================
+// vmem handler registration and mapping
+//=============================================================================
 _vmem_handler area0_handler_0000_00FF;
 _vmem_handler area0_handler_0100_01FF;
 
-
-//Different mem mapping regions for area0
-//0x0000-0x001f
-//0x0020-0x0021
-//0x005F-0x005F
-//0x0060-0x0060
-//0x0061-0x006F
-//0x0070-0x0070
-//0x0071-0x0071
-//0x0080-0x00FF
-//0x0100-0x01FF
-//Count : 9
-
 void map_area0_init()
 {
-	//area0_handler =	_vmem_register_handler(ReadMem8_area0,ReadMem16_area0,ReadMem32_area0,
-	//									  WriteMem8_area0,WriteMem16_area0,WriteMem32_area0);
-	
-	area0_handler_0000_00FF = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0000,0x00FF);
-	/*
-	area0_handler_20_21 = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0020,0x0021);
-	area0_handler_5F_5F = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x005F,0x005F);
-	area0_handler_60_60 = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0060,0x0060);
-	area0_handler_61_6F = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0061,0x006F);
-	area0_handler_70_70 = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0070,0x0070);
-	area0_handler_71_71 = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0071,0x0071);
-	//area0_handler_80_FF = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0080,0x00FF);
-	*/
-	area0_handler_0100_01FF = _vmem_register_handler_Template2(ReadMem_area0,WriteMem_area0,0x0100,0x01FF);
+	area0_handler_0000_00FF = _vmem_register_handler_Template2(
+		ReadMem_area0, WriteMem_area0, 0x0000, 0x00FF);
+
+	area0_handler_0100_01FF = _vmem_register_handler_Template2(
+		ReadMem_area0, WriteMem_area0, 0x0100, 0x01FF);
 }
+
 void map_area0(u32 base)
 {
-	verify(base<0xE000);
+	verify(base < 0xE000);
 
-	//Map 0x0000 to 0x01FF
-	//u32 start=0x0000 | base;
-	//u32 end  =start+0x01FF;
-	
-	//_vmem_map_handler(area0_handler,start,end);
-	//0x0000-0x001f
-	_vmem_map_handler(area0_handler_0000_00FF,0x00|base,0x00|base);
-	/*
-	//0x0020-0x0021
-	_vmem_map_handler(area0_handler_20_21,0x0020|base,0x0021|base);
-	//0x005F-0x005F
-	_vmem_map_handler(area0_handler_5F_5F,0x005F|base,0x005F|base);
-	//0x0060-0x0060
-	_vmem_map_handler(area0_handler_60_60,0x0060|base,0x0060|base);
-	//0x0061-0x006F
-	_vmem_map_handler(area0_handler_61_6F,0x0061|base,0x006F|base);
-	//0x0070-0x0070
-	_vmem_map_handler(area0_handler_70_70,0x0070|base,0x0070|base);
-	//0x0071-0x0071
-	_vmem_map_handler(area0_handler_71_71,0x0071|base,0x0071|base);
-	//0x0080-0x00FF
-	//_vmem_map_handler(area0_handler_80_FF,0x0080|base,0x00FF|base);
-	
-	_vmem_map_block_mirror(aica_ram.data,0x0080|base,0x00FF|base,ARAM_SIZE);
-	*/
+	// Pages 0x00-0xFF (Boot ROM, Flash, hardware registers, AICA)
+	_vmem_map_handler(area0_handler_0000_00FF, 0x00 | base, 0x00 | base);
 
-	//0x0100-0x01FF
-	_vmem_map_handler(area0_handler_0100_01FF,0x01|base,0x01|base);
+	// Pages 0x100-0x1FF (External Device)
+	_vmem_map_handler(area0_handler_0100_01FF, 0x01 | base, 0x01 | base);
 
-	//0x0240 to 0x03FF mirrors 0x0040 to 0x01FF (no flashrom or bios)
-	//0x0200 to 0x023F are unused
-	_vmem_mirror_mapping(0x02|base,0x00|base,0x02);
+	// 0x02|base mirrors 0x00|base (excludes Flash and Boot ROM per HW spec)
+	_vmem_mirror_mapping(0x02 | base, 0x00 | base, 0x02);
 }
-
