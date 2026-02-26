@@ -19,7 +19,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | _vmem.cpp | Virtual memory backend | 0.06 | Improved by claudeAI (see commit) |
-| memutil.cpp | Memory utility functions | | |
+| memutil.cpp | Memory utility functions | 0.06 | Improved by claudeAI (see commit) |
 | mmu.cpp | Memory Management Unit emulation | 0.06 | Improved by claudeAI (see commit) | |
 | sh4_mem.cpp | SH4 memory access logic | | |
 | sh4_area0.cpp | SH4 Area 0 memory mapping | | |
