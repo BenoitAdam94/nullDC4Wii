@@ -14,7 +14,6 @@
 #include "_vmem.h"
 #include "mmu.h"
 
-extern "C" int get_debug_loop();
 
 // 64 bytes of store queue buffer (256-byte aligned for hardware compatibility)
 ALIGN(256) u8 sq_both[64];
@@ -48,7 +47,7 @@ template <u32 size>
 INLINE u32 RegSRead(Array<RegisterStruct>& reg, u32 offset)
 {
 #ifdef TRACE
-	// Minimum alignment is 4 bytes for all SH4 internal registers
+// Minimum alignment is 4 bytes for all SH4 internal registers
 	if (offset & 3)
 		EMUERROR("Unaligned register read");
 #endif
@@ -158,19 +157,15 @@ T FASTCALL ReadMem_P4(u32 addr)
 {
 	switch ((addr >> 24) & 0xFF)
 	{
-	// Store queues: 0xE0000000-0xE3FFFFFF
-	// These are readable but the path here is only hit if the vmem block mapping fails.
+	// Store queues (0xE0-0xE3): fallback, normally handled by vmem block map
 	case 0xE0: case 0xE1: case 0xE2: case 0xE3:
-    if (get_debug_loop()) {
-		  printf("P4 read [Store queue fallback] addr=0x%x\n", addr);
-    }
 		return 0;
 
-	// Instruction cache address array (F0): not emulated, return 0
+	// Instruction cache address array (F0): not emulated
 	case 0xF0:
 		return 0;
 
-	// Instruction cache data array (F1): not emulated, return 0
+	// Instruction cache data array (F1): not emulated
 	case 0xF1:
 		return 0;
 
@@ -213,24 +208,15 @@ T FASTCALL ReadMem_P4(u32 addr)
 			return (T)UTLB[entry].Data.reg_data;
 		}
 
-	// Area7 (FF): on-chip peripheral registers — should be routed via area7 handler
+	// Area7 (FF): should be routed via area7 handler, not here
 	case 0xFF:
-    if (get_debug_loop()) {
-		  printf("P4 read [area7 fallback] addr=0x%x\n", addr);
-    }
-		break;
+		return 0;
 
 	default:
-    if (get_debug_loop()) {
-		  printf("P4 read [reserved] addr=0x%x\n", addr);
-    }
-		break;
+		// Outside defined P4 sub-regions (e.g. 0xECxxxxxx).
+		// Not a real SH4 address — likely a guest bug. Return 0 safely.
+		return 0;
 	}
-
-  if (get_debug_loop()) {
-	  EMUERROR2("ReadMem_P4 not implemented, addr=0x%x", addr);
-  }
-	return 0;
 }
 
 template <u32 sz, class T>
@@ -238,9 +224,8 @@ void FASTCALL WriteMem_P4(u32 addr, T data)
 {
 	switch ((addr >> 24) & 0xFF)
 	{
-	// Store queues: fallback path
+	// Store queues: fallback, normally handled by vmem block map
 	case 0xE0: case 0xE1: case 0xE2: case 0xE3:
-		printf("P4 write [Store queue fallback] addr=0x%x\n", addr);
 		return;
 
 	// Instruction cache address array (F0): ignore writes (no cache emulation)
@@ -337,31 +322,24 @@ void FASTCALL WriteMem_P4(u32 addr, T data)
 
 	// Area7 (FF): fallback
 	case 0xFF:
-		printf("P4 write [area7 fallback] addr=0x%x data=0x%x\n", addr, (u32)data);
-		break;
+		return;
 
 	default:
-		printf("P4 write [reserved] addr=0x%x data=0x%x\n", addr, (u32)data);
-		break;
+		// Outside defined P4 sub-regions — discard silently
+		return;
 	}
-
-	EMUERROR3("WriteMem_P4 not implemented, addr=0x%x, data=0x%x", addr, (u32)data);
 }
 
 
 // ---------------------------------------------------------------------------
-// Store Queue access
-// Store queues are 32-bit only per SH4 spec; warn on non-32-bit access.
+// Store Queue access (32-bit only per SH4 spec)
 // ---------------------------------------------------------------------------
 
 template <u32 sz, class T>
 T FASTCALL ReadMem_sq(u32 addr)
 {
 	if (sz != 4)
-	{
-		printf("Store Queue: only 32-bit reads are valid (addr=0x%x)\n", addr);
 		return 0xDE;
-	}
 
 	u32 offset = addr & 0x3C; // 8 dwords, 4 bytes each = 32 bytes per queue
 	return (T) *(u32*)&sq_both[offset];
@@ -371,10 +349,7 @@ template <u32 sz, class T>
 void FASTCALL WriteMem_sq(u32 addr, T data)
 {
 	if (sz != 4)
-	{
-		printf("Store Queue: only 32-bit writes are valid (addr=0x%x, data=0x%x)\n", addr, (u32)data);
 		return;
-	}
 
 	u32 offset = addr & 0x3C;
 	*(u32*)&sq_both[offset] = (u32)data;
@@ -514,15 +489,9 @@ void FASTCALL WriteMem_area7(u32 addr, T data)
 			return;
 		}
 		else if (addr >= BSC_SDMR2_addr && addr <= 0x1F90FFFF)
-		{
-			// DRAM settings 2 — write-only, no effect needed in emulation
-			return;
-		}
+			return; // DRAM settings 2 — write-only, no effect needed
 		else if (addr >= BSC_SDMR3_addr && addr <= 0x1F94FFFF)
-		{
-			// DRAM settings 3 — write-only, no effect needed in emulation
-			return;
-		}
+			return; // DRAM settings 3 — write-only, no effect needed
 		EMUERROR2("BSC register out of range, addr=0x%x", addr);
 		break;
 
@@ -612,10 +581,7 @@ template <u32 sz, class T>
 T FASTCALL ReadMem_area7_OCR_T(u32 addr)
 {
 	if (!CCN_CCR.ORA)
-	{
-		printf("On-Chip RAM read while ORA disabled, addr=0x%x\n", addr);
-		return (T)0xDE; // Undefined value
-	}
+		return (T)0xDE;
 
 	u32 ofs = addr & OnChipRAM_MASK;
 
@@ -623,7 +589,6 @@ T FASTCALL ReadMem_area7_OCR_T(u32 addr)
 	if (sz == 2) return (T)host_to_le<sz>(*(u16*)&OnChipRAM[ofs]);
 	if (sz == 4) return (T)host_to_le<sz>(*(u32*)&OnChipRAM[ofs]);
 
-	printf("ReadMem_area7_OCR_T: invalid sz=%d\n", sz);
 	return (T)0xDE;
 }
 
@@ -631,17 +596,13 @@ template <u32 sz, class T>
 void FASTCALL WriteMem_area7_OCR_T(u32 addr, T data)
 {
 	if (!CCN_CCR.ORA)
-	{
-		printf("On-Chip RAM write while ORA disabled, addr=0x%x\n", addr);
 		return;
-	}
 
 	u32 ofs = addr & OnChipRAM_MASK;
 
 	if (sz == 1)      OnChipRAM[ofs]               = (u8)data;
 	else if (sz == 2) *(u16*)&OnChipRAM[ofs]        = (u16)host_to_le<sz>((u32)data);
 	else if (sz == 4) *(u32*)&OnChipRAM[ofs]        = host_to_le<sz>((u32)data);
-	else              printf("WriteMem_area7_OCR_T: invalid sz=%d\n", sz);
 }
 
 
@@ -653,7 +614,7 @@ void sh4_internal_reg_Init()
 {
 	OnChipRAM.Resize(OnChipRAM_SIZE, false);
 
-	// Mark all register slots as unimplemented by default.
+  // Mark all register slots as unimplemented by default.
 	// Individual module Init() calls will override the ones they handle.
 	for (u32 i = 0; i < 30; i++)
 	{
@@ -669,7 +630,7 @@ void sh4_internal_reg_Init()
 		if (i < SCIF.Size) SCIF[i].flags = REG_NOT_IMPL;
 	}
 
-	// Initialize each peripheral module's register structs
+  // Initialize each peripheral module's register structs
 	bsc_Init();
 	ccn_Init();
 	cpg_Init();
@@ -700,7 +661,7 @@ void sh4_internal_reg_Reset(bool Manual)
 
 void sh4_internal_reg_Term()
 {
-	// Terminate in reverse init order for safety
+  // Terminate in reverse init order for safety
 	ubc_Term();
 	tmu_Term();
 	scif_Term();
@@ -730,7 +691,6 @@ void map_area7_init()
 
 void map_area7(u32 base)
 {
-	// On-chip RAM is active at 0x7C000000-0x7FFFFFFF (base=0x60 means P0/P3 mapped)
 	if (base == 0x60)
 		_vmem_map_handler(area7_orc_handler, 0x1C | base, 0x1F | base);
 	else
@@ -739,17 +699,17 @@ void map_area7(u32 base)
 
 void map_p4()
 {
-	// Register a catch-all P4 handler for 0xE0000000-0xFFFFFFFF
+  // Register a catch-all P4 handler for 0xE0000000-0xFFFFFFFF
 	_vmem_handler p4_handler = _vmem_register_handler_Template(ReadMem_P4, WriteMem_P4);
 	_vmem_map_handler(p4_handler, 0xE0, 0xFF);
 
-	// Store queues: direct block-mapped to sq_both buffer (fast path, no handler overhead)
+  // Store queues: direct block-mapped to sq_both buffer (fast path, no handler overhead)
 	// Each of the four 256MB segments 0xE0-0xE3 maps to the same 64-byte buffer.
 	_vmem_map_block(sq_both, 0xE0, 0xE0, 63);
 	_vmem_map_block(sq_both, 0xE1, 0xE1, 63);
 	_vmem_map_block(sq_both, 0xE2, 0xE2, 63);
 	_vmem_map_block(sq_both, 0xE3, 0xE3, 63);
 
-	// Area7 handler overlays the 0xFFxxxxxx region, overriding the P4 catch-all
+  // Area7 handler overlays the 0xFFxxxxxx region, overriding the P4 catch-all
 	map_area7(0xE0);
 }
