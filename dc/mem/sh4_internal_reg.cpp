@@ -18,8 +18,7 @@
 // 64 bytes of store queue buffer (256-byte aligned for hardware compatibility)
 ALIGN(256) u8 sq_both[64];
 
-// Suppress MSVC constant-expression-in-if warning from templates
-#pragma warning(disable : 4127)
+
 
 Array<u8> OnChipRAM;
 
@@ -447,7 +446,7 @@ T FASTCALL ReadMem_area7(u32 addr)
 	case A7_REG_HASH(UDI_BASE_addr):
 		switch (addr)
 		{
-		case UDI_SDIR_addr: return 0xFFFF; // Reset value
+		case UDI_SDIR_addr: return (T)0xFFFF; // Reset value (truncated to T width)
 		case UDI_SDDR_addr: return 0;
 		}
 		break;
