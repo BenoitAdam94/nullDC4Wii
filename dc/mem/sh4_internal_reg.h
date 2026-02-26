@@ -1,418 +1,208 @@
 #pragma once
 #include "types.h"
 
-#define OnChipRAM_SIZE (0x2000)
-#define OnChipRAM_MASK (OnChipRAM_SIZE-1)
+// Size and address mask for the SH4 on-chip scratchpad RAM (8KB)
+#define OnChipRAM_SIZE  (0x2000)
+#define OnChipRAM_MASK  (OnChipRAM_SIZE - 1)
 
+// Store queue buffer: 64 bytes, 256-byte aligned (hardware requirement)
 extern ALIGN(256) u8 sq_both[64];
 
-extern Array<RegisterStruct> CCN;		//CCN  : 14 registers
-extern Array<RegisterStruct> UBC;		//UBC  : 9 registers
-extern Array<RegisterStruct> BSC;		//BSC  : 18 registers
-extern Array<RegisterStruct> DMAC;		//DMAC : 17 registers
-extern Array<RegisterStruct> CPG;		//CPG  : 5 registers
-extern Array<RegisterStruct> RTC;		//RTC  : 16 registers
-extern Array<RegisterStruct> INTC;		//INTC : 4 registers
-extern Array<RegisterStruct> TMU;		//TMU  : 12 registers
-extern Array<RegisterStruct> SCI;		//SCI  : 8 registers
-extern Array<RegisterStruct> SCIF;		//SCIF : 10 registers
+// SH4 internal peripheral register arrays.
+// Each entry is a RegisterStruct covering one 32-bit aligned slot.
+extern Array<RegisterStruct> CCN;   // Cache/MMU control         : 14 registers
+extern Array<RegisterStruct> UBC;   // User breakpoint controller :  9 registers
+extern Array<RegisterStruct> BSC;   // Bus state controller       : 18 registers
+extern Array<RegisterStruct> DMAC;  // DMA controller             : 17 registers
+extern Array<RegisterStruct> CPG;   // Clock/power generator      :  5 registers
+extern Array<RegisterStruct> RTC;   // Real-time clock            : 16 registers
+extern Array<RegisterStruct> INTC;  // Interrupt controller       :  4 registers
+extern Array<RegisterStruct> TMU;   // Timer unit                 : 12 registers
+extern Array<RegisterStruct> SCI;   // Serial communication (SCI) :  8 registers
+extern Array<RegisterStruct> SCIF;  // Serial comm. FIFO (SCIF)   : 10 registers
 
-/*
-//Region P4
-u32 ReadMem_P4(u32 addr,u32 sz);
-void WriteMem_P4(u32 addr,u32 data,u32 sz);
-
-//Area7
-u32 ReadMem_area7(u32 addr,u32 sz);
-void WriteMem_area7(u32 addr,u32 data,u32 sz);
-void FASTCALL WriteMem_sq_32(u32 address,u32 data);*/
-
-//Init/Res/Term
+// Lifecycle
 void sh4_internal_reg_Init();
 void sh4_internal_reg_Reset(bool Manual);
 void sh4_internal_reg_Term();
 
-#define A7_REG_HASH(addr) ((addr>>16)&0x00FF)
+// Hash function: extracts bits [23:16] of an Area7 address for fast switch dispatch.
+// All SH4 peripheral modules have unique values in this bit range.
+#define A7_REG_HASH(addr) (((addr) >> 16) & 0x00FF)
 
-//CCN module registers base
-#define CCN_BASE_addr 0x1F000000
+// ---------------------------------------------------------------------------
+// CCN — Cache/MMU control registers
+// ---------------------------------------------------------------------------
+#define CCN_BASE_addr    0x1F000000
+#define CCN_PTEH_addr    0x1F000000  // Page table entry high (32-bit)
+#define CCN_PTEL_addr    0x1F000004  // Page table entry low  (32-bit)
+#define CCN_TTB_addr     0x1F000008  // Translation table base (32-bit)
+#define CCN_TEA_addr     0x1F00000C  // TLB exception address  (32-bit, held on reset)
+#define CCN_MMUCR_addr   0x1F000010  // MMU control register   (32-bit, reset=0)
+#define CCN_BASRA_addr   0x1F000014  // Break address A        (8-bit)
+#define CCN_BASRB_addr   0x1F000018  // Break address B        (8-bit)
+#define CCN_CCR_addr     0x1F00001C  // Cache control register (32-bit, reset=0)
+#define CCN_TRA_addr     0x1F000020  // TRAPA exception register (32-bit)
+#define CCN_EXPEVT_addr  0x1F000024  // Exception event        (32-bit, reset=0x000, manrst=0x020)
+#define CCN_INTEVT_addr  0x1F000028  // Interrupt event        (32-bit)
+#define CCN_PTEA_addr    0x1F000034  // Page table entry asid  (32-bit)
+#define CCN_QACR0_addr   0x1F000038  // Queue address ctrl 0   (32-bit)
+#define CCN_QACR1_addr   0x1F00003C  // Queue address ctrl 1   (32-bit)
 
-//CCN PTEH 0xFF000000 0x1F000000 32 Undefined Undefined Held Held Iclk
-#define CCN_PTEH_addr 0x1F000000
+// ---------------------------------------------------------------------------
+// UBC — User breakpoint controller registers
+// ---------------------------------------------------------------------------
+#define UBC_BASE_addr    0x1F200000
+#define UBC_BARA_addr    0x1F200000  // Break address A        (32-bit)
+#define UBC_BAMRA_addr   0x1F200004  // Break addr mask A      (8-bit)
+#define UBC_BBRA_addr    0x1F200008  // Break bus cycle A      (16-bit, reset=0)
+#define UBC_BARB_addr    0x1F20000C  // Break address B        (32-bit)
+#define UBC_BAMRB_addr   0x1F200010  // Break addr mask B      (8-bit)
+#define UBC_BBRB_addr    0x1F200014  // Break bus cycle B      (16-bit, reset=0)
+#define UBC_BDRB_addr    0x1F200018  // Break data B           (32-bit)
+#define UBC_BDMRB_addr   0x1F20001C  // Break data mask B      (32-bit)
+#define UBC_BRCR_addr    0x1F200020  // Break control          (16-bit, reset=0)
 
-//CCN PTEL 0xFF000004 0x1F000004 32 Undefined Undefined Held Held Iclk
-#define CCN_PTEL_addr 0x1F000004
+// ---------------------------------------------------------------------------
+// BSC — Bus state controller registers
+// ---------------------------------------------------------------------------
+#define BSC_BASE_addr    0x1F800000
+#define BSC_BCR1_addr    0x1F800000  // Bus control 1          (32-bit, reset=0)
+#define BSC_BCR2_addr    0x1F800004  // Bus control 2          (16-bit, reset=0x3FFC)
+#define BSC_WCR1_addr    0x1F800008  // Wait control 1         (32-bit, reset=0x77777777)
+#define BSC_WCR2_addr    0x1F80000C  // Wait control 2         (32-bit, reset=0xFFFEEFFF)
+#define BSC_WCR3_addr    0x1F800010  // Wait control 3         (32-bit, reset=0x07777777)
+#define BSC_MCR_addr     0x1F800014  // Memory control         (32-bit, reset=0)
+#define BSC_PCR_addr     0x1F800018  // PCMCIA control         (16-bit, reset=0)
+#define BSC_RTCSR_addr   0x1F80001C  // Refresh timer control  (16-bit, reset=0)
+#define BSC_RTCNT_addr   0x1F800020  // Refresh timer counter  (16-bit, reset=0)
+#define BSC_RTCOR_addr   0x1F800024  // Refresh timer compare  (16-bit, reset=0)
+#define BSC_RFCR_addr    0x1F800028  // Refresh count          (16-bit, reset=0)
+#define BSC_PCTRA_addr   0x1F80002C  // Port control A         (32-bit, reset=0)
+#define BSC_PDTRA_addr   0x1F800030  // Port data A            (16-bit, undefined reset)
+#define BSC_PCTRB_addr   0x1F800040  // Port control B         (32-bit, reset=0)
+#define BSC_PDTRB_addr   0x1F800044  // Port data B            (16-bit, undefined reset)
+#define BSC_GPIOIC_addr  0x1F800048  // GPIO interrupt control (16-bit, reset=0)
+#define BSC_SDMR2_addr   0x1F900000  // DRAM mode register 2   (8-bit, write-only)
+#define BSC_SDMR3_addr   0x1F940000  // DRAM mode register 3   (8-bit, write-only)
 
-//CCN TTB 0xFF000008 0x1F000008 32 Undefined Undefined Held Held Iclk
-#define CCN_TTB_addr 0x1F000008
-
-//CCN TEA 0xFF00000C 0x1F00000C 32 Undefined Held Held Held Iclk
-#define CCN_TEA_addr 0x1F00000C
-
-//CCN MMUCR 0xFF000010 0x1F000010 32 0x00000000 0x00000000 Held Held Iclk
-#define CCN_MMUCR_addr 0x1F000010
-
-//CCN BASRA 0xFF000014 0x1F000014 8 Undefined Held Held Held Iclk
-#define CCN_BASRA_addr 0x1F000014
-
-//CCN BASRB 0xFF000018 0x1F000018 8 Undefined Held Held Held Iclk
-#define CCN_BASRB_addr 0x1F000018
-
-//CCN CCR 0xFF00001C 0x1F00001C 32 0x00000000 0x00000000 Held Held Iclk
-#define CCN_CCR_addr 0x1F00001C
-
-//CCN TRA 0xFF000020 0x1F000020 32 Undefined Undefined Held Held Iclk
-#define CCN_TRA_addr 0x1F000020
-
-//CCN EXPEVT 0xFF000024 0x1F000024 32 0x00000000 0x00000020 Held Held Iclk
-#define CCN_EXPEVT_addr 0x1F000024
-
-//CCN INTEVT 0xFF000028 0x1F000028 32 Undefined Undefined Held Held Iclk
-#define CCN_INTEVT_addr 0x1F000028
-
-//CCN PTEA 0xFF000034 0x1F000034 32 Undefined Undefined Held Held Iclk
-#define CCN_PTEA_addr 0x1F000034
-
-//CCN QACR0 0xFF000038 0x1F000038 32 Undefined Undefined Held Held Iclk
-#define CCN_QACR0_addr 0x1F000038
-
-//CCN QACR1 0xFF00003C 0x1F00003C 32 Undefined Undefined Held Held Iclk
-#define CCN_QACR1_addr 0x1F00003C
-
-//UBC module registers base
-#define UBC_BASE_addr 0x1F200000
-
-//UBC BARA 0xFF200000 0x1F200000 32 Undefined Held Held Held Iclk
-#define UBC_BARA_addr 0x1F200000
-
-//UBC BAMRA 0xFF200004 0x1F200004 8 Undefined Held Held Held Iclk
-#define UBC_BAMRA_addr 0x1F200004
-
-//UBC BBRA 0xFF200008 0x1F200008 16 0x0000 Held Held Held Iclk
-#define UBC_BBRA_addr 0x1F200008
-
-//UBC BARB 0xFF20000C 0x1F20000C 32 Undefined Held Held Held Iclk
-#define UBC_BARB_addr 0x1F20000C
-
-//UBC BAMRB 0xFF200010 0x1F200010 8 Undefined Held Held Held Iclk
-#define UBC_BAMRB_addr 0x1F200010
-
-//UBC BBRB 0xFF200014 0x1F200014 16 0x0000 Held Held Held Iclk
-#define UBC_BBRB_addr 0x1F200014
-
-//UBC BDRB 0xFF200018 0x1F200018 32 Undefined Held Held Held Iclk
-#define UBC_BDRB_addr 0x1F200018
-
-//UBC BDMRB 0xFF20001C 0x1F20001C 32 Undefined Held Held Held Iclk
-#define UBC_BDMRB_addr 0x1F20001C
-
-//UBC BRCR 0xFF200020 0x1F200020 16 0x0000 Held Held Held Iclk
-#define UBC_BRCR_addr 0x1F200020
-
-//BSC module registers base
-#define BSC_BASE_addr 0x1F800000
-
-//BSC BCR1 0xFF800000 0x1F800000 32 0x00000000 Held Held Held Bclk
-#define BSC_BCR1_addr 0x1F800000
-
-//BSC BCR2 0xFF800004 0x1F800004 16 0x3FFC Held Held Held Bclk
-#define BSC_BCR2_addr 0x1F800004
-
-//BSC WCR1 0xFF800008 0x1F800008 32 0x77777777 Held Held Held Bclk
-#define BSC_WCR1_addr 0x1F800008
-
-//BSC WCR2 0xFF80000C 0x1F80000C 32 0xFFFEEFFF Held Held Held Bclk
-#define BSC_WCR2_addr 0x1F80000C
-
-//BSC WCR3 0xFF800010 0x1F800010 32 0x07777777 Held Held Held Bclk
-#define BSC_WCR3_addr 0x1F800010
-
-//BSC MCR 0xFF800014 0x1F800014 32 0x00000000 Held Held Held Bclk
-#define BSC_MCR_addr 0x1F800014
-
-//BSC PCR 0xFF800018 0x1F800018 16 0x0000 Held Held Held Bclk
-#define BSC_PCR_addr 0x1F800018
-
-//BSC RTCSR 0xFF80001C 0x1F80001C 16 0x0000 Held Held Held Bclk
-#define BSC_RTCSR_addr 0x1F80001C
-
-//BSC RTCNT 0xFF800020 0x1F800020 16 0x0000 Held Held Held Bclk
-#define BSC_RTCNT_addr 0x1F800020
-
-//BSC RTCOR 0xFF800024 0x1F800024 16 0x0000 Held Held Held Bclk
-#define BSC_RTCOR_addr 0x1F800024
-
-//BSC RFCR 0xFF800028 0x1F800028 16 0x0000 Held Held Held Bclk
-#define BSC_RFCR_addr 0x1F800028
-
-//BSC PCTRA 0xFF80002C 0x1F80002C 32 0x00000000 Held Held Held Bclk
-#define BSC_PCTRA_addr 0x1F80002C
-
-//BSC PDTRA 0xFF800030 0x1F800030 16 Undefined Held Held Held Bclk
-#define BSC_PDTRA_addr 0x1F800030
-
-//BSC PCTRB 0xFF800040 0x1F800040 32 0x00000000 Held Held Held Bclk
-#define BSC_PCTRB_addr 0x1F800040
-
-//BSC PDTRB 0xFF800044 0x1F800044 16 Undefined Held Held Held Bclk
-#define BSC_PDTRB_addr 0x1F800044
-
-//BSC GPIOIC 0xFF800048 0x1F800048 16 0x00000000 Held Held Held Bclk
-#define BSC_GPIOIC_addr 0x1F800048
-
-//BSC SDMR2 0xFF90xxxx 0x1F90xxxx 8 Write-only Bclk
-#define BSC_SDMR2_addr 0x1F900000
-
-//BSC SDMR3 0xFF94xxxx 0x1F94xxxx 8 Bclk
-#define BSC_SDMR3_addr 0x1F940000
-
-//DMAC module registers base
-#define DMAC_BASE_addr 0x1FA00000
-
-//DMAC SAR0 0xFFA00000 0x1FA00000 32 Undefined Undefined Held Held Bclk
-#define DMAC_SAR0_addr 0x1FA00000
-
-//DMAC DAR0 0xFFA00004 0x1FA00004 32 Undefined Undefined Held Held Bclk
-#define DMAC_DAR0_addr 0x1FA00004
-
-//DMAC DMATCR0 0xFFA00008 0x1FA00008 32 Undefined Undefined Held Held Bclk
-#define DMAC_DMATCR0_addr 0x1FA00008
-
-//DMAC CHCR0 0xFFA0000C 0x1FA0000C 32 0x00000000 0x00000000 Held Held Bclk
-#define DMAC_CHCR0_addr 0x1FA0000C
-
-//DMAC SAR1 0xFFA00010 0x1FA00010 32 Undefined Undefined Held Held Bclk
-#define DMAC_SAR1_addr 0x1FA00010
-
-//DMAC DAR1 0xFFA00014 0x1FA00014 32 Undefined Undefined Held Held Bclk
-#define DMAC_DAR1_addr 0x1FA00014
-
-//DMAC DMATCR1 0xFFA00018 0x1FA00018 32 Undefined Undefined Held Held Bclk
+// ---------------------------------------------------------------------------
+// DMAC — DMA controller registers (4 channels, 4 regs each + DMAOR)
+// ---------------------------------------------------------------------------
+#define DMAC_BASE_addr    0x1FA00000
+#define DMAC_SAR0_addr    0x1FA00000  // Source address ch.0
+#define DMAC_DAR0_addr    0x1FA00004  // Destination address ch.0
+#define DMAC_DMATCR0_addr 0x1FA00008  // Transfer count ch.0
+#define DMAC_CHCR0_addr   0x1FA0000C  // Channel control ch.0   (reset=0)
+#define DMAC_SAR1_addr    0x1FA00010
+#define DMAC_DAR1_addr    0x1FA00014
 #define DMAC_DMATCR1_addr 0x1FA00018
-
-//DMAC CHCR1 0xFFA0001C 0x1FA0001C 32 0x00000000 0x00000000 Held Held Bclk
-#define DMAC_CHCR1_addr 0x1FA0001C
-
-//DMAC SAR2 0xFFA00020 0x1FA00020 32 Undefined Undefined Held Held Bclk
-#define DMAC_SAR2_addr 0x1FA00020
-
-//DMAC DAR2 0xFFA00024 0x1FA00024 32 Undefined Undefined Held Held Bclk
-#define DMAC_DAR2_addr 0x1FA00024
-
-//DMAC DMATCR2 0xFFA00028 0x1FA00028 32 Undefined Undefined Held Held Bclk
+#define DMAC_CHCR1_addr   0x1FA0001C  // (reset=0)
+#define DMAC_SAR2_addr    0x1FA00020
+#define DMAC_DAR2_addr    0x1FA00024
 #define DMAC_DMATCR2_addr 0x1FA00028
-
-//DMAC CHCR2 0xFFA0002C 0x1FA0002C 32 0x00000000 0x00000000 Held Held Bclk
-#define DMAC_CHCR2_addr 0x1FA0002C
-
-//DMAC SAR3 0xFFA00030 0x1FA00030 32 Undefined Undefined Held Held Bclk
-#define DMAC_SAR3_addr 0x1FA00030
-
-//DMAC DAR3 0xFFA00034 0x1FA00034 32 Undefined Undefined Held Held Bclk
-#define DMAC_DAR3_addr 0x1FA00034
-
-//DMAC DMATCR3 0xFFA00038 0x1FA00038 32 Undefined Undefined Held Held Bclk
+#define DMAC_CHCR2_addr   0x1FA0002C  // (reset=0)
+#define DMAC_SAR3_addr    0x1FA00030
+#define DMAC_DAR3_addr    0x1FA00034
 #define DMAC_DMATCR3_addr 0x1FA00038
-
-//DMAC CHCR3 0xFFA0003C 0x1FA0003C 32 0x00000000 0x00000000 Held Held Bclk
-#define DMAC_CHCR3_addr 0x1FA0003C
-
-//DMAC DMAOR 0xFFA00040 0x1FA00040 32 0x00000000 0x00000000 Held Held Bclk
-#define DMAC_DMAOR_addr 0x1FA00040
-
-//CPG module registers base
-#define CPG_BASE_addr 0x1FC00000
-
-//CPG FRQCR 0xFFC00000 0x1FC00000 16  Held Held Held Pclk
-#define CPG_FRQCR_addr 0x1FC00000
-
-//CPG STBCR 0xFFC00004 0x1FC00004 8 0x00 Held Held Held Pclk
-#define CPG_STBCR_addr 0x1FC00004
-
-//CPG WTCNT 0xFFC00008 0x1FC00008 8/16 0x00 Held Held Held Pclk
-#define CPG_WTCNT_addr 0x1FC00008
-
-//CPG WTCSR 0xFFC0000C 0x1FC0000C 8/16 0x00 Held Held Held Pclk
-#define CPG_WTCSR_addr 0x1FC0000C
-
-//CPG STBCR2 0xFFC00010 0x1FC00010 8 0x00 Held Held Held Pclk
-#define CPG_STBCR2_addr 0x1FC00010
-
-//RTC module registers base
-#define RTC_BASE_addr 0x1FC80000
-
-//RTC R64CNT 0xFFC80000 0x1FC80000 8 Held Held Held Held Pclk
-#define RTC_R64CNT_addr 0x1FC80000
-
-//RTC RSECCNT 0xFFC80004 0x1FC80004 8 Held Held Held Held Pclk
-#define RTC_RSECCNT_addr 0x1FC80004
-
-//RTC RMINCNT 0xFFC80008 0x1FC80008 8 Held Held Held Held Pclk
-#define RTC_RMINCNT_addr 0x1FC80008
-
-//RTC RHRCNT 0xFFC8000C 0x1FC8000C 8 Held Held Held Held Pclk
-#define RTC_RHRCNT_addr 0x1FC8000C
-
-//RTC RWKCNT 0xFFC80010 0x1FC80010 8 Held Held Held Held Pclk
-#define RTC_RWKCNT_addr 0x1FC80010
-
-//RTC RDAYCNT 0xFFC80014 0x1FC80014 8 Held Held Held Held Pclk
-#define RTC_RDAYCNT_addr 0x1FC80014
-
-//RTC RMONCNT 0xFFC80018 0x1FC80018 8 Held Held Held Held Pclk
-#define RTC_RMONCNT_addr 0x1FC80018
-
-//RTC RYRCNT 0xFFC8001C 0x1FC8001C 16 Held Held Held Held Pclk
-#define RTC_RYRCNT_addr 0x1FC8001C
-
-//RTC RSECAR 0xFFC80020 0x1FC80020 8 Held  Held Held Held Pclk
-#define RTC_RSECAR_addr 0x1FC80020
-
-//RTC RMINAR 0xFFC80024 0x1FC80024 8 Held  Held Held Held Pclk
-#define RTC_RMINAR_addr 0x1FC80024
-
-//RTC RHRAR 0xFFC80028 0x1FC80028 8 Held  Held Held Held Pclk
-#define RTC_RHRAR_addr 0x1FC80028
-
-//RTC RWKAR 0xFFC8002C 0x1FC8002C 8 Held  Held Held Held Pclk
-#define RTC_RWKAR_addr 0x1FC8002C
-
-//RTC RDAYAR 0xFFC80030 0x1FC80030 8 Held  Held Held Held Pclk
-#define RTC_RDAYAR_addr 0x1FC80030
-
-//RTC RMONAR 0xFFC80034 0x1FC80034 8 Held  Held Held Held Pclk
-#define RTC_RMONAR_addr 0x1FC80034
-
-//RTC RCR1 0xFFC80038 0x1FC80038 8 0x00 0x00 Held Held Pclk
-#define RTC_RCR1_addr 0x1FC80038
-
-//RTC RCR2 0xFFC8003C 0x1FC8003C 8 0x09 0x00 Held Held Pclk
-#define RTC_RCR2_addr 0x1FC8003C
-
-//INTC module registers base
-#define INTC_BASE_addr 0x1FD00000
-
-//INTC ICR 0xFFD00000 0x1FD00000 16 0x0000 0x0000 Held Held Pclk
-#define INTC_ICR_addr 0x1FD00000
-
-//INTC IPRA 0xFFD00004 0x1FD00004 16 0x0000 0x0000 Held Held Pclk
-#define INTC_IPRA_addr 0x1FD00004
-
-//INTC IPRB 0xFFD00008 0x1FD00008 16 0x0000 0x0000 Held Held Pclk
-#define INTC_IPRB_addr 0x1FD00008
-
-//INTC IPRC 0xFFD0000C 0x1FD0000C 16 0x0000 0x0000 Held Held Pclk
-#define INTC_IPRC_addr 0x1FD0000C
-
-//TMU module registers base
-#define TMU_BASE_addr 0x1FD80000
-
-//TMU TOCR 0xFFD80000 0x1FD80000 8 0x00 0x00 Held Held Pclk
-#define TMU_TOCR_addr 0x1FD80000
-
-//TMU TSTR 0xFFD80004 0x1FD80004 8 0x00 0x00 Held 0x00 Pclk
-#define TMU_TSTR_addr 0x1FD80004
-
-//TMU TCOR0 0xFFD80008 0x1FD80008 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCOR0_addr 0x1FD80008
-
-//TMU TCNT0 0xFFD8000C 0x1FD8000C 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCNT0_addr 0x1FD8000C
-
-//TMU TCR0 0xFFD80010 0x1FD80010 16 0x0000 0x0000 Held Held Pclk
-#define TMU_TCR0_addr 0x1FD80010
-
-//TMU TCOR1 0xFFD80014 0x1FD80014 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCOR1_addr 0x1FD80014
-
-//TMU TCNT1 0xFFD80018 0x1FD80018 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCNT1_addr 0x1FD80018
-
-//TMU TCR1 0xFFD8001C 0x1FD8001C 16 0x0000 0x0000 Held Held Pclk
-#define TMU_TCR1_addr 0x1FD8001C
-
-//TMU TCOR2 0xFFD80020 0x1FD80020 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCOR2_addr 0x1FD80020
-
-//TMU TCNT2 0xFFD80024 0x1FD80024 32 0xFFFFFFFF 0xFFFFFFFF Held Held Pclk
-#define TMU_TCNT2_addr 0x1FD80024
-
-//TMU TCR2 0xFFD80028 0x1FD80028 16 0x0000 0x0000 Held Held Pclk
-#define TMU_TCR2_addr 0x1FD80028
-
-//TMU TCPR2 0xFFD8002C 0x1FD8002C 32 Held Held Held Held Pclk
-#define TMU_TCPR2_addr 0x1FD8002C
-
-//SCI module registers base
-#define SCI_BASE_addr 0x1FE00000
-
-//SCI SCSMR1 0xFFE00000 0x1FE00000 8 0x00 0x00 Held 0x00 Pclk
-#define SCI_SCSMR1_addr 0x1FE00000
-
-//SCI SCBRR1 0xFFE00004 0x1FE00004 8 0xFF 0xFF Held 0xFF Pclk
-#define SCI_SCBRR1_addr 0x1FE00004
-
-//SCI SCSCR1 0xFFE00008 0x1FE00008 8 0x00 0x00 Held 0x00 Pclk
-#define SCI_SCSCR1_addr 0x1FE00008
-
-//SCI SCTDR1 0xFFE0000C 0x1FE0000C 8 0xFF 0xFF Held 0xFF Pclk
-#define SCI_SCTDR1_addr 0x1FE0000C
-
-//SCI SCSSR1 0xFFE00010 0x1FE00010 8 0x84 0x84 Held 0x84 Pclk
-#define SCI_SCSSR1_addr 0x1FE00010
-
-//SCI SCRDR1 0xFFE00014 0x1FE00014 8 0x00 0x00 Held 0x00 Pclk
-#define SCI_SCRDR1_addr 0x1FE00014
-
-//SCI SCSCMR1 0xFFE00018 0x1FE00018 8 0x00 0x00 Held 0x00 Pclk
-#define SCI_SCSCMR1_addr 0x1FE00018
-
-//SCI SCSPTR1 0xFFE0001C 0x1FE0001C 8 0x00 0x00 Held 0x00*2Pclk
-#define SCI_SCSPTR1_addr 0x1FE0001C
-
-//SCIF module registers base
-#define SCIF_BASE_addr 0x1FE80000
-
-//SCIF SCSMR2 0xFFE80000 0x1FE80000 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCSMR2_addr 0x1FE80000
-
-//SCIF SCBRR2 0xFFE80004 0x1FE80004 8 0xFF 0xFF Held Held Pclk
-#define SCIF_SCBRR2_addr 0x1FE80004
-
-//SCIF SCSCR2 0xFFE80008 0x1FE80008 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCSCR2_addr 0x1FE80008
-
-//SCIF SCFTDR2 0xFFE8000C 0x1FE8000C 8 Undefined Undefined Held Held Pclk
-#define SCIF_SCFTDR2_addr 0x1FE8000C
-
-//SCIF SCFSR2 0xFFE80010 0x1FE80010 16 0x0060 0x0060 Held Held Pclk
-#define SCIF_SCFSR2_addr 0x1FE80010
-
-//SCIF SCFRDR2 0xFFE80014 0x1FE80014 8 Undefined Undefined Held Held Pclk
-#define SCIF_SCFRDR2_addr 0x1FE80014
-
-//SCIF SCFCR2 0xFFE80018 0x1FE80018 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCFCR2_addr 0x1FE80018
-
-//SCIF SCFDR2 0xFFE8001C 0x1FE8001C 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCFDR2_addr 0x1FE8001C
-
-//SCIF SCSPTR2 0xFFE80020 0x1FE80020 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCSPTR2_addr 0x1FE80020
-
-//SCIF SCLSR2 0xFFE80024 0x1FE80024 16 0x0000 0x0000 Held Held Pclk
-#define SCIF_SCLSR2_addr 0x1FE80024
-
-//UDI module registers base
-#define UDI_BASE_addr 0x1FF00000
-
-//UDI SDIR 0xFFF00000 0x1FF00000 16 0xFFFF Held Held Held Pclk
-#define UDI_SDIR_addr 0x1FF00000
-
-//UDI SDDR 0xFFF00008 0x1FF00008 32 Held Held Held Held Pclk
-#define UDI_SDDR_addr 0x1FF00008
-
-//For mem mapping
+#define DMAC_CHCR3_addr   0x1FA0003C  // (reset=0)
+#define DMAC_DMAOR_addr   0x1FA00040  // DMA operation register  (reset=0)
+
+// ---------------------------------------------------------------------------
+// CPG — Clock/power generator registers
+// ---------------------------------------------------------------------------
+#define CPG_BASE_addr    0x1FC00000
+#define CPG_FRQCR_addr   0x1FC00000  // Frequency control       (16-bit)
+#define CPG_STBCR_addr   0x1FC00004  // Standby control         (8-bit,  reset=0)
+#define CPG_WTCNT_addr   0x1FC00008  // Watchdog timer count    (8/16-bit, reset=0)
+#define CPG_WTCSR_addr   0x1FC0000C  // Watchdog timer control  (8/16-bit, reset=0)
+#define CPG_STBCR2_addr  0x1FC00010  // Standby control 2       (8-bit,  reset=0)
+
+// ---------------------------------------------------------------------------
+// RTC — Real-time clock registers
+// ---------------------------------------------------------------------------
+#define RTC_BASE_addr    0x1FC80000
+#define RTC_R64CNT_addr  0x1FC80000  // 64Hz counter            (8-bit)
+#define RTC_RSECCNT_addr 0x1FC80004  // Second counter          (8-bit, BCD)
+#define RTC_RMINCNT_addr 0x1FC80008  // Minute counter          (8-bit, BCD)
+#define RTC_RHRCNT_addr  0x1FC8000C  // Hour counter            (8-bit, BCD)
+#define RTC_RWKCNT_addr  0x1FC80010  // Day-of-week counter     (8-bit)
+#define RTC_RDAYCNT_addr 0x1FC80014  // Day counter             (8-bit, BCD)
+#define RTC_RMONCNT_addr 0x1FC80018  // Month counter           (8-bit, BCD)
+#define RTC_RYRCNT_addr  0x1FC8001C  // Year counter            (16-bit, BCD)
+#define RTC_RSECAR_addr  0x1FC80020  // Second alarm            (8-bit)
+#define RTC_RMINAR_addr  0x1FC80024  // Minute alarm            (8-bit)
+#define RTC_RHRAR_addr   0x1FC80028  // Hour alarm              (8-bit)
+#define RTC_RWKAR_addr   0x1FC8002C  // Day-of-week alarm       (8-bit)
+#define RTC_RDAYAR_addr  0x1FC80030  // Day alarm               (8-bit)
+#define RTC_RMONAR_addr  0x1FC80034  // Month alarm             (8-bit)
+#define RTC_RCR1_addr    0x1FC80038  // RTC control 1           (8-bit, reset=0)
+#define RTC_RCR2_addr    0x1FC8003C  // RTC control 2           (8-bit, reset=0x09)
+
+// ---------------------------------------------------------------------------
+// INTC — Interrupt controller registers
+// ---------------------------------------------------------------------------
+#define INTC_BASE_addr   0x1FD00000
+#define INTC_ICR_addr    0x1FD00000  // Interrupt control       (16-bit, reset=0)
+#define INTC_IPRA_addr   0x1FD00004  // Interrupt priority A    (16-bit, reset=0)
+#define INTC_IPRB_addr   0x1FD00008  // Interrupt priority B    (16-bit, reset=0)
+#define INTC_IPRC_addr   0x1FD0000C  // Interrupt priority C    (16-bit, reset=0)
+
+// ---------------------------------------------------------------------------
+// TMU — Timer unit registers (3 timers)
+// ---------------------------------------------------------------------------
+#define TMU_BASE_addr    0x1FD80000
+#define TMU_TOCR_addr    0x1FD80000  // Timer output control    (8-bit,  reset=0)
+#define TMU_TSTR_addr    0x1FD80004  // Timer start             (8-bit,  reset=0)
+#define TMU_TCOR0_addr   0x1FD80008  // Timer constant 0        (32-bit, reset=0xFFFFFFFF)
+#define TMU_TCNT0_addr   0x1FD8000C  // Timer counter 0         (32-bit, reset=0xFFFFFFFF)
+#define TMU_TCR0_addr    0x1FD80010  // Timer control 0         (16-bit, reset=0)
+#define TMU_TCOR1_addr   0x1FD80014  // Timer constant 1
+#define TMU_TCNT1_addr   0x1FD80018  // Timer counter 1
+#define TMU_TCR1_addr    0x1FD8001C  // Timer control 1
+#define TMU_TCOR2_addr   0x1FD80020  // Timer constant 2
+#define TMU_TCNT2_addr   0x1FD80024  // Timer counter 2
+#define TMU_TCR2_addr    0x1FD80028  // Timer control 2
+#define TMU_TCPR2_addr   0x1FD8002C  // Input capture register  (32-bit)
+
+// ---------------------------------------------------------------------------
+// SCI — Serial communication interface (non-FIFO) registers
+// ---------------------------------------------------------------------------
+#define SCI_BASE_addr     0x1FE00000
+#define SCI_SCSMR1_addr   0x1FE00000  // Serial mode             (8-bit, reset=0)
+#define SCI_SCBRR1_addr   0x1FE00004  // Bit rate                (8-bit, reset=0xFF)
+#define SCI_SCSCR1_addr   0x1FE00008  // Serial control          (8-bit, reset=0)
+#define SCI_SCTDR1_addr   0x1FE0000C  // Transmit data           (8-bit, reset=0xFF)
+#define SCI_SCSSR1_addr   0x1FE00010  // Serial status           (8-bit, reset=0x84)
+#define SCI_SCRDR1_addr   0x1FE00014  // Receive data            (8-bit, reset=0)
+#define SCI_SCSCMR1_addr  0x1FE00018  // Smart card mode         (8-bit, reset=0)
+#define SCI_SCSPTR1_addr  0x1FE0001C  // Serial port             (8-bit, reset=0)
+
+// ---------------------------------------------------------------------------
+// SCIF — Serial communication interface with FIFO registers
+// ---------------------------------------------------------------------------
+#define SCIF_BASE_addr     0x1FE80000
+#define SCIF_SCSMR2_addr   0x1FE80000  // Serial mode             (16-bit, reset=0)
+#define SCIF_SCBRR2_addr   0x1FE80004  // Bit rate                (8-bit,  reset=0xFF)
+#define SCIF_SCSCR2_addr   0x1FE80008  // Serial control          (16-bit, reset=0)
+#define SCIF_SCFTDR2_addr  0x1FE8000C  // FIFO transmit data      (8-bit)
+#define SCIF_SCFSR2_addr   0x1FE80010  // FIFO status             (16-bit, reset=0x0060)
+#define SCIF_SCFRDR2_addr  0x1FE80014  // FIFO receive data       (8-bit)
+#define SCIF_SCFCR2_addr   0x1FE80018  // FIFO control            (16-bit, reset=0)
+#define SCIF_SCFDR2_addr   0x1FE8001C  // FIFO data count         (16-bit, reset=0)
+#define SCIF_SCSPTR2_addr  0x1FE80020  // Serial port             (16-bit, reset=0)
+#define SCIF_SCLSR2_addr   0x1FE80024  // Line status             (16-bit, reset=0)
+
+// ---------------------------------------------------------------------------
+// UDI — User debug interface (not present on Dreamcast hardware)
+// ---------------------------------------------------------------------------
+#define UDI_BASE_addr    0x1FF00000
+#define UDI_SDIR_addr    0x1FF00000  // Scan data in/reset      (16-bit, reset=0xFFFF)
+#define UDI_SDDR_addr    0x1FF00008  // Scan data               (32-bit)
+
+// ---------------------------------------------------------------------------
+// Virtual memory mapping helpers
+// ---------------------------------------------------------------------------
 void map_area7_init();
 void map_area7(u32 base);
 void map_p4();

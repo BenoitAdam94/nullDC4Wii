@@ -14,805 +14,662 @@
 #include "_vmem.h"
 #include "mmu.h"
 
-//64bytes of sq
+extern "C" int get_debug_loop();
+
+// 64 bytes of store queue buffer (256-byte aligned for hardware compatibility)
 ALIGN(256) u8 sq_both[64];
 
-//i know , its because of templates :)
-#pragma warning( disable : 4127 /*4244*/)
+// Suppress MSVC constant-expression-in-if warning from templates
+#pragma warning(disable : 4127)
 
 Array<u8> OnChipRAM;
 
-//All registers are 4 byte alligned
+// All registers are 4-byte aligned in their arrays.
+// Array sizes are slightly oversized to avoid off-by-one issues.
+Array<RegisterStruct> CCN(16, true);   // CCN  : 14 registers (cache/MMU control)
+Array<RegisterStruct> UBC(9,  true);   // UBC  : 9 registers  (user breakpoint)
+Array<RegisterStruct> BSC(19, true);   // BSC  : 18 registers (bus state control)
+Array<RegisterStruct> DMAC(17, true);  // DMAC : 17 registers (DMA controller)
+Array<RegisterStruct> CPG(5,  true);   // CPG  : 5 registers  (clock/power)
+Array<RegisterStruct> RTC(16, true);   // RTC  : 16 registers (real-time clock)
+Array<RegisterStruct> INTC(4, true);   // INTC : 4 registers  (interrupt controller)
+Array<RegisterStruct> TMU(12, true);   // TMU  : 12 registers (timer unit)
+Array<RegisterStruct> SCI(8,  true);   // SCI  : 8 registers  (serial comm interface)
+Array<RegisterStruct> SCIF(10, true);  // SCIF : 10 registers (serial comm FIFO)
 
-Array<RegisterStruct> CCN(16,true);			//CCN  : 14 registers
-Array<RegisterStruct> UBC(9,true);			//UBC  : 9 registers
-Array<RegisterStruct> BSC(19,true);			//BSC  : 18 registers
-Array<RegisterStruct> DMAC(17,true);		//DMAC : 17 registers
-Array<RegisterStruct> CPG(5,true);			//CPG  : 5 registers
-Array<RegisterStruct> RTC(16,true);			//RTC  : 16 registers
-Array<RegisterStruct> INTC(4,true);			//INTC : 4 registers
-Array<RegisterStruct> TMU(12,true);			//TMU  : 12 registers
-Array<RegisterStruct> SCI(8,true);			//SCI  : 8 registers
-Array<RegisterStruct> SCIF(10,true);		//SCIF : 10 registers
 
+// ---------------------------------------------------------------------------
+// Register read/write helpers
+// ---------------------------------------------------------------------------
+// Template parameter 'size' is the access size in bytes (1, 2, or 4).
+// 'offset' is the byte offset within the module's register block.
 
-//helper functions
 template <u32 size>
-INLINE u32 RegSRead(Array<RegisterStruct>& reg,u32 offset)
+INLINE u32 RegSRead(Array<RegisterStruct>& reg, u32 offset)
 {
 #ifdef TRACE
-	if (offset & 3/*(size-1)*/) //4 is min allign size
-	{
-		EMUERROR("unallinged register read");
-	}
+	// Minimum alignment is 4 bytes for all SH4 internal registers
+	if (offset & 3)
+		EMUERROR("Unaligned register read");
 #endif
 
-	offset>>=2;
+	offset >>= 2; // Convert byte offset to register index
 
 #ifdef TRACE
-	if (reg[offset].flags& size)
+	if (reg[offset].flags & size)
 	{
 #endif
-		if (reg[offset].flags & REG_READ_DATA )
+		if (reg[offset].flags & REG_READ_DATA)
 		{
-			if (size==4)
-				return  *reg[offset].data32;
-			else if (size==2)
-				return  *reg[offset].data16;
-			else 
-				return  *reg[offset].data8;
+			if (size == 4)      return *reg[offset].data32;
+			else if (size == 2) return *reg[offset].data16;
+			else                return *reg[offset].data8;
 		}
 		else
 		{
 			if (reg[offset].readFunction)
 				return reg[offset].readFunction();
-			else
-			{
-				if (!(reg[offset].flags& REG_NOT_IMPL))
-					EMUERROR("ERROR [readed write olny register]");
-			}
+			else if (!(reg[offset].flags & REG_NOT_IMPL))
+				EMUERROR("Read from write-only register");
 		}
 #ifdef TRACE
 	}
 	else
 	{
-		if (!(reg[offset].flags& REG_NOT_IMPL))
-			EMUERROR("ERROR [wrong size read on register]");
+		if (!(reg[offset].flags & REG_NOT_IMPL))
+			EMUERROR("Wrong size read on register");
 	}
 #endif
-	if (reg[offset].flags& REG_NOT_IMPL)
-		EMUERROR2("Read from internal Regs , not  implemented , offset=%x",offset);
+
+	if (reg[offset].flags & REG_NOT_IMPL)
+		EMUERROR2("Read from unimplemented internal register, offset=0x%x", offset);
+
 	return 0;
 }
+
 template <u32 size>
-INLINE void RegSWrite(Array<RegisterStruct>& reg,u32 offset,u32 data)
+INLINE void RegSWrite(Array<RegisterStruct>& reg, u32 offset, u32 data)
 {
 #ifdef TRACE
-	if (offset & 3/*(size-1)*/) //4 is min allign size
-	{
-		EMUERROR("unallinged register write");
-	}
+	if (offset & 3)
+		EMUERROR("Unaligned register write");
 #endif
-	offset>>=2;
+
+	offset >>= 2;
+
 #ifdef TRACE
 	if (reg[offset].flags & size)
 	{
 #endif
 		if (reg[offset].flags & REG_WRITE_DATA)
 		{
-			if (size==4)
-				*reg[offset].data32=data;
-			else if (size==2)
-				*reg[offset].data16=(u16)data;
-			else
-				*reg[offset].data8=(u8)data;
-
+			if (size == 4)      *reg[offset].data32 = data;
+			else if (size == 2) *reg[offset].data16 = (u16)data;
+			else                *reg[offset].data8  = (u8)data;
 			return;
 		}
 		else
 		{
 			if (reg[offset].flags & REG_CONST)
-				EMUERROR("Error [Write to read olny register , const]");
-			else
 			{
-				if (reg[offset].writeFunction)
-				{
-					reg[offset].writeFunction(data);
-					return;
-				}
-				else
-				{
-					if (!(reg[offset].flags& REG_NOT_IMPL))
-						EMUERROR("ERROR [Write to read olny register]");
-				}
+				EMUERROR("Write to read-only (const) register");
+			}
+			else if (reg[offset].writeFunction)
+			{
+				reg[offset].writeFunction(data);
+				return;
+			}
+			else if (!(reg[offset].flags & REG_NOT_IMPL))
+			{
+				EMUERROR("Write to read-only register (no write function)");
 			}
 		}
 #ifdef TRACE
 	}
 	else
 	{
-		if (!(reg[offset].flags& REG_NOT_IMPL))
-			EMUERROR4("ERROR :wrong size write on register ; offset=%x , data=%x,sz=%d",offset,data,size);
+		if (!(reg[offset].flags & REG_NOT_IMPL))
+			EMUERROR4("Wrong size write on register; offset=0x%x, data=0x%x, sz=%d", offset, data, size);
 	}
 #endif
-	if ((reg[offset].flags& REG_NOT_IMPL))
-		EMUERROR3("Write to internal Regs , not  implemented , offset=%x,data=%x",offset,data);
+
+	if (reg[offset].flags & REG_NOT_IMPL)
+		EMUERROR3("Write to unimplemented internal register, offset=0x%x, data=0x%x", offset, data);
 }
 
-//Region P4
-//Read P4
-template <u32 sz,class T>
+
+// ---------------------------------------------------------------------------
+// P4 Region (0xE0000000 - 0xFFFFFFFF): privileged SH4 control space
+// Covers store queues, cache/TLB arrays, and area7 (on-chip peripheral regs).
+// ---------------------------------------------------------------------------
+
+// Page-size mask table for TLB associative write (SZ field encoding)
+// SZ: 0=1KB, 1=4KB, 2=64KB, 3=1MB
+static const u32 mmu_mask_2[4] =
+{
+	((0xFFFFFFFF) >> 10) << 0,   // 1 KB page
+	((0xFFFFFFFF) >> 12) << 2,   // 4 KB page
+	((0xFFFFFFFF) >> 16) << 6,   // 64 KB page
+	((0xFFFFFFFF) >> 20) << 10,  // 1 MB page
+};
+
+template <u32 sz, class T>
 T FASTCALL ReadMem_P4(u32 addr)
 {
-	/*if (((addr>>26)&0x7)==7)
+	switch ((addr >> 24) & 0xFF)
 	{
-	return ReadMem_area7(addr,sz);	
-	}*/
-
-	switch((addr>>24)&0xFF)
-	{
-
-	case 0xE0:
-	case 0xE1:
-	case 0xE2:
-	case 0xE3:
-		printf("Unhandled p4 read [Store queue] 0x%x\n",addr);
+	// Store queues: 0xE0000000-0xE3FFFFFF
+	// These are readable but the path here is only hit if the vmem block mapping fails.
+	case 0xE0: case 0xE1: case 0xE2: case 0xE3:
+    if (get_debug_loop()) {
+		  printf("P4 read [Store queue fallback] addr=0x%x\n", addr);
+    }
 		return 0;
-		break;
 
+	// Instruction cache address array (F0): not emulated, return 0
 	case 0xF0:
-		//printf("Unhandled p4 read [Instruction cache address array] 0x%x\n",addr);
 		return 0;
-		break;
 
+	// Instruction cache data array (F1): not emulated, return 0
 	case 0xF1:
-		//printf("Unhandled p4 read [Instruction cache data array] 0x%x\n",addr);
 		return 0;
-		break;
 
+	// ITLB address array (F2)
 	case 0xF2:
-		//printf("Unhandled p4 read [Instruction TLB address array] 0x%x\n",addr);
 		{
-			u32 entry=(addr>>8)&3;
-			return ITLB[entry].Address.reg_data | (ITLB[entry].Data.V<<8);
+			u32 entry = (addr >> 8) & 3;
+			return (T)(ITLB[entry].Address.reg_data | (ITLB[entry].Data.V << 8));
 		}
-		break;
 
+	// ITLB data arrays 1 and 2 (F3)
 	case 0xF3:
-		//printf("Unhandled p4 read [Instruction TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
-			u32 entry=(addr>>8)&3;
-			return ITLB[entry].Data.reg_data;
+			u32 entry = (addr >> 8) & 3;
+			return (T)ITLB[entry].Data.reg_data;
 		}
-		break;
 
+	// Operand cache address array (F4): not emulated
 	case 0xF4:
-		{
-			//int W,Set,A;
-			//W=(addr>>14)&1;
-			//A=(addr>>3)&1;
-			//Set=(addr>>5)&0xFF;
-			//printf("Unhandled p4 read [Operand cache address array] %d:%d,%d  0x%x\n",Set,W,A,addr);
-			return 0;
-		}
-		break;
-
-	case 0xF5:
-		//printf("Unhandled p4 read [Operand cache data array] 0x%x",addr);
 		return 0;
-		break;
 
+	// Operand cache data array (F5): not emulated
+	case 0xF5:
+		return 0;
+
+	// UTLB address array (F6)
 	case 0xF6:
-		//printf("Unhandled p4 read [Unified TLB address array] 0x%x\n",addr);
 		{
-			u32 entry=(addr>>8)&63;
-			u32 rv=UTLB[entry].Address.reg_data;
-			rv|=UTLB[entry].Data.D<<9;
-			rv|=UTLB[entry].Data.V<<8;
-			return rv;
+			u32 entry = (addr >> 8) & 63;
+			u32 rv = UTLB[entry].Address.reg_data;
+			rv |= UTLB[entry].Data.D << 9;
+			rv |= UTLB[entry].Data.V << 8;
+			return (T)rv;
 		}
-		break;
 
+	// UTLB data arrays 1 and 2 (F7)
 	case 0xF7:
-		//printf("Unhandled p4 read [Unified TLB data arrays 1 and 2] 0x%x\n",addr);
 		{
-			u32 entry=(addr>>8)&63;
-			return UTLB[entry].Data.reg_data;
+			u32 entry = (addr >> 8) & 63;
+			return (T)UTLB[entry].Data.reg_data;
 		}
-		break;
 
+	// Area7 (FF): on-chip peripheral registers — should be routed via area7 handler
 	case 0xFF:
-		printf("Unhandled p4 read [area7] 0x%x\n",addr);
+    if (get_debug_loop()) {
+		  printf("P4 read [area7 fallback] addr=0x%x\n", addr);
+    }
 		break;
 
 	default:
-		printf("Unhandled p4 read [Reserved] 0x%x\n",addr);
+    if (get_debug_loop()) {
+		  printf("P4 read [reserved] addr=0x%x\n", addr);
+    }
 		break;
 	}
 
-	EMUERROR2("Read from P4 not implemented , addr=%x",addr);
+  if (get_debug_loop()) {
+	  EMUERROR2("ReadMem_P4 not implemented, addr=0x%x", addr);
+  }
 	return 0;
-
 }
-const u32 mmu_mask_2[4]= 
+
+template <u32 sz, class T>
+void FASTCALL WriteMem_P4(u32 addr, T data)
 {
-	((0xFFFFFFFF)>>10)<<0,	//1 kb page
-	((0xFFFFFFFF)>>12)<<2,	//4 kb page
-	((0xFFFFFFFF)>>16)<<6,	//64 kb page
-	((0xFFFFFFFF)>>20)<<10	//1 MB page
-};
-//Write P4
-template <u32 sz,class T>
-void FASTCALL WriteMem_P4(u32 addr,T data)
-{
-	/*if (((addr>>26)&0x7)==7)
+	switch ((addr >> 24) & 0xFF)
 	{
-	WriteMem_area7(addr,data,sz);	
-	return;
-	}*/
+	// Store queues: fallback path
+	case 0xE0: case 0xE1: case 0xE2: case 0xE3:
+		printf("P4 write [Store queue fallback] addr=0x%x\n", addr);
+		return;
 
-	switch((addr>>24)&0xFF)
-	{
-
-	case 0xE0:
-	case 0xE1:
-	case 0xE2:
-	case 0xE3:
-		printf("Unhandled p4 Write [Store queue] 0x%x",addr);
-		break;
-
+	// Instruction cache address array (F0): ignore writes (no cache emulation)
 	case 0xF0:
-		//printf("Unhandled p4 Write [Instruction cache address array] 0x%x = %x\n",addr,data);
 		return;
-		break;
 
+	// Instruction cache data array (F1): ignore writes
 	case 0xF1:
-		//printf("Unhandled p4 Write [Instruction cache data array] 0x%x = %x\n",addr,data);
 		return;
-		break;
 
+	// ITLB address array (F2)
 	case 0xF2:
-		//printf("Unhandled p4 Write [Instruction TLB address array] 0x%x = %x\n",addr,data);
 		{
-			u32 entry=(addr>>8)&3;
-			ITLB[entry].Address.reg_data=data & 0xFFFFFEFF;
-			ITLB[entry].Data.V=(data>>8) & 1;
+			u32 entry = (addr >> 8) & 3;
+			ITLB[entry].Address.reg_data = data & 0xFFFFFEFF;
+			ITLB[entry].Data.V = ((u32)data >> 8) & 1;
 			ITLB_Sync(entry);
 			return;
 		}
-		break;
 
+	// ITLB data arrays (F3)
 	case 0xF3:
-		//printf("Unhandled p4 Write [Instruction TLB data arrays 1 and 2] 0x%x = %x\n",addr,data);
 		{
-			u32 entry=(addr>>8)&3;
-			ITLB[entry].Data.reg_data=data;
+			u32 entry = (addr >> 8) & 3;
+			ITLB[entry].Data.reg_data = data;
 			ITLB_Sync(entry);
 			return;
 		}
-		break;
 
+	// Operand cache address array (F4): ignore writes
 	case 0xF4:
-		{
-			//int W,Set,A;
-			//W=(addr>>14)&1;
-			//A=(addr>>3)&1;
-			//Set=(addr>>5)&0xFF;
-			//printf("Unhandled p4 Write [Operand cache address array] %d:%d,%d  0x%x = %x\n",Set,W,A,addr,data);
-			return;
-		}
-		break;
-
-	case 0xF5:
-		//printf("Unhandled p4 Write [Operand cache data array] 0x%x = %x\n",addr,data);
 		return;
-		break;
 
+	// Operand cache data array (F5): ignore writes
+	case 0xF5:
+		return;
+
+	// UTLB address array (F6)
 	case 0xF6:
 		{
-			if (addr&0x80)
+			if (addr & 0x80)
 			{
-				//printf("Unhandled p4 Write [Unified TLB address array , Associative Write] 0x%x = %x\n",addr,data);
+				// Associative write: match VPN+ASID across all TLB entries
 				CCN_PTEH_type t;
-				t.reg_data=data;
+				t.reg_data = data;
 
-				//That is not 100% correct :/
-				for (int i=0;i<64;i++)
+				for (int i = 0; i < 64; i++)
 				{
-					u32 tsz=UTLB[i].Data.SZ1*2+UTLB[i].Data.SZ0;
-					u32 mask=mmu_mask_2[tsz];
-					u32 vpn=t.VPN&mask;
+					u32 tsz  = UTLB[i].Data.SZ1 * 2 + UTLB[i].Data.SZ0;
+					u32 mask = mmu_mask_2[tsz];
+					u32 vpn  = t.VPN & mask;
 
-					if (( (UTLB[i].Address.VPN&mask) ==vpn) && (UTLB[i].Address.ASID == CCN_PTEH.ASID))
+					if (((UTLB[i].Address.VPN & mask) == vpn) &&
+					    (UTLB[i].Address.ASID == CCN_PTEH.ASID))
 					{
-						UTLB[i].Data.V=((u32)data>>8)&1;
-						UTLB[i].Data.D=((u32)data>>9)&1;
+						UTLB[i].Data.V = ((u32)data >> 8) & 1;
+						UTLB[i].Data.D = ((u32)data >> 9) & 1;
 					}
 				}
 
-				for (int i=0;i<4;i++)
+				for (int i = 0; i < 4; i++)
 				{
-					u32 tsz=ITLB[i].Data.SZ1*2+ITLB[i].Data.SZ0;
-					u32 mask=mmu_mask_2[tsz];
-					u32 vpn=t.VPN&mask;
-					if (( (ITLB[i].Address.VPN&mask)==vpn) && (ITLB[i].Address.ASID == CCN_PTEH.ASID))
+					u32 tsz  = ITLB[i].Data.SZ1 * 2 + ITLB[i].Data.SZ0;
+					u32 mask = mmu_mask_2[tsz];
+					u32 vpn  = t.VPN & mask;
+
+					if (((ITLB[i].Address.VPN & mask) == vpn) &&
+					    (ITLB[i].Address.ASID == CCN_PTEH.ASID))
 					{
-						ITLB[i].Data.V=((u32)data>>8)&1;
-						ITLB[i].Data.D=((u32)data>>9)&1;
+						ITLB[i].Data.V = ((u32)data >> 8) & 1;
+						ITLB[i].Data.D = ((u32)data >> 9) & 1;
 					}
 				}
 			}
 			else
 			{
-				u32 entry=(addr>>8)&63;
-				UTLB[entry].Address.reg_data=data & 0xFFFFFCFF;
-				UTLB[entry].Data.D=(data>>9)&1;
-				UTLB[entry].Data.V=(data>>8)&1;
+				u32 entry = (addr >> 8) & 63;
+				UTLB[entry].Address.reg_data = data & 0xFFFFFCFF;
+				UTLB[entry].Data.D = ((u32)data >> 9) & 1;
+				UTLB[entry].Data.V = ((u32)data >> 8) & 1;
 				UTLB_Sync(entry);
 			}
 			return;
 		}
-		break;
 
+	// UTLB data arrays (F7)
 	case 0xF7:
 		{
-			//printf("Unhandled p4 Write [Unified TLB data arrays 1 and 2] 0x%x = %x\n",addr,data);
-			u32 entry=(addr>>8)&63;
-			UTLB[entry].Data.reg_data=data;
+			u32 entry = (addr >> 8) & 63;
+			UTLB[entry].Data.reg_data = data;
 			UTLB_Sync(entry);
 			return;
 		}
-		break;
 
+	// Area7 (FF): fallback
 	case 0xFF:
-		printf("Unhandled p4 Write [area7] 0x%x = %x\n",addr,data);
+		printf("P4 write [area7 fallback] addr=0x%x data=0x%x\n", addr, (u32)data);
 		break;
 
 	default:
-		printf("Unhandled p4 Write [Reserved] 0x%x\n",addr);
+		printf("P4 write [reserved] addr=0x%x data=0x%x\n", addr, (u32)data);
 		break;
 	}
 
-	EMUERROR3("Write to P4 not implemented , addr=%x,data=%x",addr,data);
+	EMUERROR3("WriteMem_P4 not implemented, addr=0x%x, data=0x%x", addr, (u32)data);
 }
 
 
-//***********
-//Store Queue
-//***********
-//TODO : replace w/ mem mapped array
-//Read SQ
-template <u32 sz,class T>
+// ---------------------------------------------------------------------------
+// Store Queue access
+// Store queues are 32-bit only per SH4 spec; warn on non-32-bit access.
+// ---------------------------------------------------------------------------
+
+template <u32 sz, class T>
 T FASTCALL ReadMem_sq(u32 addr)
 {
-	if (sz!=4)
+	if (sz != 4)
 	{
-		printf("Store Queue Error , olny 4 byte read are possible[x%X]\n",addr);
+		printf("Store Queue: only 32-bit reads are valid (addr=0x%x)\n", addr);
 		return 0xDE;
 	}
 
-	u32 united_offset=addr & 0x3C;
-
-	return (T)*(u32*)&sq_both[united_offset];
+	u32 offset = addr & 0x3C; // 8 dwords, 4 bytes each = 32 bytes per queue
+	return (T) *(u32*)&sq_both[offset];
 }
 
-
-//Write SQ
-template <u32 sz,class T>
-void FASTCALL WriteMem_sq(u32 addr,T data)
+template <u32 sz, class T>
+void FASTCALL WriteMem_sq(u32 addr, T data)
 {
-	if (sz!=4)
-		printf("Store Queue Error , olny 4 byte writes are possible[x%X=0x%X]\n",addr,data);
-	//u32 offset = (addr >> 2) & 7; // 3 bits
-	u32 united_offset=addr & 0x3C;
-
-	/*if ((addr & 0x20)) // 0: SQ0, 1: SQ1
+	if (sz != 4)
 	{
-	sq1_dw[offset] = data;
+		printf("Store Queue: only 32-bit writes are valid (addr=0x%x, data=0x%x)\n", addr, (u32)data);
+		return;
 	}
-	else
-	{
-	sq0_dw[offset] = data;
-	}
-	return;*/
 
-	*(u32*)&sq_both[united_offset]=data;
+	u32 offset = addr & 0x3C;
+	*(u32*)&sq_both[offset] = (u32)data;
 }
 
 
-//***********
-//**Area  7**
-//***********
-//Read Area7
-template <u32 sz,class T>
+// ---------------------------------------------------------------------------
+// Area 7 (0x1Fxxxxxx): on-chip peripheral register dispatch
+// Registers are grouped by module, hashed by address bits [23:16].
+// ---------------------------------------------------------------------------
+
+// Special-case address seen in Shenmue; harmless read
+static const u32 SHENMUE_UNKNOWN_ADDR = 0x1F100008;
+
+template <u32 sz, class T>
 T FASTCALL ReadMem_area7(u32 addr)
 {
-	addr&=0x1FFFFFFF;
+	addr &= 0x1FFFFFFF;
+
 	switch (A7_REG_HASH(addr))
 	{
-	case A7_REG_HASH(0x1f100008):
-		{
-		if (addr==0x1f100008)
-			return 0;//wtf ? shenmue, it just printf's a LOT
-		else
-			EMUERROR2("Unkown Read from Area7 , addr=%x",addr);
-		}
+	// Shenmue reads this address frequently; return 0 silently
+	case A7_REG_HASH(SHENMUE_UNKNOWN_ADDR):
+		if (addr == SHENMUE_UNKNOWN_ADDR)
+			return 0;
+		EMUERROR2("Unknown read from Area7, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(CCN_BASE_addr):
-		if (addr<=0x1F00003C)
-		{
-			return (T)RegSRead<sz>(CCN,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1F00003C)
+			return (T)RegSRead<sz>(CCN, addr & 0xFF);
+		EMUERROR2("CCN register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(UBC_BASE_addr):
-		if (addr<=0x1F200020)
-		{
-			return (T)RegSRead<sz>(UBC,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1F200020)
+			return (T)RegSRead<sz>(UBC, addr & 0xFF);
+		EMUERROR2("UBC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(BSC_BASE_addr):
-		if (addr<=0x1F800048)
-		{
-			return (T)RegSRead<sz>(BSC,addr & 0xFF);
-		}
-		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
-		{
-			//dram settings 2 / write olny
-			EMUERROR("Read from write-olny registers [dram settings 2]");
-		}
-		else if ((addr>=BSC_SDMR3_addr) && (addr<= 0x1F94FFFF))
-		{
-			//dram settings 3 / write olny
-			EMUERROR("Read from write-olny registers [dram settings 3]");
-		}
+		if (addr <= 0x1F800048)
+			return (T)RegSRead<sz>(BSC, addr & 0xFF);
+		else if (addr >= BSC_SDMR2_addr && addr <= 0x1F90FFFF)
+			EMUERROR("Read from write-only SDMR2 (DRAM settings)");
+		else if (addr >= BSC_SDMR3_addr && addr <= 0x1F94FFFF)
+			EMUERROR("Read from write-only SDMR3 (DRAM settings)");
 		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+			EMUERROR2("BSC register out of range, addr=0x%x", addr);
 		break;
 
-
-
 	case A7_REG_HASH(DMAC_BASE_addr):
-		if (addr<=0x1FA00040)
-		{
-			return (T)RegSRead<sz>(DMAC,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FA00040)
+			return (T)RegSRead<sz>(DMAC, addr & 0xFF);
+		EMUERROR2("DMAC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(CPG_BASE_addr):
-		if (addr<=0x1FC00010)
-		{
-			return (T)RegSRead<sz>(CPG,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FC00010)
+			return (T)RegSRead<sz>(CPG, addr & 0xFF);
+		EMUERROR2("CPG register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(RTC_BASE_addr):
-		if (addr<=0x1FC8003C)
-		{
-			return (T)RegSRead<sz>(RTC,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FC8003C)
+			return (T)RegSRead<sz>(RTC, addr & 0xFF);
+		EMUERROR2("RTC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(INTC_BASE_addr):
-		if (addr<=0x1FD0000C)
-		{
-			return (T)RegSRead<sz>(INTC,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FD0000C)
+			return (T)RegSRead<sz>(INTC, addr & 0xFF);
+		EMUERROR2("INTC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(TMU_BASE_addr):
-		if (addr<=0x1FD8002C)
-		{
-			return (T)RegSRead<sz>(TMU,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FD8002C)
+			return (T)RegSRead<sz>(TMU, addr & 0xFF);
+		EMUERROR2("TMU register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(SCI_BASE_addr):
-		if (addr<=0x1FE0001C)
-		{
-			return (T)RegSRead<sz>(SCI,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FE0001C)
+			return (T)RegSRead<sz>(SCI, addr & 0xFF);
+		EMUERROR2("SCI register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(SCIF_BASE_addr):
-		if (addr<=0x1FE80024)
-		{
-			return (T)RegSRead<sz>(SCIF,addr & 0xFF);
-		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		if (addr <= 0x1FE80024)
+			return (T)RegSRead<sz>(SCIF, addr & 0xFF);
+		EMUERROR2("SCIF register out of range, addr=0x%x", addr);
 		break;
 
-		//who realy cares about ht-udi ? it's not existant on dc iirc ..
+	// UDI (User Debug Interface): not present on Dreamcast, ignore silently
 	case A7_REG_HASH(UDI_BASE_addr):
-		switch(addr)
+		switch (addr)
 		{
-			//UDI SDIR 0x1FF00000 0x1FF00000 16 0xFFFF Held Held Held Pclk
-		case UDI_SDIR_addr :
-			break;
-
-
-			//UDI SDDR 0x1FF00008 0x1FF00008 32 Held Held Held Held Pclk
-		case UDI_SDDR_addr :
-			break;
+		case UDI_SDIR_addr: return 0xFFFF; // Reset value
+		case UDI_SDDR_addr: return 0;
 		}
 		break;
 	}
 
-
-	EMUERROR2("Unkown Read from Area7 , addr=%x",addr);
+	EMUERROR2("ReadMem_area7 not implemented, addr=0x%x", addr);
 	return 0;
 }
 
-//Write Area7
-template <u32 sz,class T>
-void FASTCALL WriteMem_area7(u32 addr,T data)
+template <u32 sz, class T>
+void FASTCALL WriteMem_area7(u32 addr, T data)
 {
-	addr&=0x1FFFFFFF;
+	addr &= 0x1FFFFFFF;
+
 	switch (A7_REG_HASH(addr))
 	{
-
 	case A7_REG_HASH(CCN_BASE_addr):
-		if (addr<=0x1F00003C)
+		if (addr <= 0x1F00003C)
 		{
-			RegSWrite<sz>(CCN,addr & 0xFF,data);
+			RegSWrite<sz>(CCN, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("CCN register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(UBC_BASE_addr):
-		if (addr<=0x1F200020)
+		if (addr <= 0x1F200020)
 		{
-			RegSWrite<sz>(UBC,addr & 0xFF,data);
+			RegSWrite<sz>(UBC, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("UBC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(BSC_BASE_addr):
-		if (addr<=0x1F800048)
+		if (addr <= 0x1F800048)
 		{
-			RegSWrite<sz>(BSC,addr & 0xFF,data);
+			RegSWrite<sz>(BSC, addr & 0xFF, data);
 			return;
 		}
-		else if ((addr>=BSC_SDMR2_addr) && (addr<= 0x1F90FFFF))
+		else if (addr >= BSC_SDMR2_addr && addr <= 0x1F90FFFF)
 		{
-			//dram settings 2 / write olny
-			return;//no need ?
+			// DRAM settings 2 — write-only, no effect needed in emulation
+			return;
 		}
-		else if ((addr>=BSC_SDMR3_addr) && (addr<= 0x1F94FFFF))
+		else if (addr >= BSC_SDMR3_addr && addr <= 0x1F94FFFF)
 		{
-			//dram settings 3 / write olny
-			return;//no need ?
+			// DRAM settings 3 — write-only, no effect needed in emulation
+			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("BSC register out of range, addr=0x%x", addr);
 		break;
 
-
-
 	case A7_REG_HASH(DMAC_BASE_addr):
-		if (addr<=0x1FA00040)
+		if (addr <= 0x1FA00040)
 		{
-			RegSWrite<sz>(DMAC,addr & 0xFF,data);
+			RegSWrite<sz>(DMAC, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("DMAC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(CPG_BASE_addr):
-		if (addr<=0x1FC00010)
+		if (addr <= 0x1FC00010)
 		{
-			RegSWrite<sz>(CPG,addr & 0xFF,data);
+			RegSWrite<sz>(CPG, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("CPG register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(RTC_BASE_addr):
-		if (addr<=0x1FC8003C)
+		if (addr <= 0x1FC8003C)
 		{
-			RegSWrite<sz>(RTC,addr & 0xFF,data);
+			RegSWrite<sz>(RTC, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("RTC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(INTC_BASE_addr):
-		if (addr<=0x1FD0000C)
+		if (addr <= 0x1FD0000C)
 		{
-			RegSWrite<sz>(INTC,addr & 0xFF,data);
+			RegSWrite<sz>(INTC, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("INTC register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(TMU_BASE_addr):
-		if (addr<=0x1FD8002C)
+		if (addr <= 0x1FD8002C)
 		{
-			RegSWrite<sz>(TMU,addr & 0xFF,data);
+			RegSWrite<sz>(TMU, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("TMU register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(SCI_BASE_addr):
-		if (addr<=0x1FE0001C)
+		if (addr <= 0x1FE0001C)
 		{
-			RegSWrite<sz>(SCI,addr & 0xFF,data);
+			RegSWrite<sz>(SCI, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("SCI register out of range, addr=0x%x", addr);
 		break;
 
 	case A7_REG_HASH(SCIF_BASE_addr):
-		if (addr<=0x1FE80024)
+		if (addr <= 0x1FE80024)
 		{
-			RegSWrite<sz>(SCIF,addr & 0xFF,data);
+			RegSWrite<sz>(SCIF, addr & 0xFF, data);
 			return;
 		}
-		else
-		{
-			EMUERROR2("Out of range on register index . %x",addr);
-		}
+		EMUERROR2("SCIF register out of range, addr=0x%x", addr);
 		break;
 
-		//who realy cares about ht-udi ? it's not existant on dc iirc ..
+	// UDI: not present on Dreamcast, ignore writes silently
 	case A7_REG_HASH(UDI_BASE_addr):
-		switch(addr)
+		switch (addr)
 		{
-			//UDI SDIR 0xFFF00000 0x1FF00000 16 0xFFFF Held Held Held Pclk
-		case UDI_SDIR_addr :
-			break;
-
-
-			//UDI SDDR 0xFFF00008 0x1FF00008 32 Held Held Held Held Pclk
-		case UDI_SDDR_addr :
-			break;
+		case UDI_SDIR_addr: return;
+		case UDI_SDDR_addr: return;
 		}
 		break;
 	}
 
-	EMUERROR4("Write to Area7 not implemented , addr=%x,data=%x w/ sz %d",addr,data,sz);
+	EMUERROR4("WriteMem_area7 not implemented, addr=0x%x, data=0x%x, sz=%d", addr, (u32)data, sz);
 }
 
 
-//***********
-//On Chip Ram
-//***********
-//Read OCR
-template <u32 sz,class T>
+// ---------------------------------------------------------------------------
+// On-Chip RAM (scratchpad, 8KB)
+// Only active when CCN_CCR.ORA bit is set.
+// ---------------------------------------------------------------------------
+
+template <u32 sz, class T>
 T FASTCALL ReadMem_area7_OCR_T(u32 addr)
 {
-	if (CCN_CCR.ORA)
+	if (!CCN_CCR.ORA)
 	{
-		if (sz==1)
-			return (T)OnChipRAM[addr&OnChipRAM_MASK];
-		else if (sz==2)
-			return (T)host_to_le<sz>(*(u16*)&OnChipRAM[addr&OnChipRAM_MASK]);
-		else if (sz==4)
-			return (T)host_to_le<sz>(*(u32*)&OnChipRAM[addr&OnChipRAM_MASK]);
-		else
-		{
-			printf("ReadMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
-			return 0xDE;
-		}
+		printf("On-Chip RAM read while ORA disabled, addr=0x%x\n", addr);
+		return (T)0xDE; // Undefined value
 	}
-	else
-	{
-		printf("On Chip Ram Read ; but OCR is disabled\n");
-		return 0xDE;
-	}
+
+	u32 ofs = addr & OnChipRAM_MASK;
+
+	if (sz == 1) return (T)OnChipRAM[ofs];
+	if (sz == 2) return (T)host_to_le<sz>(*(u16*)&OnChipRAM[ofs]);
+	if (sz == 4) return (T)host_to_le<sz>(*(u32*)&OnChipRAM[ofs]);
+
+	printf("ReadMem_area7_OCR_T: invalid sz=%d\n", sz);
+	return (T)0xDE;
 }
 
-//Write OCR
-template <u32 sz,class T>
-void FASTCALL WriteMem_area7_OCR_T(u32 addr,T data)
+template <u32 sz, class T>
+void FASTCALL WriteMem_area7_OCR_T(u32 addr, T data)
 {
-	if (CCN_CCR.ORA)
+	if (!CCN_CCR.ORA)
 	{
-		if (sz==1)
-			OnChipRAM[addr&OnChipRAM_MASK]=(u8)data;
-		else if (sz==2)
-			*(u16*)&OnChipRAM[addr&OnChipRAM_MASK]=(u16)host_to_le<sz>(data);
-		else if (sz==4)
-			*(u32*)&OnChipRAM[addr&OnChipRAM_MASK]=host_to_le<sz>(data);
-		else
-		{
-			printf("WriteMem_area7_OCR_T: template SZ is wrong = %d\n",sz);
-		}
+		printf("On-Chip RAM write while ORA disabled, addr=0x%x\n", addr);
+		return;
 	}
-	else
-	{
-		printf("On Chip Ram Write ; but OCR is disabled\n");
-	}
+
+	u32 ofs = addr & OnChipRAM_MASK;
+
+	if (sz == 1)      OnChipRAM[ofs]               = (u8)data;
+	else if (sz == 2) *(u16*)&OnChipRAM[ofs]        = (u16)host_to_le<sz>((u32)data);
+	else if (sz == 4) *(u32*)&OnChipRAM[ofs]        = host_to_le<sz>((u32)data);
+	else              printf("WriteMem_area7_OCR_T: invalid sz=%d\n", sz);
 }
 
-//Init/Res/Term
+
+// ---------------------------------------------------------------------------
+// Lifecycle: Init / Reset / Term
+// ---------------------------------------------------------------------------
+
 void sh4_internal_reg_Init()
 {
-	OnChipRAM.Resize(OnChipRAM_SIZE,false);
+	OnChipRAM.Resize(OnChipRAM_SIZE, false);
 
-	for (u32 i=0;i<30;i++)
+	// Mark all register slots as unimplemented by default.
+	// Individual module Init() calls will override the ones they handle.
+	for (u32 i = 0; i < 30; i++)
 	{
-		if (i<CCN.Size)	CCN[i].flags=REG_NOT_IMPL;	//(16,true);	//CCN  : 14 registers
-		if (i<UBC.Size)	UBC[i].flags=REG_NOT_IMPL;	//(9,true);		//UBC  : 9 registers
-		if (i<BSC.Size)	BSC[i].flags=REG_NOT_IMPL;	//(19,true);	//BSC  : 18 registers
-		if (i<DMAC.Size)DMAC[i].flags=REG_NOT_IMPL;	//(17,true);	//DMAC : 17 registers
-		if (i<CPG.Size)	CPG[i].flags=REG_NOT_IMPL;	//(5,true);		//CPG  : 5 registers
-		if (i<RTC.Size)	RTC[i].flags=REG_NOT_IMPL;	//(16,true);	//RTC  : 16 registers
-		if (i<INTC.Size)INTC[i].flags=REG_NOT_IMPL;	//(4,true);		//INTC : 4 registers
-		if (i<TMU.Size)	TMU[i].flags=REG_NOT_IMPL;	//(12,true);	//TMU  : 12 registers
-		if (i<SCI.Size)	SCI[i].flags=REG_NOT_IMPL;	//(8,true);		//SCI  : 8 registers
-		if (i<SCIF.Size)SCIF[i].flags=REG_NOT_IMPL;	//(10,true);	//SCIF : 10 registers
+		if (i < CCN.Size)  CCN[i].flags  = REG_NOT_IMPL;
+		if (i < UBC.Size)  UBC[i].flags  = REG_NOT_IMPL;
+		if (i < BSC.Size)  BSC[i].flags  = REG_NOT_IMPL;
+		if (i < DMAC.Size) DMAC[i].flags = REG_NOT_IMPL;
+		if (i < CPG.Size)  CPG[i].flags  = REG_NOT_IMPL;
+		if (i < RTC.Size)  RTC[i].flags  = REG_NOT_IMPL;
+		if (i < INTC.Size) INTC[i].flags = REG_NOT_IMPL;
+		if (i < TMU.Size)  TMU[i].flags  = REG_NOT_IMPL;
+		if (i < SCI.Size)  SCI[i].flags  = REG_NOT_IMPL;
+		if (i < SCIF.Size) SCIF[i].flags = REG_NOT_IMPL;
 	}
 
-	//initialise Register structs
+	// Initialize each peripheral module's register structs
 	bsc_Init();
 	ccn_Init();
 	cpg_Init();
@@ -828,7 +685,7 @@ void sh4_internal_reg_Init()
 void sh4_internal_reg_Reset(bool Manual)
 {
 	OnChipRAM.Zero();
-	//Reset register values
+
 	bsc_Reset(Manual);
 	ccn_Reset(Manual);
 	cpg_Reset(Manual);
@@ -843,7 +700,7 @@ void sh4_internal_reg_Reset(bool Manual)
 
 void sh4_internal_reg_Term()
 {
-	//free any alloc'd resources [if any]
+	// Terminate in reverse init order for safety
 	ubc_Term();
 	tmu_Term();
 	scif_Term();
@@ -856,81 +713,43 @@ void sh4_internal_reg_Term()
 	bsc_Term();
 	OnChipRAM.Free();
 }
-//Mem map :)
 
-//AREA 7	--	Sh4 Regs
+
+// ---------------------------------------------------------------------------
+// Virtual memory handler registration and mapping
+// ---------------------------------------------------------------------------
+
 _vmem_handler area7_handler;
-/*
-_vmem_handler area7_handler_1F00;
-_vmem_handler area7_handler_1F20;
-_vmem_handler area7_handler_1F80;
-_vmem_handler area7_handler_1FA0;
-_vmem_handler area7_handler_1FC0;
-_vmem_handler area7_handler_1FC8;
-_vmem_handler area7_handler_1FD0;
-_vmem_handler area7_handler_1FD8;
-_vmem_handler area7_handler_1FE0;
-_vmem_handler area7_handler_1FE8;
-_vmem_handler area7_handler_1FF0;*/
-
 _vmem_handler area7_orc_handler;
 
 void map_area7_init()
 {
-	//=_vmem_register_handler(ReadMem8_area7,ReadMem16_area7,ReadMem32_area7,
-	//									WriteMem8_area7,WriteMem16_area7,WriteMem32_area7);
-
-	//default area7 handler
-	area7_handler= _vmem_register_handler_Template(ReadMem_area7,WriteMem_area7);
-
-	area7_orc_handler= _vmem_register_handler_Template(ReadMem_area7_OCR_T,WriteMem_area7_OCR_T);
+	area7_handler     = _vmem_register_handler_Template(ReadMem_area7,     WriteMem_area7);
+	area7_orc_handler = _vmem_register_handler_Template(ReadMem_area7_OCR_T, WriteMem_area7_OCR_T);
 }
+
 void map_area7(u32 base)
 {
-	//OCR @
-	//((addr>=0x7C000000) && (addr<=0x7FFFFFFF))
-	if (base==0x60)
-		_vmem_map_handler(area7_orc_handler,0x1C | base , 0x1F| base);
+	// On-chip RAM is active at 0x7C000000-0x7FFFFFFF (base=0x60 means P0/P3 mapped)
+	if (base == 0x60)
+		_vmem_map_handler(area7_orc_handler, 0x1C | base, 0x1F | base);
 	else
-	{
-		_vmem_map_handler(area7_handler,0x1F | base , 0x1F| base);
-/*
-#define mmap_a7_handler(mbase) _vmem_map_handler(area7_handler_##mbase,0x##mbase | base , 0x##mbase| base);
-
-		mmap_a7_handler(1F00);
-		mmap_a7_handler(1F20);
-		mmap_a7_handler(1F80);
-		mmap_a7_handler(1FA0);
-		mmap_a7_handler(1FC0);
-		mmap_a7_handler(1FC8);
-		mmap_a7_handler(1FD0);
-		mmap_a7_handler(1FD8);
-		mmap_a7_handler(1FE0);
-		mmap_a7_handler(1FE8);
-		mmap_a7_handler(1FF0);*/
-	}
+		_vmem_map_handler(area7_handler, 0x1F | base, 0x1F | base);
 }
 
-//P4
 void map_p4()
 {
-	//P4 Region :
-	_vmem_handler p4_handler =	_vmem_register_handler_Template(ReadMem_P4,WriteMem_P4);
+	// Register a catch-all P4 handler for 0xE0000000-0xFFFFFFFF
+	_vmem_handler p4_handler = _vmem_register_handler_Template(ReadMem_P4, WriteMem_P4);
+	_vmem_map_handler(p4_handler, 0xE0, 0xFF);
 
-	//register this before area7 and SQ , so they overwrite it and handle em :)
-	//Defualt P4 handler
-	//0xE0000000-0xFFFFFFFF
-	_vmem_map_handler(p4_handler,0xE0,0xFF);
+	// Store queues: direct block-mapped to sq_both buffer (fast path, no handler overhead)
+	// Each of the four 256MB segments 0xE0-0xE3 maps to the same 64-byte buffer.
+	_vmem_map_block(sq_both, 0xE0, 0xE0, 63);
+	_vmem_map_block(sq_both, 0xE1, 0xE1, 63);
+	_vmem_map_block(sq_both, 0xE2, 0xE2, 63);
+	_vmem_map_block(sq_both, 0xE3, 0xE3, 63);
 
-	//Store Queues	--	Write olny 32bit (well , they can be readed too btw)
-	/*
-	_vmem_handler sq_handler =_vmem_register_handler_Template(ReadMem_sq,WriteMem_sq);
-	_vmem_map_handler(sq_handler,0xE000,0xE3FF);
-	*/
-	_vmem_map_block(sq_both,0xE0,0xE0,63);
-	_vmem_map_block(sq_both,0xE1,0xE1,63);
-	_vmem_map_block(sq_both,0xE2,0xE2,63);
-	_vmem_map_block(sq_both,0xE3,0xE3,63);
-
+	// Area7 handler overlays the 0xFFxxxxxx region, overriding the P4 catch-all
 	map_area7(0xE0);
 }
