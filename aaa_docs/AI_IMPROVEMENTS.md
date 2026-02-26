@@ -12,16 +12,15 @@
 | nullDC.cpp | Main emulator implementation and loop | | |
 | common.cpp | Shared utilities and helpers | | |
 | config.cpp | Configuration handling | | |
-| driver.cpp | Platform-specific driver glue | 0.04 | Improved by ClaudeAI (no notable change) |
-| ui.cpp | User interface layer | | |
+| driver.cpp | Platform-specific driver glue | 0.04 + 0.06| Improved by ClaudeAI (no notable change) |
 
 ## Memory Management
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| _vmem.cpp | Virtual memory backend | | |
+| _vmem.cpp | Virtual memory backend | 0.06 | Improved by claudeAI (see commit) |
 | memutil.cpp | Memory utility functions | | |
-| mmu.cpp | Memory Management Unit emulation | | |
+| mmu.cpp | Memory Management Unit emulation | 0.06 | Improved by claudeAI (see commit) | |
 | sh4_mem.cpp | SH4 memory access logic | | |
 | sh4_area0.cpp | SH4 Area 0 memory mapping | | |
 | local_cache.cpp | Memory caching system | | |
@@ -82,6 +81,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | gxRend.cpp | GX renderer (Wii / GameCube) | | Improvement failed for now (Blackscreen with white flashes). May need improvement at the same time with ta.cpp/ta.h/ta_const_df./ta_structus.h files also |
+| gxRend.cpp | GX renderer (Wii / GameCube) | |  |
 
 ## GD-ROM / Storage / Disc Images
 
@@ -133,5 +133,5 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| wii_driver.cpp | Wii hardware driver | | 2nd attemp, black screen (see archives) |
+| wii_driver.cpp | Wii hardware driver | 0.06 | small improvement without breaking |
 | wii_types.cpp | Wii-specific type definitions | | 2nd attemp, black screen (see archives) |
