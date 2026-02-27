@@ -2,64 +2,67 @@
 #include "dc/mem/sh4_internal_reg.h"
 #include "cpg.h"
 
-
 u16 CPG_FRQCR;
-u8 CPG_STBCR;
+u8  CPG_STBCR;
 u16 CPG_WTCNT;
 u16 CPG_WTCSR;
-u8 CPG_STBCR2;
+u8  CPG_STBCR2;
 
-//Init term res
+// Helper: index into the CPG register array from a full address
+#define CPG_REG(addr) CPG[((addr) & 0xFF) >> 2]
+
+// Helper: set up a simple data-backed register with no custom read/write handlers
+static inline void cpg_reg_init_16(u32 addr, u16* data)
+{
+    CPG_REG(addr).flags         = REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+    CPG_REG(addr).readFunction  = 0;
+    CPG_REG(addr).writeFunction = 0;
+    CPG_REG(addr).data16        = data;
+}
+
+static inline void cpg_reg_init_8(u32 addr, u8* data)
+{
+    CPG_REG(addr).flags         = REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+    CPG_REG(addr).readFunction  = 0;
+    CPG_REG(addr).writeFunction = 0;
+    CPG_REG(addr).data8         = data;
+}
+
 void cpg_Init()
 {
-	//CPG FRQCR H'FFC0 0000 H'1FC0 0000 16 *2 Held Held Held Pclk
-	CPG[(CPG_FRQCR_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	CPG[(CPG_FRQCR_addr&0xFF)>>2].readFunction=0;
-	CPG[(CPG_FRQCR_addr&0xFF)>>2].writeFunction=0;
-	CPG[(CPG_FRQCR_addr&0xFF)>>2].data16=&CPG_FRQCR;
+    // FRQCR  H'FFC00000 - 16-bit, Clock Frequency Control
+    cpg_reg_init_16(CPG_FRQCR_addr,  &CPG_FRQCR);
 
-	//CPG STBCR H'FFC0 0004 H'1FC0 0004 8 H'00 Held Held Held Pclk
-	CPG[(CPG_STBCR_addr&0xFF)>>2].flags=REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	CPG[(CPG_STBCR_addr&0xFF)>>2].readFunction=0;
-	CPG[(CPG_STBCR_addr&0xFF)>>2].writeFunction=0;
-	CPG[(CPG_STBCR_addr&0xFF)>>2].data8=&CPG_STBCR;
+    // STBCR  H'FFC00004 - 8-bit,  Standby Control (module clock gating)
+    cpg_reg_init_8 (CPG_STBCR_addr,  &CPG_STBCR);
 
-	//CPG WTCNT H'FFC0 0008 H'1FC0 0008 8/16*3 H'00 Held Held Held Pclk
-	CPG[(CPG_WTCNT_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	CPG[(CPG_WTCNT_addr&0xFF)>>2].readFunction=0;
-	CPG[(CPG_WTCNT_addr&0xFF)>>2].writeFunction=0;
-	CPG[(CPG_WTCNT_addr&0xFF)>>2].data16=&CPG_WTCNT;
+    // WTCNT  H'FFC00008 - 16-bit, Watchdog Timer Counter
+    cpg_reg_init_16(CPG_WTCNT_addr,  &CPG_WTCNT);
 
-	//CPG WTCSR H'FFC0 000C H'1FC0 000C 8/16*3 H'00 Held Held Held Pclk
-	CPG[(CPG_WTCSR_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	CPG[(CPG_WTCSR_addr&0xFF)>>2].readFunction=0;
-	CPG[(CPG_WTCSR_addr&0xFF)>>2].writeFunction=0;
-	CPG[(CPG_WTCSR_addr&0xFF)>>2].data16=&CPG_WTCSR;
+    // WTCSR  H'FFC0000C - 16-bit, Watchdog Timer Control/Status
+    cpg_reg_init_16(CPG_WTCSR_addr,  &CPG_WTCSR);
 
-	//CPG STBCR2 H'FFC0 0010 H'1FC0 0010 8 H'00 Held Held Held Pclk
-	CPG[(CPG_STBCR2_addr&0xFF)>>2].flags=REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	CPG[(CPG_STBCR2_addr&0xFF)>>2].readFunction=0;
-	CPG[(CPG_STBCR2_addr&0xFF)>>2].writeFunction=0;
-	CPG[(CPG_STBCR2_addr&0xFF)>>2].data8=&CPG_STBCR2;
-
-
+    // STBCR2 H'FFC00010 - 8-bit,  Standby Control 2
+    cpg_reg_init_8 (CPG_STBCR2_addr, &CPG_STBCR2);
 }
+
 void cpg_Reset(bool Manual)
 {
-	/*
-	CPG FRQCR H'FFC0 0000 H'1FC0 0000 16 *2 Held Held Held Pclk
-	CPG STBCR H'FFC0 0004 H'1FC0 0004 8 H'00 Held Held Held Pclk
-	CPG WTCNT H'FFC0 0008 H'1FC0 0008 8/16*3 H'00 Held Held Held Pclk
-	CPG WTCSR H'FFC0 000C H'1FC0 000C 8/16*3 H'00 Held Held Held Pclk
-	CPG STBCR2 H'FFC0 0010 H'1FC0 0010 8 H'00 Held Held Held Pclk
-	*/
-	CPG_FRQCR = 0;
-	CPG_STBCR = 0;
-	CPG_WTCNT = 0;
-	CPG_WTCSR = 0;
-	CPG_STBCR2 = 0;
-	
+    // SH-4 manual: on power-on reset FRQCR reflects the hardware pin state.
+    // The Dreamcast boots at a fixed ratio; 0x0E0A is the typical value seen.
+    // "Held" registers retain their value across manual resets.
+    if (!Manual)
+    {
+        CPG_FRQCR  = 0x0E0A; // Power-on default (hardware pin-determined)
+        CPG_STBCR  = 0x00;
+        CPG_STBCR2 = 0x00;
+        CPG_WTCNT  = 0x0000;
+        CPG_WTCSR  = 0x0000;
+    }
+    // Manual reset: all CPG registers are "Held" — no changes needed
 }
+
 void cpg_Term()
 {
+    // Nothing to clean up; registers are statically allocated
 }
