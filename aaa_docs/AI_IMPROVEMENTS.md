@@ -45,9 +45,9 @@
 |------|----------|---------|----------------|
 | bsc.cpp | Bus State Controller | 0.06 | Improved with ClaudeAI. Still can be improved. See docs |
 | ccn.cpp | Cache Control | 0.06 | Improved with ClaudeAI |
-| cpg.cpp | Clock Pulse Generator | | |
-| dmac.cpp | DMA Controller | | |
-| intc.cpp | Interrupt Controller | | |
+| cpg.cpp | Clock Pulse Generator | 0.06 | Improved with ClaudeAI (see commit) |
+| dmac.cpp | DMA Controller | 0.06 | Improved with ClaudeAI (see commit) |
+| intc.cpp | Interrupt Controller | N/A | Try Improving with claudeAI (see archive, it hangs on boot) Has to retry with inc_types.h |
 | rtc.cpp | Real Time Clock | | |
 | sci.cpp | Serial Communication Interface | | |
 | scif.cpp | Serial Communication Interface with FIFO | | |
