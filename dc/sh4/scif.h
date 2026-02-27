@@ -2,11 +2,10 @@
 
 #include "types.h"
 
-//Init/Res/Term
+// Init / Reset / Term
 void scif_Init();
 void scif_Reset(bool Manual);
 void scif_Term();
-
 
 
 //SCIF SCSMR2 0xFFE80000 0x1FE80000 16 0x0000 0x0000 Held Held Pclk
@@ -55,7 +54,6 @@ union SCSMR2_type
 	};
 	u16 full;
 };
-
 extern SCSMR2_type SCIF_SCSMR2;
 
 //SCIF SCBRR2 0xFFE80004 0x1FE80004 8 0xFF 0xFF Held Held Pclk
@@ -136,7 +134,6 @@ union SCFSR2_type
 		u32 PER2:1;
 		u32 PER3:1;
 #else
-
 		u32 PER3:1;
 		u32 PER2:1;
 		u32 PER1:1;
@@ -160,10 +157,11 @@ union SCFSR2_type
 	};
 	u16 full;
 };
-extern SCSCR2_type SCIF_SCFSR2;
+// BUG FIX: was incorrectly declared as SCSCR2_type in the original header
+extern SCFSR2_type SCIF_SCFSR2;
 
 //SCIF SCFRDR2 0xFFE80014 0x1FE80014 8 Undefined Undefined Held Held Pclk
-//Read OLNY
+// Read ONLY
 extern u8 SCIF_SCFRDR2;
 
 //SCIF SCFCR2 0xFFE80018 0x1FE80018 16 0x0000 0x0000 Held Held Pclk
@@ -214,7 +212,7 @@ union SCFCR2_type
 };
 extern SCFCR2_type SCIF_SCFCR2;
 
-//Read OLNY
+// Read ONLY
 //SCIF SCFDR2 0xFFE8001C 0x1FE8001C 16 0x0000 0x0000 Held Held Pclk
 union SCFDR2_type
 {
