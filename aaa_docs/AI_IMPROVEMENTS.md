@@ -37,7 +37,7 @@
 | sh4_registers.cpp | SH4 register definitions | | |
 | sh4_internal_reg.cpp | SH4 internal registers | | |
 | decoder.cpp | Instruction decoder | 0.05 | Improved with ClaudeAI (clean and 3 news JIT codes) |
-| shil.cpp | SH4 intermediate language (JIT layer) | | |
+| shil.cpp | SH4 intermediate language (JIT layer) | 0.06 |  Improved with ClaudeAI (see commit) |
 
 ## SH4 System Controllers
 
