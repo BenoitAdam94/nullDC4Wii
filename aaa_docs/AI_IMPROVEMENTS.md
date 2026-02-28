@@ -48,9 +48,9 @@
 | cpg.cpp | Clock Pulse Generator | 0.06 | Improved with ClaudeAI (see commit) |
 | dmac.cpp | DMA Controller | 0.06 | Improved with ClaudeAI (see commit) |
 | intc.cpp | Interrupt Controller | N/A | Try Improving with claudeAI (see archive, it hangs on boot) Has to retry with inc_types.h |
-| rtc.cpp | Real Time Clock | | |
-| sci.cpp | Serial Communication Interface | | |
-| scif.cpp | Serial Communication Interface with FIFO | | |
+| rtc.cpp | Real Time Clock | 0.06 | Improved with ClaudeAI (see commit) |
+| sci.cpp | Serial Communication Interface | 0.06 | Improved with ClaudeAI (see commit) |
+| scif.cpp | Serial Communication Interface with FIFO | 0.06 | Improved with ClaudeAI (see commit) |
 | tmu.cpp | Timer Management Unit | | |
 | ubc.cpp | User Break Controller | | |
 
