@@ -48,9 +48,9 @@
 | cpg.cpp | Clock Pulse Generator | 0.06 | Improved with ClaudeAI (see commit) |
 | dmac.cpp | DMA Controller | 0.06 | Improved with ClaudeAI (see commit) |
 | intc.cpp | Interrupt Controller | N/A | Try Improving with claudeAI (see archive, it hangs on boot) Has to retry with inc_types.h |
-| rtc.cpp | Real Time Clock | | |
-| sci.cpp | Serial Communication Interface | | |
-| scif.cpp | Serial Communication Interface with FIFO | | |
+| rtc.cpp | Real Time Clock | 0.06 | Improved with ClaudeAI (see commit) |
+| sci.cpp | Serial Communication Interface | 0.06 | Improved with ClaudeAI (see commit) |
+| scif.cpp | Serial Communication Interface with FIFO | 0.06 | Improved with ClaudeAI (see commit) |
 | tmu.cpp | Timer Management Unit | | |
 | ubc.cpp | User Break Controller | | |
 
@@ -72,7 +72,7 @@
 | pvrLock.cpp | PVR synchronization mechanisms | 0.05 |Improved by ClaudeAI (gxRend.cpp also updated) - Makefile flto suggested |
 | drkPvr.cpp | PVR renderer backend | 0.06 | Improved by Claude AI |
 | Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
-| regs.cpp | PVR register definitions | | |
+| regs.cpp | PVR register definitions | 0.06 | Improved by Claude AI (see commit) |
 | SPG.cpp | Sync Pulse Generator | 0.06 | Improved by AI |
 | ta.cpp | Tile Accelerator | | |
 
