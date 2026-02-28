@@ -74,7 +74,7 @@
 | Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
 | regs.cpp | PVR register definitions | 0.06 | Improved by Claude AI (see commit) |
 | SPG.cpp | Sync Pulse Generator | 0.06 | Improved by AI |
-| ta.cpp | Tile Accelerator | | |
+| ta.cpp | Tile Accelerator | 0.06 | Improved by AI (See commit) |
 
 ## Rendering Backends
 
