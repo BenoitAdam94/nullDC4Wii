@@ -72,7 +72,7 @@
 | pvrLock.cpp | PVR synchronization mechanisms | 0.05 |Improved by ClaudeAI (gxRend.cpp also updated) - Makefile flto suggested |
 | drkPvr.cpp | PVR renderer backend | 0.06 | Improved by Claude AI |
 | Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
-| regs.cpp | PVR register definitions | | |
+| regs.cpp | PVR register definitions | 0.06 | Improved by Claude AI (see commit) |
 | SPG.cpp | Sync Pulse Generator | 0.06 | Improved by AI |
 | ta.cpp | Tile Accelerator | | |
 
