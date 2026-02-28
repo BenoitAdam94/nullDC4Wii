@@ -66,43 +66,48 @@ u32 SB_SDDIV;
  u32 SB_SBREV;
 //0x005F68A0	SB_RBSPLT	RW	SH4 Root Bus split enable 
  u32 SB_RBSPLT;
+
+// 0x005F68A4 and 0x005F68AC: undocumented/reserved registers written to zero
+// by the Dreamcast BIOS during init. Silently accepted to avoid boot errors.
+ u32 SB_UNK_68A4;  // unknown, reserved gap after SB_RBSPLT
+ u32 SB_UNK_68AC;  // unknown, reserved gap after SB_RBSPLT
 			
 //0x005F6900	SB_ISTNRM	RW	Normal interrupt status 
  u32 SB_ISTNRM;
-//0x005F6904	SB_ISTEXT	R	al interrupt status 
+//0x005F6904	SB_ISTEXT	R	External interrupt status 
  u32 SB_ISTEXT;
 //0x005F6908	SB_ISTERR	RW	Error interrupt status 
  u32 SB_ISTERR;
 			
 //0x005F6910	SB_IML2NRM	RW	Level 2 normal interrupt mask 
  u32 SB_IML2NRM;
-//0x005F6914	SB_IML2EXT	RW	Level 2 al interrupt mask 
+//0x005F6914	SB_IML2EXT	RW	Level 2 external interrupt mask 
  u32 SB_IML2EXT;
 //0x005F6918	SB_IML2ERR	RW	Level 2 error interrupt mask 
  u32 SB_IML2ERR;
 			
 //0x005F6920	SB_IML4NRM	RW	Level 4 normal interrupt mask 
  u32 SB_IML4NRM;
-//0x005F6924	SB_IML4EXT	RW	Level 4 al interrupt mask 
+//0x005F6924	SB_IML4EXT	RW	Level 4 external interrupt mask 
  u32 SB_IML4EXT;
 //0x005F6928	SB_IML4ERR	RW	Level 4 error interrupt mask 
  u32 SB_IML4ERR;
 			
 //0x005F6930	SB_IML6NRM	RW	Level 6 normal interrupt mask 
  u32 SB_IML6NRM;
-//0x005F6934	SB_IML6EXT	RW	Level 6 al interrupt mask 
+//0x005F6934	SB_IML6EXT	RW	Level 6 external interrupt mask 
  u32 SB_IML6EXT;
 //0x005F6938	SB_IML6ERR	RW	Level 6 error interrupt mask 
  u32 SB_IML6ERR;
 			
 //0x005F6940	SB_PDTNRM	RW	Normal interrupt PVR-DMA startup mask 
  u32 SB_PDTNRM;
-//0x005F6944	SB_PDTEXT	RW	al interrupt PVR-DMA startup mask 
+//0x005F6944	SB_PDTEXT	RW	External interrupt PVR-DMA startup mask 
  u32 SB_PDTEXT;
 			
 //0x005F6950	SB_G2DTNRM	RW	Normal interrupt G2-DMA startup mask 
  u32 SB_G2DTNRM;
-//0x005F6954	SB_G2DTEXT	RW	al interrupt G2-DMA startup mask 
+//0x005F6954	SB_G2DTEXT	RW	External interrupt G2-DMA startup mask 
  u32 SB_G2DTEXT;
 			
 //0x005F6C04	SB_MDSTAR	RW	Maple-DMA command table address 
@@ -260,6 +265,16 @@ u32 SB_SDDIV;
  u32 SB_G2MDMTO;
 //0x005F789C	SB_G2MDMW	RW	Modem unit wait time 
  u32 SB_G2MDMW;
+
+// 0x005F78A0–0x005F78B8: undocumented/reserved G2 registers written to zero
+// by the Dreamcast BIOS during init. Silently accepted to avoid boot errors.
+ u32 SB_UNK_78A0;  // unknown G2 reserved
+ u32 SB_UNK_78A4;  // unknown G2 reserved
+ u32 SB_UNK_78A8;  // unknown G2 reserved
+ u32 SB_UNK_78AC;  // unknown G2 reserved
+ u32 SB_UNK_78B0;  // unknown G2 reserved
+ u32 SB_UNK_78B4;  // unknown G2 reserved
+ u32 SB_UNK_78B8;  // unknown G2 reserved
 			
 //0x005F78BC	SB_G2APRO	W	G2-DMA address range 
  u32 SB_G2APRO;
@@ -321,7 +336,8 @@ u32 sb_ReadMem(u32 addr,u32 sz)
 {	
 	u32 offset = addr-SB_BASE;
 #ifdef TRACE
-	if (offset & 3/*(size-1)*/) //4 is min allign size
+	// All SB registers are 32-bit aligned; warn on unaligned access
+	if (offset & 3) //4-byte minimum alignment
 	{
 		EMUERROR("unallinged System Bus register read");
 	}
@@ -369,7 +385,8 @@ void sb_WriteMem(u32 addr,u32 data,u32 sz)
 {
 	u32 offset = addr-SB_BASE;
 #ifdef TRACE
-	if (offset & 3/*(size-1)*/) //4 is min allign size
+	// All SB registers are 32-bit aligned; warn on unaligned access
+	if (offset & 3) //4-byte minimum alignment
 	{
 		EMUERROR("unallinged System bus register write");
 	}
@@ -420,22 +437,28 @@ offset>>=2;
 }
 
 u32 SB_FFST_rc;
+// SB_FFST_TOGGLE_MASK: toggles bits 4:0 of FIFO status every 8 reads,
+// simulating the FIFO draining. Real hardware would reflect actual FIFO level.
+static const u32 SB_FFST_TOGGLE_MASK = 0x1F; // bits [4:0]
 u32 RegRead_SB_FFST()
 {
 	SB_FFST_rc++;
 	if (SB_FFST_rc & 0x8)
 	{
-		SB_FFST^=31;
+		SB_FFST ^= SB_FFST_TOGGLE_MASK;
 	}
 	return SB_FFST;
 }
 void SB_SFRES_write32(u32 data)
 {
-	if ((u16)data==0x7611)
+	// Holly soft-reset: triggered by writing the magic value 0x7611
+	if ((u16)data == 0x7611)
 	{
 		printf("SB/HOLLY : System reset requested\n");
-		//if (!SoftReset_DC())
-			printf("SOFT RESET REQUEST FAILED\n");
+		// TODO: implement SoftReset_DC() to properly reset all subsystems
+		// Currently unimplemented; uncomment and implement to enable soft reset:
+		// if (!SoftReset_DC())
+		printf("SOFT RESET REQUEST FAILED (not implemented)\n");
 	}
 }
 void sb_Init()
@@ -532,7 +555,7 @@ void sb_Init()
 	sb_regs[((SB_SDST_addr-SB_BASE))>>2].writeFunction=0;
 	sb_regs[((SB_SDST_addr-SB_BASE))>>2].data32=&SB_SDST;
 
-	//0x005F6820	SB_SDST	RW	Sort-DMA start
+	//0x005F6860	SB_SDDIV	R	Sort-DMA LAT index (guess)
 	sb_regs[((SB_SDDIV_addr-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA;
 	sb_regs[((SB_SDDIV_addr-SB_BASE))>>2].readFunction=0;
 	sb_regs[((SB_SDDIV_addr-SB_BASE))>>2].writeFunction=0;
@@ -617,6 +640,17 @@ void sb_Init()
 	sb_regs[((SB_RBSPLT_addr-SB_BASE))>>2].readFunction=0;
 	sb_regs[((SB_RBSPLT_addr-SB_BASE))>>2].writeFunction=0;
 	sb_regs[((SB_RBSPLT_addr-SB_BASE))>>2].data32=&SB_RBSPLT;
+
+	// 0x005F68A4 / 0x005F68AC: undocumented reserved registers; accept writes silently
+	sb_regs[((0x005F68A4-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F68A4-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F68A4-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F68A4-SB_BASE))>>2].data32=&SB_UNK_68A4;
+
+	sb_regs[((0x005F68AC-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F68AC-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F68AC-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F68AC-SB_BASE))>>2].data32=&SB_UNK_68AC;
 
 
 				
@@ -1221,6 +1255,42 @@ void sb_Init()
 	sb_regs[((SB_G2MDMW_addr-SB_BASE))>>2].writeFunction=0;
 	sb_regs[((SB_G2MDMW_addr-SB_BASE))>>2].data32=&SB_G2MDMW;
 
+	// 0x005F78A0–0x005F78B8: undocumented reserved G2 registers; accept writes silently
+	sb_regs[((0x005F78A0-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78A0-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78A0-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78A0-SB_BASE))>>2].data32=&SB_UNK_78A0;
+
+	sb_regs[((0x005F78A4-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78A4-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78A4-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78A4-SB_BASE))>>2].data32=&SB_UNK_78A4;
+
+	sb_regs[((0x005F78A8-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78A8-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78A8-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78A8-SB_BASE))>>2].data32=&SB_UNK_78A8;
+
+	sb_regs[((0x005F78AC-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78AC-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78AC-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78AC-SB_BASE))>>2].data32=&SB_UNK_78AC;
+
+	sb_regs[((0x005F78B0-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78B0-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78B0-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78B0-SB_BASE))>>2].data32=&SB_UNK_78B0;
+
+	sb_regs[((0x005F78B4-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78B4-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78B4-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78B4-SB_BASE))>>2].data32=&SB_UNK_78B4;
+
+	sb_regs[((0x005F78B8-SB_BASE))>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
+	sb_regs[((0x005F78B8-SB_BASE))>>2].readFunction=0;
+	sb_regs[((0x005F78B8-SB_BASE))>>2].writeFunction=0;
+	sb_regs[((0x005F78B8-SB_BASE))>>2].data32=&SB_UNK_78B8;
+
 
 				
 	//0x005F78BC	SB_G2APRO	W	G2-DMA address range
@@ -1400,6 +1470,8 @@ void sb_Init()
 	
 	SB_SBREV=0xB;
 	SB_G2ID=0x12;
+	// G1SYSM bits [3:0]: boot device (1 = GD-ROM), bits [7:4]: reserved (0)
+	// 0x1 = normal retail boot from GD-ROM
 	SB_G1SYSM=((0x0<<4) | (0x1));
 
 	asic_reg_Init();
