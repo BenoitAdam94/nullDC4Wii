@@ -74,7 +74,7 @@
 | Renderer_if.cpp | Renderer abstraction interface | - | N/A nothing to improve here|
 | regs.cpp | PVR register definitions | 0.06 | Improved by Claude AI (see commit) |
 | SPG.cpp | Sync Pulse Generator | 0.06 | Improved by AI |
-| ta.cpp | Tile Accelerator | | |
+| ta.cpp | Tile Accelerator | 0.06 | Improved by AI (See commit) |
 
 ## Rendering Backends
 
@@ -92,7 +92,7 @@
 | iso.cpp | ISO image handling | | |
 | iso9660.cpp | ISO9660 filesystem parsing | | |
 | ImgReader.cpp | Disc image reader | | |
-| cdi.cpp | CDI image format support | | |
+| cdi.cpp | CDI image format support | 0.06 | Improved but still not working |
 | mds.cpp | MDS image format support | | |
 | mds_reader.cpp | MDS file reader | | |
 | ioctl.cpp | Low-level device I/O control | | |
@@ -112,8 +112,8 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| asic.cpp | ASIC interrupt and event controller | | |
-| sb.cpp | System bus implementation | | |
+| asic.cpp | ASIC interrupt and event controller | 0.06 | Claude AI improvements (see commits) |
+| sb.cpp | System bus implementation | 0.06 | Claude AI improvements (see commits) |
 
 ## Plugins & Extensions
 
