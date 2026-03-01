@@ -7,7 +7,6 @@ a fork from https://github.com/skmp/nullDCe
 ### Simple
 
 - Test current state with every game and report compatibility (see "compatibility" below)
-- Fowarder for Wii Menu (planned for alpha 0.06)
 
 ### Developer (Easy)
 
@@ -158,6 +157,10 @@ In windows variable environnement
 
 Add C:\devkitPro\devkitPPC\bin to Uservariable PATH
 
+*UPDATE MARCH 2026*
+
+This folder seems to be needed also for elf2dol : C:\devkitPro\tools\bin
+
 Modify these system variable
 
 DEVKITPPC : C:\devkitPro\devkitPPC  
@@ -230,6 +233,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
