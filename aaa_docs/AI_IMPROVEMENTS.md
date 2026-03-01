@@ -35,7 +35,7 @@
 | sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
 | sh4_opcode_list.cpp | SH4 opcode definitions | 0.05 | Improved with ClaudeAI |
 | sh4_registers.cpp | SH4 register definitions | | |
-| sh4_internal_reg.cpp | SH4 internal registers | | |
+| sh4_internal_reg.cpp | SH4 internal registers | 0.06 | Improved with ClaudeAI (see commit) |
 | decoder.cpp | Instruction decoder | 0.05 | Improved with ClaudeAI (clean and 3 news JIT codes) |
 | shil.cpp | SH4 intermediate language (JIT layer) | 0.06 |  Improved with ClaudeAI (see commit) |
 
