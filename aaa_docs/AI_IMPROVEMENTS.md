@@ -23,7 +23,7 @@
 | mmu.cpp | Memory Management Unit emulation | 0.06 | Improved by claudeAI (see commit) |
 | sh4_mem.cpp | SH4 memory access logic | 0.06 | Improved by claudeAI (see commit)  |
 | sh4_area0.cpp | SH4 Area 0 memory mapping | 0.06 | Improved by claudeAI (see commit)  |
-| local_cache.cpp | Memory caching system | | |
+| local_cache.cpp | Memory caching system | 0.06 | Improved by claudeAI (see commit)  |
 
 ## SH4 CPU Core
 
