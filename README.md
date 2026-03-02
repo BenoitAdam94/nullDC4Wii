@@ -153,13 +153,13 @@ pacman -S wii-dev
 
 #### 4/ PATH & System variable configuration :
 
-In windows variable environnement
+##### PATH 
 
-Add C:\devkitPro\devkitPPC\bin to Uservariable PATH
+In windows variable environnement add C:\devkitPro\devkitPPC\bin to Uservariable PATH
 
-*UPDATE MARCH 2026*
+*UPDATE MARCH 2026* :  This folder seems to be needed also for elf2dol : C:\devkitPro\tools\bin
 
-This folder seems to be needed also for elf2dol : C:\devkitPro\tools\bin
+##### System variables
 
 Modify these system variable
 
@@ -234,6 +234,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
