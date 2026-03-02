@@ -7,7 +7,6 @@ a fork from https://github.com/skmp/nullDCe
 ### Simple
 
 - Test current state with every game and report compatibility (see "compatibility" below)
-- Fowarder for Wii Menu (planned for alpha 0.06)
 
 ### Developer (Easy)
 
@@ -152,11 +151,15 @@ C:\devkitPro\msys2\usr\bin\mintty.exe
 pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
-#### 4/ PATH & System variable configuration :
+#### 4/ PATH & System variable configuration (Windows)
 
-In windows variable environnement
+##### PATH 
 
-Add C:\devkitPro\devkitPPC\bin to Uservariable PATH
+In windows variable environnement add C:\devkitPro\devkitPPC\bin to Uservariable PATH
+
+*UPDATE MARCH 2026* :  This folder seems to be needed also for elf2dol : C:\devkitPro\tools\bin
+
+##### System variables
 
 Modify these system variable
 
@@ -185,7 +188,9 @@ dollz3 is a compress tool for *.dol files, and it is in the original "vs_make.ba
 ### Dreamcast Emulators 
 
 NullDC https://code.google.com/archive/p/nulldc/source/default/source  
+NullDC (github) https://github.com/skmp/nullDCe  
 NullDC for PSP : https://github.com/PSP-Archive/nulldce-psp  
+NullDC for Xbox360 https://github.com/gligli/nulldc-360  
 Reicast : https://github.com/skmp/reicast-emulator  
 Flycast : https://github.com/flyinghead/flycast  
 
@@ -213,7 +218,7 @@ Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 ## Credits
 
 - skmp (original NullDC creator)
-- NullDC team for the emulator  
+- NullDC contributors
 - Joseph Jordan - libiso  
 - Xale00 (also know as Benoit Adam) - 2026 recompilation  
 - Flyinghead/Flycast Team  
@@ -230,6 +235,12 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
+
+
+
+
+
 
 
 
