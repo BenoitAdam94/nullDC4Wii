@@ -46,6 +46,8 @@ extern int g_frame_counter;
 #include <gccore.h>
 #include <malloc.h>
 #include "regs.h"
+#include "wii/wii_audio.h"
+
 
 // The FIFO is the command buffer for the GX hardware. 
 // 256KB is a standard size for most homebrew applications.
@@ -1292,6 +1294,8 @@ void DoRender()
   VIDEO_SetNextFramebuffer(frameBuffer[fb]);
 
   VIDEO_Flush();
+
+  // wii_audio_frame(); // Step AICA and push one frame of audio to ASND
   VIDEO_WaitVSync();  // Needed for O3 mode (else Dreamcast logo take 5 seconds instead of 9)
 }
 
