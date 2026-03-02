@@ -5,264 +5,288 @@
 #include "plugins/plugin_manager.h"
 #include "dc/asic/asic.h"
 
-//arm 7 is emulated within the aica implementation
-//RTC is emulated here tho xD
-//Gota check what to do about the rest regs that are not aica olny .. pfftt [display mode , any other ?]
 #include <time.h>
+#include <stdio.h>
 
+// ---------------------------------------------------------------------------
+// Globals
+// ---------------------------------------------------------------------------
 VArray2 aica_ram;
-u32 VREG;//video reg =P
-u32 rtc_EN=0;
+u32 VREG    = 0;
+u32 rtc_EN  = 0;
+
+// ---------------------------------------------------------------------------
+// Logging helper — redirect to your Wii logger by redefining AICA_LOG
+// ---------------------------------------------------------------------------
+#ifndef AICA_LOG
+#  define AICA_LOG(fmt, ...) printf(fmt, ##__VA_ARGS__)
+#endif
+
+// ---------------------------------------------------------------------------
+// RTC
+// ---------------------------------------------------------------------------
+
+// Known Dreamcast epoch: 1998-11-27 00:00:00 local time
+// DC RTC base value at that moment: 0x5BFC8900
+static const time_t  DC_EPOCH_OFFSET = 0x5BFC8900UL;
+
 u32 GetRTC_now()
 {
-	time_t rawtime=0;
-	tm  timeinfo;
-	timeinfo.tm_year=1998-1900;
-	timeinfo.tm_mon=11-1;
-	timeinfo.tm_mday=27;
-	timeinfo.tm_hour=0;
-	timeinfo.tm_min=0;
-	timeinfo.tm_sec=0;
+    // Build the reference wall-clock time for the DC epoch
+    struct tm ref = {};
+    ref.tm_year = 1998 - 1900;
+    ref.tm_mon  = 11   - 1;
+    ref.tm_mday = 27;
+    // tm_hour/min/sec left 0
 
-	rawtime=mktime( &timeinfo );
-	
-	rawtime=time (0)-rawtime;//get delta of time since the known dc date
-	
-	time_t temp=time(0);
-	timeinfo=*localtime(&temp);
-	if (timeinfo.tm_isdst)
-		rawtime+=24*3600;//add an hour if dst (maby rtc has a reg for that ? *watch* and add it if yes :)
+    time_t dc_ref = mktime(&ref);
+    if (dc_ref == (time_t)-1)
+        return DC_EPOCH_OFFSET; // mktime failed, return base
 
-	u32 RTC=0x5bfc8900 + (u32)rawtime;// add delta to known dc time
-	return RTC;
+    time_t now   = time(NULL);
+    time_t delta = now - dc_ref;
+
+    // Apply DST correction (DC RTC is plain linear seconds, no DST)
+    struct tm local_now;
+#if defined(_WIN32)
+    localtime_s(&local_now, &now);
+#else
+    localtime_r(&now, &local_now);
+#endif
+    if (local_now.tm_isdst > 0)
+        delta += 24 * 3600;
+
+    return (u32)(DC_EPOCH_OFFSET + (u32)delta);
 }
 
 extern s32 rtc_cycles;
-u32 ReadMem_aica_rtc(u32 addr,u32 sz)
-{
-	//settings.dreamcast.RTC=GetRTC_now();
-	switch( addr & 0xFF )
-	{
-	case 0:	
-		return settings.dreamcast.RTC>>16;
-	case 4:	
-		return settings.dreamcast.RTC &0xFFFF;
-	case 8:	
-		return 0;
-	}
 
-	printf("ReadMem_aica_rtc : invalid address\n");
-	return 0;
+u32 ReadMem_aica_rtc(u32 addr, u32 sz)
+{
+    switch (addr & 0xFF)
+    {
+    case 0: return settings.dreamcast.RTC >> 16;
+    case 4: return settings.dreamcast.RTC & 0xFFFF;
+    case 8: return 0; // write-enable register reads as 0
+    default:
+        AICA_LOG("ReadMem_aica_rtc: invalid address 0x%08X\n", addr);
+        return 0;
+    }
 }
 
-void WriteMem_aica_rtc(u32 addr,u32 data,u32 sz)
+void WriteMem_aica_rtc(u32 addr, u32 data, u32 sz)
 {
-	switch( addr & 0xFF )
-	{
-	case 0:	
-		if (rtc_EN)
-		{
-			settings.dreamcast.RTC&=0xFFFF;
-			settings.dreamcast.RTC|=(data&0xFFFF)<<16;
-			rtc_EN=0;
-			SaveSettings();
-		}
-		return;
-	case 4:	
-		if (rtc_EN)
-		{
-			settings.dreamcast.RTC&=0xFFFF0000;
-			settings.dreamcast.RTC|= data&0xFFFF;
-			rtc_cycles=SH4_CLOCK;	//clear the internal cycle counter ;)
-		}
-		return;
-	case 8:	
-		rtc_EN=data&1;
-		return;
-	}
+    switch (addr & 0xFF)
+    {
+    case 0:
+        // High 16 bits — only honoured when write-enable is set
+        if (rtc_EN)
+        {
+            settings.dreamcast.RTC = (settings.dreamcast.RTC & 0x0000FFFF)
+                                   | ((data & 0xFFFF) << 16);
+            rtc_EN = 0;
+            SaveSettings();
+        }
+        return;
 
-	return;
+    case 4:
+        // Low 16 bits — latch and reset internal cycle counter
+        if (rtc_EN)
+        {
+            settings.dreamcast.RTC = (settings.dreamcast.RTC & 0xFFFF0000)
+                                   | (data & 0xFFFF);
+            rtc_cycles = SH4_CLOCK;
+        }
+        return;
+
+    case 8:
+        rtc_EN = data & 1;
+        return;
+
+    default:
+        return;
+    }
 }
-u32 FASTCALL ReadMem_aica_reg(u32 addr,u32 sz)
+
+// ---------------------------------------------------------------------------
+// AICA register access
+// VREG lives at AICA offset 0x2C00 (32-bit) / 0x2C01 (8-bit, high byte)
+// ---------------------------------------------------------------------------
+
+static const u32 VREG_OFFSET_32 = 0x2C00;
+static const u32 VREG_OFFSET_8  = 0x2C01;
+
+u32 FASTCALL ReadMem_aica_reg(u32 addr, u32 sz)
 {
-	if (sz==1)
-	{
-		if ((addr & 0x7FFF)==0x2C01)
-		{
-			return VREG;
-		}
-		else
-			return libAICA_ReadMem_aica_reg(addr,sz);
-	}
-	else
-	{
-		if ((addr & 0x7FFF)==0x2C00)
-		{
-			return libAICA_ReadMem_aica_reg(addr,sz) | (VREG<<8);
-		}
-		else
-			return libAICA_ReadMem_aica_reg(addr,sz);
-	}
+    u32 offset = addr & 0x7FFF;
+
+    if (sz == 1)
+    {
+        if (offset == VREG_OFFSET_8)
+            return VREG;
+    }
+    else
+    {
+        if (offset == VREG_OFFSET_32)
+            return libAICA_ReadMem_aica_reg(addr, sz) | (VREG << 8);
+    }
+
+    return libAICA_ReadMem_aica_reg(addr, sz);
 }
-void FASTCALL WriteMem_aica_reg(u32 addr,u32 data,u32 sz)
+
+void FASTCALL WriteMem_aica_reg(u32 addr, u32 data, u32 sz)
 {
-	if (sz==1)
-	{
-		if ((addr & 0x7FFF)==0x2C01)
-		{
-			VREG=data;
-			printf("VREG = %02X\n",VREG);
-		}
-		else
-		{
-			libAICA_WriteMem_aica_reg(addr,data,sz);
-		}
-	}
-	else
-	{
-		if ((addr & 0x7FFF)==0x2C00)
-		{
-			VREG=(data>>8)&0xFF;
-			printf("VREG = %02X\n",VREG);
-			libAICA_WriteMem_aica_reg(addr,data&(~0xFF00),sz);
-		}
-		else
-		{
-			libAICA_WriteMem_aica_reg(addr,data,sz);
-		}
-	}
+    u32 offset = addr & 0x7FFF;
+
+    if (sz == 1)
+    {
+        if (offset == VREG_OFFSET_8)
+        {
+            VREG = data & 0xFF;
+            AICA_LOG("VREG = %02X\n", VREG);
+            return;
+        }
+    }
+    else
+    {
+        if (offset == VREG_OFFSET_32)
+        {
+            VREG = (data >> 8) & 0xFF;
+            AICA_LOG("VREG = %02X\n", VREG);
+            // Mask out the VREG byte before forwarding so the plugin
+            // doesn't see a stale value in bits [15:8]
+            data &= ~0xFF00u;
+        }
+    }
+
+    libAICA_WriteMem_aica_reg(addr, data, sz);
 }
-//Init/res/term
-void aica_Init()
-{
-	//mmnnn ? gota fill it w/ something
-}
+
+// ---------------------------------------------------------------------------
+// Lifecycle
+// ---------------------------------------------------------------------------
+
+void aica_Init()  {}
+void aica_Term()  {}
 
 void aica_Reset(bool Manual)
 {
-	if (!Manual)
-	{
-		aica_ram.Zero();
-	}
+    if (!Manual)
+        aica_ram.Zero();
 }
 
-void aica_Term()
+// ---------------------------------------------------------------------------
+// DMA helpers
+// ---------------------------------------------------------------------------
+
+// Clamp transfer length to a sane maximum to guard against corrupted regs.
+// 8 MB is larger than any real AICA RAM window.
+static const u32 DMA_MAX_LEN = 8 * 1024 * 1024;
+
+static inline u32 clamp_dma_len(u32 len)
 {
-
+    return (len < DMA_MAX_LEN) ? len : DMA_MAX_LEN;
 }
 
+// ---------------------------------------------------------------------------
+// SB_ADST — AICA G2-DMA (system RAM → AICA sound RAM)
+// ---------------------------------------------------------------------------
 void Write_SB_ADST(u32 data)
 {
-	//0x005F7800	SB_ADSTAG	RW	AICA:G2-DMA G2 start address 
-	//0x005F7804	SB_ADSTAR	RW	AICA:G2-DMA system memory start address 
-	//0x005F7808	SB_ADLEN	RW	AICA:G2-DMA length 
-	//0x005F780C	SB_ADDIR	RW	AICA:G2-DMA direction 
-	//0x005F7810	SB_ADTSEL	RW	AICA:G2-DMA trigger select 
-	//0x005F7814	SB_ADEN	RW	AICA:G2-DMA enable 
-	//0x005F7818	SB_ADST	RW	AICA:G2-DMA start 
-	//0x005F781C	SB_ADSUSP	RW	AICA:G2-DMA suspend 
-	
-	if (data&1)
-	{
-		if (SB_ADEN&1)
-		{
-			if (SB_ADDIR==1)
-				msgboxf("AICA DMA : SB_ADDIR==1 !!!!!!!!",MBX_OK | MBX_ICONERROR);
+    if (!(data & 1))
+        return;
 
-			u32 src=SB_ADSTAR;
-			u32 dst=SB_ADSTAG;
-			u32 len=SB_ADLEN & 0x7FFFFFFF;
+    if (!(SB_ADEN & 1))
+        return;
 
-			for (u32 i=0;i<len;i+=4)
-			{
-				u32 data=ReadMem32_nommu(src+i);
-				WriteMem32_nommu(dst+i,data);
-			}
+    if (SB_ADDIR == 1)
+    {
+        // Direction: AICA→system RAM is not implemented; warn and bail.
+        msgboxf("AICA DMA: SB_ADDIR==1 (AICA→RAM) not supported",
+                MBX_OK | MBX_ICONERROR);
+        return;
+    }
 
-			if (SB_ADLEN & 0x80000000)
-				SB_ADEN=1;//
-			else
-				SB_ADEN=0;//
+    u32 src = SB_ADSTAR;
+    u32 dst = SB_ADSTAG;
+    u32 len = clamp_dma_len(SB_ADLEN & 0x7FFFFFFF);
 
-			SB_ADSTAR+=len;
-			SB_ADSTAG+=len;
-			SB_ADST = 0x00000000;//dma done
-			SB_ADLEN = 0x00000000;
+    // Transfer must be 4-byte aligned
+    len &= ~3u;
 
-			
-			asic_RaiseInterrupt(holly_SPU_DMA);
-		}
-	}
+    for (u32 i = 0; i < len; i += 4)
+    {
+        u32 word = ReadMem32_nommu(src + i);
+        WriteMem32_nommu(dst + i, word);
+    }
+
+    // Bit 31 of ADLEN: keep ADEN asserted (continuous mode)
+    SB_ADEN  = (SB_ADLEN & 0x80000000) ? 1 : 0;
+
+    SB_ADSTAR += len;
+    SB_ADSTAG += len;
+    SB_ADST   = 0;
+    SB_ADLEN  = 0;
+
+    asic_RaiseInterrupt(holly_SPU_DMA);
 }
 
+// ---------------------------------------------------------------------------
+// SB_E1ST — G2-EXT1 DMA (BBA / expansion port)
+// ---------------------------------------------------------------------------
 void Write_SB_E1ST(u32 data)
 {
-	//0x005F7800	SB_ADSTAG	RW	AICA:G2-DMA G2 start address 
-	//0x005F7804	SB_ADSTAR	RW	AICA:G2-DMA system memory start address 
-	//0x005F7808	SB_ADLEN	RW	AICA:G2-DMA length 
-	//0x005F780C	SB_ADDIR	RW	AICA:G2-DMA direction 
-	//0x005F7810	SB_ADTSEL	RW	AICA:G2-DMA trigger select 
-	//0x005F7814	SB_ADEN	RW	AICA:G2-DMA enable 
-	//0x005F7818	SB_ADST	RW	AICA:G2-DMA start 
-	//0x005F781C	SB_ADSUSP	RW	AICA:G2-DMA suspend 
-	
-	if (data&1)
-	{
-		if (SB_E1EN&1)
-		{
-			u32 src=SB_E1STAR;
-			u32 dst=SB_E1STAG;
-			u32 len=SB_E1LEN & 0x7FFFFFFF;
+    if (!(data & 1))
+        return;
 
-			if (SB_E1DIR==1)
-			{
-				u32 t=src;
-				src=dst;
-				dst=t;
-				printf("G2-EXT1 DMA : SB_E1DIR==1 DMA Read to 0x%X from 0x%X %d bytes\n",dst,src,len);
-			}
-			else
-				printf("G2-EXT1 DMA : SB_E1DIR==0:DMA Write to 0x%X from 0x%X %d bytes\n",dst,src,len);
+    if (!(SB_E1EN & 1))
+        return;
 
-			for (u32 i=0;i<len;i+=4)
-			{
-				u32 data=ReadMem32_nommu(src+i);
-				WriteMem32_nommu(dst+i,data);
-			}
+    u32 src = SB_E1STAR;
+    u32 dst = SB_E1STAG;
+    u32 len = clamp_dma_len(SB_E1LEN & 0x7FFFFFFF);
 
-			if (SB_E1LEN & 0x80000000)
-				SB_E1EN=1;//
-			else
-				SB_E1EN=0;//
+    len &= ~3u;
 
-			SB_E1STAR+=len;
-			SB_E1STAG+=len;
-			SB_E1ST = 0x00000000;//dma done
-			SB_E1LEN = 0x00000000;
+    if (SB_E1DIR == 1)
+    {
+        // Read from device: swap src/dst
+        u32 tmp = src; src = dst; dst = tmp;
+        AICA_LOG("G2-EXT1 DMA: read  dst=0x%08X src=0x%08X len=%u\n", dst, src, len);
+    }
+    else
+    {
+        AICA_LOG("G2-EXT1 DMA: write dst=0x%08X src=0x%08X len=%u\n", dst, src, len);
+    }
 
-			
-			asic_RaiseInterrupt(holly_EXT_DMA1);
-		}
-	}
+    for (u32 i = 0; i < len; i += 4)
+    {
+        u32 word = ReadMem32_nommu(src + i);
+        WriteMem32_nommu(dst + i, word);
+    }
+
+    SB_E1EN  = (SB_E1LEN & 0x80000000) ? 1 : 0;
+
+    SB_E1STAR += len;
+    SB_E1STAG += len;
+    SB_E1ST   = 0;
+    SB_E1LEN  = 0;
+
+    asic_RaiseInterrupt(holly_EXT_DMA1);
 }
 
+// ---------------------------------------------------------------------------
+// SB register setup
+// ---------------------------------------------------------------------------
 void aica_sb_Init()
 {
-	//NRM
-	//6
-	sb_regs[((SB_ADST_addr-SB_BASE)>>2)].flags=REG_32BIT_READWRITE | REG_READ_DATA;
-	sb_regs[((SB_ADST_addr-SB_BASE)>>2)].writeFunction=Write_SB_ADST;
+    sb_regs[((SB_ADST_addr - SB_BASE) >> 2)].flags         = REG_32BIT_READWRITE | REG_READ_DATA;
+    sb_regs[((SB_ADST_addr - SB_BASE) >> 2)].writeFunction = Write_SB_ADST;
 
-	//I realy need to implement G2 dma (and rest dmas actualy) properly
-	//THIS IS NOT AICA, its G2-EXT (BBA)
-	sb_regs[((SB_E1ST_addr-SB_BASE)>>2)].flags=REG_32BIT_READWRITE | REG_READ_DATA;
-	sb_regs[((SB_E1ST_addr-SB_BASE)>>2)].writeFunction=Write_SB_E1ST;
+    // G2-EXT1 (BBA)
+    sb_regs[((SB_E1ST_addr - SB_BASE) >> 2)].flags         = REG_32BIT_READWRITE | REG_READ_DATA;
+    sb_regs[((SB_E1ST_addr - SB_BASE) >> 2)].writeFunction = Write_SB_E1ST;
 }
 
-void aica_sb_Reset(bool Manual)
-{
-}
-
-void aica_sb_Term()
-{
-}
+void aica_sb_Reset(bool Manual) {}
+void aica_sb_Term()             {}
