@@ -23,9 +23,19 @@
 	#include "linux/typedefs.h"
 #elif HOST_OS==OS_WII
 	#include <gccore.h>
+	#include <stdint.h>
+	#include <cstddef>
+	typedef int8_t   s8;
+	typedef int16_t  s16;
+	typedef int32_t  s32;
+	typedef int64_t  s64;
+	typedef uint8_t  u8;
+	typedef uint16_t u16;
+	typedef uint32_t u32;
+	typedef uint64_t u64;
 	#define FASTCALL
 	#define fastcall
-	void __debugbreak();
+	inline void __debugbreak() {}
 	#define ALIGN(x) __attribute__((aligned(x)))
 #elif HOST_OS==OS_PS3
 	#include "linux/typedefs.h"
@@ -73,7 +83,11 @@ typedef double f64;
 
 typedef char wchar;
 
-#define EXPORT extern "C" __declspec(dllexport)
+#if HOST_OS==OS_WINDOWS
+	#define EXPORT extern "C" __declspec(dllexport)
+#else
+	#define EXPORT extern "C"
+#endif
 
 #define EXPORT_CALL
 

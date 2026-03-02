@@ -4,6 +4,70 @@
 #error beef
 #endif
 
+//******************************************************
+//******************* Plugin system ********************
+//******************************************************
+
+enum PluginType
+{
+	Plugin_ARM = 1,
+	Plugin_GFX = 2,
+	Plugin_SPU = 3,
+	Plugin_SH4 = 4,
+};
+
+#define PLUGIN_I_F_VERSION     1
+#define ARM_PLUGIN_I_F_VERSION 1
+
+#define rv_ARM_ok 0
+
+// Callbacks the ARM plugin calls back into the emulator core with
+typedef void (*MenuCallback)(u32 id, void* wnd, void* param);
+
+struct emu_info
+{
+	void* RootMenu;
+	void  (*AddMenuItem)(void* menu, int pos, const char* label, MenuCallback cb, u32 id);
+	int   (*ConfigLoadInt)(const char* section, const char* key, int defval);
+	void  (*ConfigSaveInt)(const char* section, const char* key, int val);
+};
+
+// Passed to armInit() — gives the plugin access to AICA RAM and register callbacks
+struct arm_init_params
+{
+	u8*   aica_ram;
+	u32   (*ReadMem_aica_reg) (u32 addr, u32 size);
+	void  (*WriteMem_aica_reg)(u32 addr, u32 data, u32 size);
+};
+
+struct common_plugin_interface
+{
+	u32        InterfaceVersion;
+	char       Name[128];
+	PluginType Type;
+
+	s32  (FASTCALL *Load)  (emu_info* em);
+	void (FASTCALL *Unload)(void);
+};
+
+struct arm_plugin_interface
+{
+	s32  (FASTCALL *Init)              (arm_init_params* p);
+	void (FASTCALL *Reset)             (bool manual);
+	void (FASTCALL *Term)              (void);
+	void (FASTCALL *Update)            (u32 cycles);
+	void (FASTCALL *ArmInterruptChange)(u32 bits, u32 L);
+	void (*ExeptionHanlder)            (void);   // typo kept intentionally for ABI compat
+	void (FASTCALL *SetResetState)     (u32 state);
+};
+
+struct plugin_interface
+{
+	u32                    InterfaceVersion;
+	common_plugin_interface common;
+	arm_plugin_interface    arm;
+};
+
 
 /* There are for easy porting from ndc */
 #define DC_PLATFORM_NORMAL		0
