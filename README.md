@@ -218,7 +218,7 @@ Homebrew tutorials : https://wiibrew.org/wiki/Main_Page
 ## Credits
 
 - skmp (original NullDC creator)
-- NullDC team for the emulator  
+- NullDC contributors
 - Joseph Jordan - libiso  
 - Xale00 (also know as Benoit Adam) - 2026 recompilation  
 - Flyinghead/Flycast Team  
@@ -235,6 +235,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
