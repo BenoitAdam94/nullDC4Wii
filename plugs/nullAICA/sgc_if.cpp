@@ -1,11 +1,11 @@
 #include "sgc_if.h"
+// PSP-specific headers replaced with Wii stubs
+// #include "dc/arm7/SoundOut.h"
+// #include "dc/aica/aica_if.h"
 
-// Wii audio output stubs (replaces PSP-specific SoundOut.h / aica_if.h)
-// Wire PSP_WriteSample / PSP_InitAudio to your Wii audio backend here.
-static inline void PSP_InitAudio() { /* TODO: initialise Wii audio */ }
-static inline void PSP_WriteSample(s16 r, s16 l) { /* TODO: push sample to Wii audio buffer */ }
-
-extern u8* aica_ram; // declared in mem.h / mem.cpp
+static inline void PSP_InitAudio() { }
+static inline void PSP_WriteSample(short r, short l) { (void)r; (void)l; }
+extern unsigned char* aica_ram;
 
 #include <math.h>
 #undef FAR
@@ -539,49 +539,27 @@ struct ChannelEx
 
 		this->CA ++;
 
-		/*SampleType sample=InterpolateSample();
+		StepStream(this);
 
-		//Volume & Mixer processing
-		//All attenuations are added together then applied and mixed :)
-		u32 ofsatt=lfo.alfo+(AEG.GetValue()>>2);
-		ofsatt=(ofsatt > 254 ? 255 : ofsatt);//min(ofsatt,255);//make sure it never gets more 255 -- it can happen with some alfo/aeg combinations
+		SampleType sample = InterpolateSample();
 
-		u32 const max_att=((16<<4)-1)-ofsatt;
+		// Volume & Mixer processing
+		u32 ofsatt = lfo.alfo + (AEG.GetValue() >> 2);
+		if (ofsatt > 254) ofsatt = 254;
 
-		s32* logtable=ofsatt+tl_lut;
+		u32 const max_att = ((16<<4)-1) - ofsatt;
+		s32* logtable = ofsatt + tl_lut;
 
-		u32 dl=min(VolMix.DLAtt,max_att);
-		u32 dr=min(VolMix.DRAtt,max_att);
-		u32 ds=min(VolMix.DSPAtt,max_att);
+		u32 dl = VolMix.DLAtt < max_att ? VolMix.DLAtt : max_att;
+		u32 dr = VolMix.DRAtt < max_att ? VolMix.DRAtt : max_att;
 
-		SampleType oLeft=FPMul(sample,logtable[dl],15);
-		SampleType oRight=FPMul(sample,logtable[dr],15);
-		SampleType oDsp=FPMul(sample,logtable[ds],15);
+		SampleType oLeft  = FPMul(sample, logtable[dl], 15);
+		SampleType oRight = FPMul(sample, logtable[dr], 15);
 
-		if((AEG.state != EG_Attack) && (AEG.state != EG_Release))//temp
-		{
-			if((this->AEG.Decay2Value == 0) && ((s64)(oLeft + oRight + oDsp) == 0))
-				this->SetAegState(EG_Attack);
-		}
+		mixl += oLeft;
+		mixr += oRight;
 
-
-		clip_verify(((s16)oLeft)==oLeft);
-		clip_verify(((s16)oRight)==oRight);
-		clip_verify(((s16)oDsp)==oDsp);
-		clip_verify(sample*oLeft>=0);
-		clip_verify(sample*oRight>=0);
-		clip_verify(sample*oDsp>=0);
-
-		// VolMix.DSPOut+=oDsp;  (disabled)
-		mixl+=oLeft;
-		mixr+=oRight;*/
-        
-//        if (oLeft || oRight) printf("%08x %08x\n",oLeft,oRight);
-
-		/*StepAEG(this);
-		StepFEG(this);*/
-		//StepStream(this);
-		//lfo.Step(this);
+		StepAEG(this);
 	}
 	INLINE void Generate()
 	{
@@ -1315,8 +1293,6 @@ void AICA_Sample()
 
 	ChannelEx::GenerateAll();
 
-	return;
-	
 	//OK , generated all Channels  , now DSP/ect + final mix ;p
 	//CDDA EXTS input
 	
@@ -1325,9 +1301,8 @@ void AICA_Sample()
 		cdda_index=0;
 		//aica_params.CDDA_Sector(cdda_sector);
 	}
-	s32 EXTS0L=cdda_sector[cdda_index];
-	s32 EXTS0R=cdda_sector[cdda_index+1];
-	(void)EXTS0L; (void)EXTS0R;
+	s32 EXTS0L=cdda_sector[cdda_index]; (void)EXTS0L;
+	s32 EXTS0R=cdda_sector[cdda_index+1]; (void)EXTS0R;
 	cdda_index+=2;
 
 	//No dsp tho ;p

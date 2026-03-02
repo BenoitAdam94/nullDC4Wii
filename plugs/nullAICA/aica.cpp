@@ -287,7 +287,12 @@ void AICA_Init()
 	wii_audio_aica_ready();
 }
 
+void AICA_Sample(); // defined in sgc_if.cpp — runs all 64 channels, writes mixl/mixr
+
 void libAICA_TimeStep() {
+
+	// Generate one sample from all 64 AICA channels
+	AICA_Sample();
 
 	for (int i = 0; i < 3; i++)
 			timers[i].StepTimer();
