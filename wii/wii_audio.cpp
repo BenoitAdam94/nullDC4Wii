@@ -21,6 +21,15 @@ extern void   libAICA_TimeStep();   // steps one AICA sample, writes mixl/mixr
 extern int    mixl;                 // from sgc_if.cpp  (SampleType == s32)
 extern int    mixr;
 
+// Set to 1 by wii_audio_aica_ready() once AICA_Init() has run.
+// wii_audio_frame() is a no-op until then to avoid stepping null pointers.
+static volatile int aica_ready = 0;
+
+void wii_audio_aica_ready()
+{
+    aica_ready = 1;
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -107,6 +116,10 @@ void wii_audio_term()
 
 void wii_audio_frame()
 {
+    // Don't step AICA until it's been fully initialized
+    if (!aica_ready)
+        return;
+
     s16 *dst = audio_buf[fill_buf];
 
     for (int i = 0; i < SAMPLES_PER_FRAME; i++)

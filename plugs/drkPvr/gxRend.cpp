@@ -1295,7 +1295,7 @@ void DoRender()
 
   VIDEO_Flush();
 
-  // wii_audio_frame(); // Step AICA and push one frame of audio to ASND
+  wii_audio_frame(); // Audio (Step AICA and push one frame of audio to ASND)
   VIDEO_WaitVSync();  // Needed for O3 mode (else Dreamcast logo take 5 seconds instead of 9)
 }
 

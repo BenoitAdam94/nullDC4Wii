@@ -1,6 +1,7 @@
 #include "aica.h"
 #include "sgc_if.h"
 #include "mem.h"
+#include "wii/wii_audio.h"
 #include <math.h>
 
 #define SH4_IRQ_BIT (1<<(u8)holly_SPU_IRQ)
@@ -281,6 +282,9 @@ void AICA_Init()
 	sgc_Init();
 	for (int i=0;i<3;i++)
 		timers[i].Init(aica_reg,i);
+
+	// Signal the audio backend that AICA is fully initialized and safe to step
+	wii_audio_aica_ready();
 }
 
 void libAICA_TimeStep() {
