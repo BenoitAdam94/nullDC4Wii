@@ -5,7 +5,6 @@ wii/boot.elf
 wii/boot_dol/
 repomix/
 apps/
-wii/boot_dol.7z
+build/
 listfile.bat
-file_list.txt
 tmp
