@@ -189,6 +189,7 @@ dollz3 is a compress tool for *.dol files, and it is in the original "vs_make.ba
 
 NullDC https://code.google.com/archive/p/nulldc/source/default/source  
 NullDC for PSP : https://github.com/PSP-Archive/nulldce-psp  
+NullDC for Xbox360 https://github.com/gligli/nulldc-360  
 Reicast : https://github.com/skmp/reicast-emulator  
 Flycast : https://github.com/flyinghead/flycast  
 
@@ -233,6 +234,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
