@@ -5,6 +5,28 @@
 
 #define SH4_IRQ_BIT (1<<(u8)holly_SPU_IRQ)
 
+// ---------------------------------------------------------------------------
+// aica_params — Wii definition
+// struct aica_init_params has these fields (from plugin_types.h):
+//   HollyRaiseInterruptFP*  RaiseInterrupt
+//   u8*                     aica_ram
+//   u32*                    SB_ISTEXT
+//   HollyCancelInterruptFP* CancelInterrupt
+// aica_ram and SB_ISTEXT are filled in by aica_Init() once memory is ready.
+// ---------------------------------------------------------------------------
+extern void FASTCALL asic_RaiseInterrupt(HollyInterruptID inter);
+extern void FASTCALL asic_CancelInterrupt(HollyInterruptID inter);
+extern u32 SB_ISTEXT;
+extern u8* aica_ram;   // allocated in LIBAICA_init_mem()
+
+aica_init_params aica_params =
+{
+    asic_RaiseInterrupt,  // RaiseInterrupt
+    nullptr,              // aica_ram  — set in AICA_Init()
+    nullptr,              // SB_ISTEXT — set in AICA_Init()
+    asic_CancelInterrupt, // CancelInterrupt
+};
+
 CommonData_struct* CommonData;
 DSPData_struct* DSPData;
 InterruptInfo* MCIEB;
@@ -56,9 +78,8 @@ void update_arm_interrupts()
 		}
 	}
 
-	// ArmInterruptChange is not present in the Wii plugin_header; 
-	// ARM interrupt level changes are handled implicitly via the ARM CPU core.
-	// If your port exposes a callback for this, wire it here.
+	// ArmInterruptChange: PSP-only callback, not present in aica_init_params on Wii.
+	// The ARM7 core reads SCIEB/SCIPD directly; nothing to do here.
 	(void)p_ints; (void)Lval;
 }
 
@@ -240,6 +261,10 @@ void AICA_Init()
 {
 	verify(sizeof(*CommonData)==0x508);
 	verify(sizeof(*DSPData)==0x15C8);
+
+	// Wire runtime pointers into aica_params now that memory is allocated
+	aica_params.aica_ram  = aica_ram;
+	aica_params.SB_ISTEXT = &SB_ISTEXT;
 
 	CommonData=(CommonData_struct*)&aica_reg[0x2800];
 	DSPData=(DSPData_struct*)&aica_reg[0x3000];
