@@ -151,7 +151,7 @@ C:\devkitPro\msys2\usr\bin\mintty.exe
 pacman -Syu  # updates MSYS2 and package database  
 pacman -S wii-dev
 
-#### 4/ PATH & System variable configuration :
+#### 4/ PATH & System variable configuration (Windows)
 
 ##### PATH 
 
@@ -234,6 +234,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
