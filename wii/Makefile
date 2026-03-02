@@ -24,9 +24,9 @@ DATA        :=
 SOURCES     := ../
 SOURCES     += ../cl/
 SOURCES     += ../config/
-SOURCES     += ../debug_mem.o
-SOURCES     += ../profiler/
-SOURCES     += ../serial_ipc/
+SOURCES     += ../debug_mem.o # needed ?
+SOURCES     += ../profiler/ # needed ?
+SOURCES     += ../serial_ipc/ # needed ?
 
 #--- Dreamcast Emulation Core ---
 SOURCES     += ../dc/
@@ -44,6 +44,7 @@ SOURCES     += ../plugins/
 SOURCES     += ../plugs/nullExtDev/
 SOURCES     += ../plugs/drkMapleDevices/
 SOURCES     += ../plugs/EmptyAICA/
+SOURCES     += ../plugs/nullAICA/
 SOURCES     += ../plugs/ImgReader/
 SOURCES     += ../plugs/gui/
 SOURCES     += ../plugs/drkPvr/
