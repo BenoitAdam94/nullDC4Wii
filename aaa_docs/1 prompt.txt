@@ -1,0 +1,3 @@
+For my dreamcast emulator for wii
+
+What does this file do and can you improve these files without breaking compatibility ?
