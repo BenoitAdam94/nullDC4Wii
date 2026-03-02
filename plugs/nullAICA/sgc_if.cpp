@@ -1,6 +1,11 @@
 #include "sgc_if.h"
-#include "dc/arm7/SoundOut.h"
-#include "dc/aica/aica_if.h"
+
+// Wii audio output stubs (replaces PSP-specific SoundOut.h / aica_if.h)
+// Wire PSP_WriteSample / PSP_InitAudio to your Wii audio backend here.
+static inline void PSP_InitAudio() { /* TODO: initialise Wii audio */ }
+static inline void PSP_WriteSample(s16 r, s16 l) { /* TODO: push sample to Wii audio buffer */ }
+
+extern u8* aica_ram; // declared in mem.h / mem.cpp
 
 #include <math.h>
 #undef FAR
@@ -567,7 +572,7 @@ struct ChannelEx
 		clip_verify(sample*oRight>=0);
 		clip_verify(sample*oDsp>=0);
 
-		//*VolMix.DSPOut+=oDsp;
+		// VolMix.DSPOut+=oDsp;  (disabled)
 		mixl+=oLeft;
 		mixr+=oRight;*/
         
@@ -663,7 +668,7 @@ struct ChannelEx
 		if (ccd->PCMS==0)
 			addr&=~1;	//0: 16 bit
 		
-		SA=&aica_ram.data[addr];
+		SA=&aica_ram[addr];
 	}
 	//LSA,LEA
 	void UpdateLoop()
@@ -1322,6 +1327,7 @@ void AICA_Sample()
 	}
 	s32 EXTS0L=cdda_sector[cdda_index];
 	s32 EXTS0R=cdda_sector[cdda_index+1];
+	(void)EXTS0L; (void)EXTS0R;
 	cdda_index+=2;
 
 	//No dsp tho ;p

@@ -21,4 +21,4 @@
 			else if (sz==2)							\
 				{*(u16*)&arr[addr]=(u16)data;}		\
 			else if (sz==4)							\
-			{*(u32*)&arr[addr]=data;}}	
+			{*(u32*)&arr[addr]=data;}}

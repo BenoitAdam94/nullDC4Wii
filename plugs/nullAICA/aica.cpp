@@ -56,7 +56,10 @@ void update_arm_interrupts()
 		}
 	}
 
-	aica_params.ArmInterruptChange(p_ints,Lval);
+	// ArmInterruptChange is not present in the Wii plugin_header; 
+	// ARM interrupt level changes are handled implicitly via the ARM CPU core.
+	// If your port exposes a callback for this, wire it here.
+	(void)p_ints; (void)Lval;
 }
 
 //sh4 side
