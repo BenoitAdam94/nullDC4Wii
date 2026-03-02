@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <gccore.h> // needed, or VScode will show errors
+#include <asndlib.h>
+#include "wii/wii_audio.h"
 
 // ============================================================================
 // GLOBAL EMULATOR PRESET
@@ -148,7 +150,7 @@ void listFilesInDirectory(const char *dirPath)
       int pathLen = snprintf(fullPath, sizeof(fullPath), "%s/%s", dirPath, entry->d_name);
 
       // Check if path isn't trunkacted
-      if (pathLen >= sizeof(fullPath))
+      if ((size_t)pathLen >= sizeof(fullPath))
       {
         printf("Warning: Path too long, skipping: %s/%s\n", dirPath, entry->d_name);
         continue;
@@ -160,7 +162,10 @@ void listFilesInDirectory(const char *dirPath)
         if (S_ISDIR(statbuf.st_mode))
         {
           // It's a directory, add it
-          snprintf(fileList[fileCount].name, sizeof(fileList[fileCount].name), "[%s]", entry->d_name);
+          // Claude AI want to add this 2 lines but this has nothing to do with AICA changes i think
+          // Reserve 3 bytes for '[', ']', and '\0' so truncation never occurs
+          size_t maxName = sizeof(fileList[fileCount].name) - 3;
+          snprintf(fileList[fileCount].name, sizeof(fileList[fileCount].name), "[%.*s]", (int)maxName, entry->d_name);
           strcpy(fileList[fileCount].fullPath, fullPath);
           fileList[fileCount].isDirectory = true;
           fileCount++;
@@ -479,6 +484,14 @@ int main(int argc, wchar *argv[])
   // (yes, right now before gxrend, otherwise no game selector)
   VIDEO_Init();
   /* // Claude AI */
+  ASND_Init();
+  wii_audio_init();
+  // And at shutdown / exit, add:
+  //
+  //   wii_audio_term();
+  //   ASND_End();
+
+
 
   // This function initialises the attached controllers (devkit wii-example)
   PAD_Init();
