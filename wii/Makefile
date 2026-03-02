@@ -107,7 +107,7 @@ LDFLAGS  := -g $(MACHDEP) -Wl,-Map,$(TARGET).map
 #---------------------------------------------------------------------------------
 # Libraries
 #---------------------------------------------------------------------------------
-LIBS    := -lwiiuse -lbte -lfat -logc -lm
+LIBS    := -lwiiuse -lbte -lfat -lasnd -logc -lm
 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
