@@ -913,6 +913,8 @@ void ngen_mainloop()
 			ppc_jump(loop_no_update);
 			//right
 
+      /*
+      Claude AI says it's dead end after looking in dump dynarec_XXX.bin
 			ppc_lbz(ppc_rarg0,ppc_rarg0,ppc_addr_high(ppc_rarg0,(void*)&sh4_int_bCpuRun));
 			ppc_sh_load(ppc_next_pc,reg_nextpc);
 
@@ -922,14 +924,12 @@ void ngen_mainloop()
 			//ppc_bcx(BO_TRUE,BI_CR0_EQ,ppc_jdiff(loop_no_update),0,0);
 			
 
-			/*
 			//write back registers and stuff ...
-			*/
 
 			//cleanup
-			/*
+			
 			Clean up the stack frame and return ...
-			*/
+			
 
 			//restore link register
 			ppc_lwz(ppc_r0,ppc_sp,stac_alloc_size+4);
@@ -948,6 +948,7 @@ void ngen_mainloop()
 
 			//return
 			ppc_bclrx(BO_ALWAYS,BI_CR0_EQ,0);  // blr
+      */
 
 		} //that was mainloop
 
