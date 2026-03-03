@@ -51,6 +51,48 @@
 #include "dc\mem\sh4_mem.h"
 #include "emitter\PPCEmit\ppc_emitter.h"
 
+// wii_driver.cpp defines its own higher-level wrappers for these names.
+// Undefine any macros from ppc_emitter.h that would clash with the
+// local function definitions below.
+#ifdef ppc_li
+#  undef ppc_li
+#endif
+#ifdef ppc_lis
+#  undef ppc_lis
+#endif
+#ifdef ppc_li32
+#  undef ppc_li32
+#endif
+#ifdef ppc_mr
+#  undef ppc_mr
+#endif
+#ifdef ppc_mov
+#  undef ppc_mov
+#endif
+#ifdef ppc_nop
+#  undef ppc_nop
+#endif
+#ifdef ppc_blr
+#  undef ppc_blr
+#endif
+#ifdef ppc_bctr
+#  undef ppc_bctr
+#endif
+#ifdef ppc_bctrl
+#  undef ppc_bctrl
+#endif
+#ifdef ppc_b
+#  undef ppc_b
+#endif
+#ifdef ppc_bl
+#  undef ppc_bl
+#endif
+// These are defined as real functions below; ppc_bx is also a real function
+// (overload of the auto-generated one) so guard it too.
+#ifdef ppc_bx
+#  undef ppc_bx
+#endif
+
 // Define "invalid" value for non-mapped-registery
 const ppc_freg ppc_finvalid = static_cast<ppc_freg>(-1);  // sentinel: out-of-range (valid regs are 0..31)
 const ppc_ireg ppc_rinvalid = static_cast<ppc_ireg>(-1);  // sentinel: out-of-range (valid regs are 0..31)
@@ -111,7 +153,7 @@ void ppc_call_and_jump(void* funct)
 {
 	ppc_call(funct);
 	ppc_mtctr(ppc_r3);
-	ppc_bctr();
+	ppc_bcctrx(BO_ALWAYS,BI_CR0_EQ,0);  // bctr
 }
 template<typename T> void ppc_call_and_jump(T* dst) { return ppc_call_and_jump((void*)dst); }
 void make_address_range_executable(void* addr, u32 size)
@@ -420,7 +462,7 @@ void ngen_End(DecodedBlock* block)
 	case BET_DynamicRet:
 		//printf("Dynamic !\n");
 		//mov reg,djump
-		ppc_mov(ppc_rarg0,ppc_djump);
+		ppc_ori(ppc_rarg0,ppc_djump,0);  // mr rarg0, djump
 		//jmp no update
 		ppc_jump(loop_no_update);
 		break;
@@ -770,12 +812,13 @@ DynarecCodeEntry* ngen_Compile(DecodedBlock* block,bool force_checks)
 
 		default:
 			//canonical fallback ~
+      if (!shil_chf[op->op]) {
+          printf("OH CRAP %d\n", op->op);
+          die("Recompiler doesn't know about that opcode");
+      }
 			shil_chf[op->op](op);
 			break;
-
-defaulty:
-			printf("OH CRAP %d\n",op->op);
-			die("Recompiler doesn't know about that opcode");
+      
 		}
 	}
 
@@ -904,7 +947,7 @@ void ngen_mainloop()
 			ppc_addi(ppc_sp,ppc_sp,stac_alloc_size);
 
 			//return
-			ppc_blr();
+			ppc_bclrx(BO_ALWAYS,BI_CR0_EQ,0);  // blr
 
 		} //that was mainloop
 
