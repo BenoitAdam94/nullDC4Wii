@@ -57,10 +57,6 @@ static const u32 SH4_MEDIUM_ACCURATE     = 8;    // every  3 584 cycles
 static const u32 SH4_SLOW_ACCURATE       = 16;   // every  7 168 cycles
 static const u32 SH4_VSLOW_ACCURATE      = 32;   // every 14 336 cycles
 
-// Legacy aliases kept for any external code that references the old names
-static const s32 SH4_TIMESLICE_CYCLES = SH4_TIMESLICE_ACCURATE;
-static const s32 SH4_CPU_RATIO        = SH4_CPU_RATIO_ACCURATE;
-
 // -------------------------------------------------------------------------
 // Opcode classification flags
 // -------------------------------------------------------------------------
