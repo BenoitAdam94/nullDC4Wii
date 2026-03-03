@@ -8,6 +8,60 @@
 typedef void (FASTCALL OpCallFP)(u32 op);
 
 // -------------------------------------------------------------------------
+// Runtime accuracy preset (defined in main.cpp)
+//   0 = Fast     — largest timeslice, loosest peripheral timing
+//   1 = Balanced — moderate timeslice, good compatibility
+//   2 = Accurate — original timeslice, tightest peripheral timing
+// -------------------------------------------------------------------------
+extern "C" int get_accuracy_preset();
+
+#define FAST()     (get_accuracy_preset() == 0)
+#define BALANCED() (get_accuracy_preset() == 1)
+#define ACCURATE() (get_accuracy_preset() == 2)
+
+// -------------------------------------------------------------------------
+// Per-preset SH4 execution constants
+//
+//  TIMESLICE     — SH4 cycles dispatched between UpdateSystem() calls
+//  CPU_RATIO     — opcode cost in host cycles (drains the timeslice counter)
+//
+//  Cascade thresholds (in UpdateSystem() call counts):
+//  MEDIUM_PERIOD — AICA / DMA
+//  SLOW_PERIOD   — GDRom        (2× medium)
+//  VSLOW_PERIOD  — Maple / RTC  (4× medium)
+//
+//  Fast stretches the timeslice so peripherals are polled less often,
+//  saving CPU at the cost of timing accuracy.
+// -------------------------------------------------------------------------
+
+//                             TIMESLICE   CPU_RATIO  MEDIUM  SLOW   VSLOW
+// Fast     (1792 cycles)         ×4          8          4      8      16
+// Balanced  (896 cycles)         ×2          8          8     16      32
+// Accurate  (448 cycles)    original         8          8     16      32
+
+static const s32 SH4_TIMESLICE_FAST      = 1792;
+static const s32 SH4_CPU_RATIO_FAST      = 8;
+static const u32 SH4_MEDIUM_FAST         = 4;    // every  7 168 cycles
+static const u32 SH4_SLOW_FAST           = 8;    // every 14 336 cycles
+static const u32 SH4_VSLOW_FAST          = 16;   // every 28 672 cycles
+
+static const s32 SH4_TIMESLICE_BALANCED  = 896;
+static const s32 SH4_CPU_RATIO_BALANCED  = 8;
+static const u32 SH4_MEDIUM_BALANCED     = 8;    // every  7 168 cycles
+static const u32 SH4_SLOW_BALANCED       = 16;   // every 14 336 cycles
+static const u32 SH4_VSLOW_BALANCED      = 32;   // every 28 672 cycles
+
+static const s32 SH4_TIMESLICE_ACCURATE  = 448;
+static const s32 SH4_CPU_RATIO_ACCURATE  = 8;
+static const u32 SH4_MEDIUM_ACCURATE     = 8;    // every  3 584 cycles
+static const u32 SH4_SLOW_ACCURATE       = 16;   // every  7 168 cycles
+static const u32 SH4_VSLOW_ACCURATE      = 32;   // every 14 336 cycles
+
+// Legacy aliases kept for any external code that references the old names
+static const s32 SH4_TIMESLICE_CYCLES = SH4_TIMESLICE_ACCURATE;
+static const s32 SH4_CPU_RATIO        = SH4_CPU_RATIO_ACCURATE;
+
+// -------------------------------------------------------------------------
 // Opcode classification flags
 // -------------------------------------------------------------------------
 enum OpcodeType
@@ -16,20 +70,15 @@ enum OpcodeType
 	ReadsPC      = 1,    // PC must be valid/set before calling
 	WritesPC     = 2,    // Opcode writes PC (branch)
 	Delayslot    = 4,    // Has a delay-slot opcode (only valid with WritesPC)
-
 	WritesSR     = 8,    // Writes SR  -> UpdateSR() must be called after
 	WritesFPSCR  = 16,   // Writes FPSCR -> UpdateFPSCR() must be called after
 	Invalid      = 128,  // Undefined/illegal opcode
 
-	// Composite helpers
 	ReadWritePC       = ReadsPC | WritesPC,
 	WritesSRRWPC      = WritesSR | ReadsPC | WritesPC,
 
-	// Branch variants (no delay slot)
-	Branch_dir        = ReadWritePC,  // Direct   e.g. PC = Rn
-	Branch_rel        = ReadWritePC,  // Relative e.g. PC += disp
-
-	// Branch variants (with delay slot)
+	Branch_dir        = ReadWritePC,
+	Branch_rel        = ReadWritePC,
 	Branch_dir_d      = Delayslot | Branch_dir,
 	Branch_rel_d      = Delayslot | Branch_rel,
 };
@@ -46,7 +95,7 @@ void Sh4_int_Init();
 void Sh4_int_Term();
 bool Sh4_int_IsCpuRunning();
 
-// Exception helpers (note: legacy misspelling kept as an alias for ABI compat)
+// Exception helpers (legacy misspelling kept as inline alias for ABI compat)
 void FASTCALL sh4_int_RaiseException(u32 ExceptionCode, u32 VectorAddr);
 static inline void FASTCALL sh4_int_RaiseExeption(u32 code, u32 vec)
 {
@@ -56,22 +105,10 @@ static inline void FASTCALL sh4_int_RaiseExeption(u32 code, u32 vec)
 u32  Sh4_int_GetRegister(Sh4RegType reg);
 void Sh4_int_SetRegister(Sh4RegType reg, u32 regdata);
 
-// Delay-slot helpers (used by opcode implementations)
 void ExecuteDelayslot();
 void ExecuteDelayslot_RTE();
 
-
 int FASTCALL UpdateSystem();
 
-
-// -------------------------------------------------------------------------
-// Miscellaneous
-// -------------------------------------------------------------------------
-
-// Coarse timer that ticks at ~13,216 kHz.
-// Used to time block freeing; block promotion is no longer implemented.
+// Coarse timer (~13,216 kHz) used for block lifecycle tracking
 extern u32 gcp_timer;
-
-// SH4 execution constants (also useful to external code that schedules work)
-static const s32 SH4_TIMESLICE_CYCLES = 448;
-static const s32 SH4_CPU_RATIO        = 8;   // host cycles per SH4 cycle

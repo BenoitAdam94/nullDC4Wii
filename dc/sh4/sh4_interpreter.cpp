@@ -1,16 +1,14 @@
 /*
  * SH4 Interpreter — Dreamcast / Wii port
  *
- * Improvements over the original:
- *  - Named constants instead of bare magic numbers.
- *  - GenerateSinCos: endian-swap now covers the full 0x10000 table, not just
- *    the first 0x8000 entries (harmless on Wii/big-endian but correct on LE).
- *  - Sh4_int_Reset: also zeroes the FPU register banks (fr/xf).
- *  - Run loop: volatile ordering comment + clear frame-limiter hook for Wii.
- *  - sh4_int_RaiseException added with the old misspelled name kept as an
- *    inline alias in the header for ABI compatibility.
- *  - Minor const-correctness and comment cleanup throughout.
- *  - All logic and external interfaces are identical to the original.
+ * Runtime accuracy preset (get_accuracy_preset()):
+ *   0 = Fast     — timeslice 1792, loose peripheral polling
+ *   1 = Balanced — timeslice  896, moderate peripheral polling
+ *   2 = Accurate — timeslice  448, original peripheral polling (default)
+ *
+ * All timing-sensitive values (timeslice, CPU_RATIO, cascade thresholds)
+ * are selected at the start of Sh4_int_Run() so a preset change takes
+ * effect on the next Run() call without any restart required.
  */
 
 #include "types.h"
@@ -28,23 +26,9 @@
 #include "tmu.h"
 #include "dc/mem/sh4_mem.h"
 #include "ccn.h"
-// #include <gccore.h> // Wii-specific includes for frame limiting (needed later ?)
+// #include <gccore.h>  // Uncomment for Wii VIDEO_WaitVSync() frame limiter
 #include <time.h>
 #include <float.h>
-
-// -------------------------------------------------------------------------
-// Timing constants
-// -------------------------------------------------------------------------
-// One "timeslice" worth of SH4 cycles dispatched before UpdateSystem() runs.
-static const s32 TIMESLICE      = SH4_TIMESLICE_CYCLES;   // 448
-// Host cycles consumed per SH4 opcode (controls how fast 'l' drains).
-static const s32 CPU_RATIO      = SH4_CPU_RATIO;           // 8
-
-// Update cascade thresholds (in units of UpdateSystem() calls = 448 SH4 cycles each)
-static const u32 MEDIUM_PERIOD  = 8;   // every  3 584 cycles → AICA / DMA
-static const u32 SLOW_PERIOD    = 16;  // every  7 168 cycles → GDRom
-static const u32 VSLOW_PERIOD   = 32;  // every 14 336 cycles → Maple / RTC
-static const s32 RTC_PERIOD     = SH4_CLOCK;
 
 // -------------------------------------------------------------------------
 // Opcode field helpers
@@ -53,7 +37,7 @@ static const s32 RTC_PERIOD     = SH4_CLOCK;
 #define GetM(op) (((op) >> 4) & 0xf)
 
 // -------------------------------------------------------------------------
-// Run flag — written from interrupt context on Wii, so keep it volatile.
+// Run flag — volatile: may be cleared from an interrupt/other thread on Wii
 // -------------------------------------------------------------------------
 volatile bool sh4_int_bCpuRun = false;
 
@@ -65,35 +49,82 @@ volatile bool sh4_int_bCpuRun = false;
 f32 sin_table[0x10000 + 0x4000];
 
 // -------------------------------------------------------------------------
+// Active timing parameters — set at the top of Sh4_int_Run() from preset
+// -------------------------------------------------------------------------
+static s32 s_timeslice     = SH4_TIMESLICE_ACCURATE;
+static s32 s_cpu_ratio     = SH4_CPU_RATIO_ACCURATE;
+static u32 s_medium_period = SH4_MEDIUM_ACCURATE;
+static u32 s_slow_period   = SH4_SLOW_ACCURATE;
+static u32 s_vslow_period  = SH4_VSLOW_ACCURATE;
+
+// Selects all timing parameters from the current accuracy preset.
+// Called once at the start of each Run() so changes take effect immediately.
+static void ApplyAccuracyPreset()
+{
+	const int preset = get_accuracy_preset();
+
+	if (preset == 0)  // Fast
+	{
+		s_timeslice     = SH4_TIMESLICE_FAST;
+		s_cpu_ratio     = SH4_CPU_RATIO_FAST;
+		s_medium_period = SH4_MEDIUM_FAST;
+		s_slow_period   = SH4_SLOW_FAST;
+		s_vslow_period  = SH4_VSLOW_FAST;
+		printf("Sh4: accuracy preset = FAST (timeslice %d)\n", s_timeslice);
+	}
+	else if (preset == 1)  // Balanced
+	{
+		s_timeslice     = SH4_TIMESLICE_BALANCED;
+		s_cpu_ratio     = SH4_CPU_RATIO_BALANCED;
+		s_medium_period = SH4_MEDIUM_BALANCED;
+		s_slow_period   = SH4_SLOW_BALANCED;
+		s_vslow_period  = SH4_VSLOW_BALANCED;
+		printf("Sh4: accuracy preset = BALANCED (timeslice %d)\n", s_timeslice);
+	}
+	else  // Accurate (default)
+	{
+		s_timeslice     = SH4_TIMESLICE_ACCURATE;
+		s_cpu_ratio     = SH4_CPU_RATIO_ACCURATE;
+		s_medium_period = SH4_MEDIUM_ACCURATE;
+		s_slow_period   = SH4_SLOW_ACCURATE;
+		s_vslow_period  = SH4_VSLOW_ACCURATE;
+		printf("Sh4: accuracy preset = ACCURATE (timeslice %d)\n", s_timeslice);
+	}
+}
+
+// -------------------------------------------------------------------------
 // Sh4_int_Run
 // -------------------------------------------------------------------------
 void Sh4_int_Run()
 {
+	// Latch timing parameters for this run session
+	ApplyAccuracyPreset();
+
 	sh4_int_bCpuRun = true;
 
-	s32 l = TIMESLICE;
+	s32 l = s_timeslice;
 
 	do
 	{
-		// Inner loop: run one timeslice worth of opcodes.
+		// Inner loop: dispatch one timeslice worth of opcodes
 		do
 		{
 			const u32 op = ReadMem16(next_pc);
 			next_pc += 2;
 
 			OpPtr[op](op);
-			l -= CPU_RATIO;
+			l -= s_cpu_ratio;
 		} while (l > 0);
 
-		l += TIMESLICE;
+		l += s_timeslice;
 
-		// System peripherals (TMU, PVR, AICA, DMA, GDRom, Maple …)
+		// Peripheral update cascade (TMU, PVR, AICA, DMA, GDRom, Maple …)
 		UpdateSystem();
 
 		// ----------------------------------------------------------------
 		// Wii frame limiter — uncomment to lock to 60 Hz vsync.
-		// VIDEO_WaitVSync() must be called OUTSIDE the inner opcode loop
-		// (already the case here) to avoid burning CPU while waiting.
+		// VIDEO_WaitVSync() must sit OUTSIDE the inner opcode loop
+		// (already the case here) so we yield rather than spin-wait.
 		//
 		// #include <gccore.h>
 		// VIDEO_WaitVSync();
@@ -168,7 +199,7 @@ void Sh4_int_Reset(bool /*Manual*/)
 	old_sr = sr;
 	UpdateSR();
 
-	// FPU registers — also zero the banked set (xf) which the original skipped
+	// FPU registers (including banked set xf[], skipped by original)
 	memset(fr, 0, sizeof(fr));
 	memset(xf, 0, sizeof(xf));
 
@@ -181,8 +212,6 @@ void Sh4_int_Reset(bool /*Manual*/)
 
 // -------------------------------------------------------------------------
 // GenerateSinCos
-// Loads the first half (0x8000 entries) from fsca-table.bin, mirrors the
-// second half, and fixes endianness for all entries (full 0x10000 + overlap).
 // -------------------------------------------------------------------------
 void GenerateSinCos()
 {
@@ -198,16 +227,16 @@ void GenerateSinCos()
 	fread(sin_table, sizeof(f32), 0x8000, tbl);
 	fclose(tbl);
 
-	// --- Endian-swap the loaded half (no-op on big-endian / Wii) ----------
+	// Endian-swap the loaded half (no-op on big-endian / Wii)
 	for (int i = 0; i < 0x8000; i++)
 		(u32&)sin_table[i] = host_to_le<4>((u32&)sin_table[i]);
 
-	// --- Mirror: second half of the unit circle (sin is antisymmetric) ----
-	sin_table[0x8000] = 0.0f;                         // sin(π) == 0 exactly
+	// Mirror: second half of the unit circle (sin is antisymmetric)
+	sin_table[0x8000] = 0.0f;                    // sin(π) == 0 exactly
 	for (int i = 0x8001; i < 0x10000; i++)
 		sin_table[i] = -sin_table[i - 0x8000];
 
-	// --- Overlap region: copy [0..0x3FFF] → [0x10000..0x13FFF] for cos ----
+	// Overlap region for cos: copy [0..0x3FFF] → [0x10000..0x13FFF]
 	for (int i = 0x10000; i < 0x14000; i++)
 		sin_table[i] = sin_table[i & 0xFFFF];
 }
@@ -251,10 +280,14 @@ void ExecuteDelayslot_RTE()
 
 // -------------------------------------------------------------------------
 // Update cascade
-//   UpdateSystem()   — every 448 SH4 cycles  (called from run loop)
-//   MediumUpdate()   — every 3 584 cycles     (AICA, DMA)
-//   SlowUpdate()     — every 7 168 cycles     (GDRom)
-//   VerySlowUpdate() — every 14 336 cycles    (Maple, RTC)
+//
+//  UpdateSystem()   — every s_timeslice SH4 cycles  (called from run loop)
+//  MediumUpdate()   — every s_medium_period calls   (AICA, DMA)
+//  SlowUpdate()     — every s_slow_period calls     (GDRom)
+//  VerySlowUpdate() — every s_vslow_period calls    (Maple, RTC)
+//
+//  The period masks use the latched s_* values so they scale automatically
+//  with the active accuracy preset.
 // -------------------------------------------------------------------------
 s32 rtc_cycles  = 0;
 u32 update_cnt  = 0;
@@ -263,41 +296,41 @@ u32 gcp_timer   = 0;
 void FASTCALL VerySlowUpdate()
 {
 	gcp_timer++;
-	rtc_cycles -= 14336;
+	rtc_cycles -= (s_timeslice * (s32)s_vslow_period);
 	if (rtc_cycles <= 0)
 	{
-		rtc_cycles += RTC_PERIOD;
+		rtc_cycles += SH4_CLOCK;
 		settings.dreamcast.RTC++;
 	}
-	maple_Update(14336);
+	maple_Update(s_timeslice * s_vslow_period);
 }
 
 void FASTCALL SlowUpdate()
 {
 	UpdateGDRom();
 
-	if (!(update_cnt & (SLOW_PERIOD - 1)))
+	if (!(update_cnt & (s_vslow_period - 1)))
 		VerySlowUpdate();
 }
 
 void FASTCALL MediumUpdate()
 {
-	UpdateAica(3584);
+	UpdateAica(s_timeslice * s_medium_period);
 	UpdateDMA();
 
-	if (!(update_cnt & (SLOW_PERIOD - 1)))
+	if (!(update_cnt & (s_slow_period - 1)))
 		SlowUpdate();
 }
 
 int FASTCALL UpdateSystem()
 {
-	if (!(update_cnt & (MEDIUM_PERIOD - 1)))
+	if (!(update_cnt & (s_medium_period - 1)))
 		MediumUpdate();
 
 	update_cnt++;
 
-	UpdateTMU(448);
-	UpdatePvr(448);
+	UpdateTMU(s_timeslice);
+	UpdatePvr(s_timeslice);
 	return UpdateINTC();
 }
 
