@@ -58,10 +58,22 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| aica_if.cpp | AICA sound interface | | |
+| aica_if.cpp | AICA sound interface | 0.06 (or 0.07 ?)| Improved with Claude AI (see commit) |
 | aica_hle.cpp | AICA high-level emulation | | |
 | aica_hax.cpp | AICA experimental hacks | | |
 | EmptyAICA.cpp | Stub AICA implementation | | |
+
+
+## AICA ARM7 (Sound System)
+
+| File | Function | Version | AI Improvement |
+|------|----------|---------|----------------|
+| arm_aicaf.cpp | AICA ARM | |  |
+| arm7.cpp | AICA arm | | |
+| mem.cpp | AICA mem | | |
+| vbaARM.cpp | AICA vva | | |
+
+
 
 ## Graphics – PowerVR (PVR)
 
