@@ -629,6 +629,7 @@ sh4op(i1111_1011_1111_1101)
 sh4op(i1111_0011_1111_1101)
 {
   fpscr.SZ = 1 - fpscr.SZ;
+  old_fpscr = fpscr;
 }
 
 // fsqrt <FREG_N>

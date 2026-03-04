@@ -60,8 +60,8 @@ bool UpdateSR()
 }
 
 //make x86 and sh4 float status registers match ;)
-u32 old_rm=0xFF;
-u32 old_dn=0xFF;
+static u32 old_rm=0xFF;
+static u32 old_dn=0xFF;
 void SetFloatStatusReg()
 {
 	if ((old_rm!=fpscr.RM) || (old_dn!=fpscr.DN) || (old_rm==0xFF )|| (old_dn==0xFF))
@@ -77,12 +77,16 @@ void SetFloatStatusReg()
 			temp|=(1<<15);
 
 		//TODO: Implement this (needed for SOTB)
-#if HOST_ARCH==ARCH_X86 && HOST_OS==OS_WINDOWS
-		_asm
-		{
-			ldmxcsr temp;	//load the float status :)
-		}
+#if HOST_ARCH==ARCH_X86
+		#if HOST_OS==OS_WINDOWS
+		_asm { ldmxcsr temp; }
+		#elif defined(__GNUC__)
+		__asm__ volatile("ldmxcsr %0" :: "m"(temp));
+		#endif
 #endif
+		// NOTE: No fallback for non-x86 (Wii/PPC) intentionally.
+		// Calling fesetround() here corrupts the PPC FPU rounding mode
+		// and causes rendering artifacts. The Wii does not use SSE/MXCSR.
 	}
 }
 //called when fpscr is changed and we must check for reg banks ect..
