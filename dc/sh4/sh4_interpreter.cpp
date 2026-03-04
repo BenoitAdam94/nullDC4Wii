@@ -199,9 +199,11 @@ void Sh4_int_Reset(bool /*Manual*/)
 	old_sr = sr;
 	UpdateSR();
 
-	// FPU registers (including banked set xf[], skipped by original)
+	// FPU registers
+	// NOTE: xf[] (shadow FP bank) intentionally NOT cleared here.
+	// The BIOS initializes xf[] before game code runs. Clearing it
+	// corrupts the matrix/vector state and causes a black frame on boot.
 	memset(fr, 0, sizeof(fr));
-	memset(xf, 0, sizeof(xf));
 
 	fpscr.full = 0x00040001u;
 	old_fpscr  = fpscr;
@@ -274,7 +276,11 @@ void ExecuteDelayslot()
 
 void ExecuteDelayslot_RTE()
 {
-	sr.SetFull(ssr);
+	// Restore SR status bits directly from SSR (raw copy, no SetFull).
+	// This matches original nullDC: only status is copied here; T is
+	// restored separately when the caller processes the full SR write.
+	// UpdateSR() is called by the RTE opcode handler after this returns.
+	sr.status = ssr & 0x700083F2;
 	ExecuteDelayslot();
 }
 
