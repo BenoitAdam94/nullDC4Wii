@@ -47,10 +47,10 @@ extern ALIGN(64) Sh4Context Sh4cntx;
 #define old_fpscr Sh4cntx.old_fpscr
 #define fr Sh4cntx.fr
 #define xf Sh4cntx.xf
-#define fr_hex ((u32*)fr)
-#define xf_hex ((u32*)xf)
-#define dr_hex ((u64*)fr)
-#define xd_hex ((u64*)xf)
+#define fr_hex ((u32*)(fr))
+#define xf_hex ((u32*)(xf))
+#define dr_hex ((u64*)(fr))
+#define xd_hex ((u64*)(xf))
 
 
 
@@ -67,7 +67,7 @@ INLINE f64 GetDR(u32 n)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("DR_r INDEX OVERRUN %d >7",n);
+		printf("DR_r INDEX OVERRUN %d >7\n",n);
 #endif
 	DoubleReg t;
 
@@ -86,7 +86,7 @@ INLINE f64 GetXD(u32 n)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("XD_r INDEX OVERRUN %d >7",n);
+		printf("XD_r INDEX OVERRUN %d >7\n",n);
 #endif
 	DoubleReg t;
 	#if HOST_ENDIAN==ENDIAN_BIG
@@ -104,7 +104,7 @@ INLINE void SetDR(u32 n,f64 val)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("DR_w INDEX OVERRUN %d >7",n);
+		printf("DR_w INDEX OVERRUN %d >7\n",n);
 #endif
 	DoubleReg t;
 	t.dbl=val;
@@ -122,7 +122,7 @@ INLINE void SetXD(u32 n,f64 val)
 {
 #ifdef TRACE
 	if (n>7)
-		printf("XD_w INDEX OVERRUN %d >7",n);
+		printf("XD_w INDEX OVERRUN %d >7\n",n);
 #endif
 
 	DoubleReg t;

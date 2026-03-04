@@ -123,66 +123,51 @@ u32* Sh4_int_GetRegisterPtr(Sh4RegType reg)
 		{
 		case reg_gbr :
 			return &gbr;
-			break;
 		case reg_vbr :
 			return &vbr;
-			break;
 
 		case reg_ssr :
 			return &ssr;
-			break;
 
 		case reg_spc :
 			return &spc;
-			break;
 
 		case reg_sgr :
 			return &sgr;
-			break;
 
 		case reg_dbr :
 			return &dbr;
-			break;
 
 		case reg_mach :
 			return &mach;
-			break;
 
 		case reg_macl :
 			return &macl;
-			break;
 
 		case reg_pr :
 			return &pr;
-			break;
 
 		case reg_fpul :
 			return &fpul;
-			break;
 
 
 		case reg_nextpc :
 			return &next_pc;
-			break;
 
 		case reg_sr_status :
 			return &sr.status;
-			break;
 
 		case reg_sr_T :
 			return &sr.T;
-			break;
 
 		case reg_fpscr :
 			return &fpscr.full;
-			break;
 
 
 		default:
 			EMUERROR2("Unkown register Id %d",reg);
 			die("invalid reg");
-			return 0;
-			break;
+			return nullptr;
 		}
 	}
 }
