@@ -30,7 +30,7 @@
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
 | sh4_cpu.cpp | SH4 CPU core implementation | 0.05 | improved with ClaudeAI |
-| sh4_interpreter.cpp | SH4 instruction interpreter | | |
+| sh4_interpreter.cpp | SH4 instruction interpreter | 0.07 | Improved with ClaudeAI (+accuracy preset added) | |
 | sh4_fpu.cpp | SH4 floating point unit | 0.06 | Improved with ClaudeAI (+accuracy preset added) |
 | sh4_if.cpp | SH4 interface layer | 0.04 | Improved with ClaudeAI (nothing added in fact) |
 | sh4_opcode_list.cpp | SH4 opcode definitions | 0.05 | Improved with ClaudeAI |
@@ -58,10 +58,22 @@
 
 | File | Function | Version | AI Improvement |
 |------|----------|---------|----------------|
-| aica_if.cpp | AICA sound interface | | |
+| aica_if.cpp | AICA sound interface | 0.06 (or 0.07 ?)| Improved with Claude AI (see commit) |
 | aica_hle.cpp | AICA high-level emulation | | |
 | aica_hax.cpp | AICA experimental hacks | | |
 | EmptyAICA.cpp | Stub AICA implementation | | |
+
+
+## AICA ARM7 (Sound System)
+
+| File | Function | Version | AI Improvement |
+|------|----------|---------|----------------|
+| arm_aicaf.cpp | AICA ARM | |  |
+| arm7.cpp | AICA arm | | |
+| mem.cpp | AICA mem | | |
+| vbaARM.cpp | AICA vva | | |
+
+
 
 ## Graphics – PowerVR (PVR)
 
