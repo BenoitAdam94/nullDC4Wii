@@ -1104,10 +1104,11 @@ void DoRender()
   GX_InvVtxCache();
   GX_InvalidateTexAll();
 
-  // Define the vertex format for the GX pipeline.
-  GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
-  GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
+  // Single vertex format, always 24 bytes/vertex (POS+CLR0+TEX0).
+  // VCD never changes mid-stream to avoid CP packet FIFO misalignment.
+  GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS,  GX_POS_XYZ,  GX_F32,   0);
   GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
+  GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST,   GX_F32,   0);
 
   GX_SetNumChans(1);
   GX_SetNumTexGens(1);
@@ -1204,6 +1205,17 @@ void DoRender()
   if (vtx_max_Z < 0 || vtx_max_Z > 128 * 1024)
     vtx_max_Z = 1;
 
+  // Extra guard: if EFB garbage or NaN slipped through and corrupted the
+  // Z range so that min >= max, the projection math below produces NaN/inf
+  // which desyncs the GX FIFO ("GFX Fifo Opcode unknown 0x64").
+  // Reset to a safe default range so the frame renders without a crash.
+  // Can be removed
+  if (vtx_min_Z >= vtx_max_Z || vtx_max_Z != vtx_max_Z || vtx_min_Z != vtx_min_Z)
+  {
+    vtx_min_Z = 0.001f;
+    vtx_max_Z = 100000.0f;  // was 1.0f -- caused flash by collapsing all geometry to near-plane
+  }
+
   // extend range
   vtx_max_Z *= 1.001; // to not clip vtx_max verts
   // vtx_min_Z*=0.999;
@@ -1240,6 +1252,8 @@ void DoRender()
   GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
   GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 
+  int last_textured = -1;  // track texture state to skip redundant GX calls
+
   // Process opaque and then translucent lists.
   for (; drawLST != crLST; drawLST++)
   {
@@ -1254,15 +1268,25 @@ void DoRender()
     s32 count = drawLST->count;
     if (count < 0)
     {
-            if (drawMod->pcw.Texture)
+      int is_textured = drawMod->pcw.Texture ? 1 : 0;
+      if (is_textured != last_textured)
       {
-
+        if (is_textured)
+        {
+          GX_SetNumTexGens(1);
+          GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+          GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+        }
+        else
+        {
+          GX_SetNumTexGens(0);
+          GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+          GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
+        }
+        last_textured = is_textured;
+      }
+      if (is_textured)
         SetTextureParams(drawMod);
-      }
-      else
-      {
-        GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
-      }
 
       drawMod++;
       count &= 0x7FFF;
@@ -1313,7 +1337,74 @@ void StartRender()
     render_end_pending_cycles = 50000;
 
   if (FB_W_SOF1 & 0x1000000)
+  {
+    // 2D direct framebuffer mode (logo screens).
+    // Read from FB_R_SOF1 (what the DC video hardware displays),
+    // NOT FB_W_SOF1 (write destination, may be the back buffer).
+    static u16 fb2d_tex[640 * 480] ATTRIBUTE_ALIGN(32);
+
+    u32 vram_addr = FB_R_SOF1 & 0x00FFFFFF;
+    u16 *src = (u16 *)&params.vram[fast_ConvOffset32toOffset64(vram_addr)];
+
+    // Tile into GX 4x4-block layout with LE->BE byte swap per pixel.
+    for (int ty = 0; ty < 480; ty += 4)
+      for (int tx = 0; tx < 640; tx += 4)
+      {
+        u16 *dst = &fb2d_tex[((ty / 4) * (640 / 4) + (tx / 4)) * 16];
+        for (int row = 0; row < 4; row++)
+        {
+          u16 *srow = &src[(ty + row) * 640 + tx];
+          for (int col = 0; col < 4; col++)
+            *dst++ = (srow[col] >> 8) | (srow[col] << 8);
+        }
+      }
+    DCFlushRange(fb2d_tex, sizeof(fb2d_tex));
+
+    // FB_R_CTRL.fb_depth: 1 = RGB565, others = ARGB1555 (RGB5A3 on GX)
+    GXTexObj texobj;
+    if (FB_R_CTRL.fb_depth == 1)
+      GX_InitTexObj(&texobj, fb2d_tex, 640, 480, GX_TF_RGB565,  GX_CLAMP, GX_CLAMP, GX_FALSE);
+    else
+      GX_InitTexObj(&texobj, fb2d_tex, 640, 480, GX_TF_RGB5A3,  GX_CLAMP, GX_CLAMP, GX_FALSE);
+    GX_InitTexObjLOD(&texobj, GX_NEAR, GX_NEAR, 0, 0, 0, GX_FALSE, GX_FALSE, GX_ANISO_1);
+    GX_LoadTexObj(&texobj, GX_TEXMAP0);
+
+    // VTXFMT1: XY+UV only, leaves VTXFMT0 (3D path) undisturbed.
+    GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS,  GX_POS_XY,  GX_F32, 0);
+    GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST,  GX_F32, 0);
+    GX_ClearVtxDesc();
+    GX_SetVtxDesc(GX_VA_POS,  GX_DIRECT);
+    GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+    GX_SetNumChans(0);
+    GX_SetNumTexGens(1);
+    GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
+    GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLORNULL);
+    GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+    GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
+    GX_SetBlendMode(GX_BM_NONE, GX_BL_ONE, GX_BL_ZERO, GX_LO_CLEAR);
+
+    Mtx44 ortho;
+    guOrtho(ortho, 0, 480, 0, 640, 0, 1);
+    GX_LoadProjectionMtx(ortho, GX_ORTHOGRAPHIC);
+    Mtx mv;
+    guMtxIdentity(mv);
+    GX_LoadPosMtxImm(mv, GX_PNMTX0);
+
+    GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
+      GX_Position2f32(  0,   0); GX_TexCoord2f32(0, 0);
+      GX_Position2f32(640,   0); GX_TexCoord2f32(1, 0);
+      GX_Position2f32(640, 480); GX_TexCoord2f32(1, 1);
+      GX_Position2f32(  0, 480); GX_TexCoord2f32(0, 1);
+    GX_End();
+
+    GX_DrawDone();
+    GX_CopyDisp(frameBuffer[fb], GX_TRUE);
+    VIDEO_SetNextFramebuffer(frameBuffer[fb]);
+    VIDEO_Flush();
+    VIDEO_WaitVSync();
+    FrameCount++;
     return;
+  }
 
   DoRender();
 
@@ -1420,14 +1511,25 @@ struct VertexDecoder
   }
 
 // Standard vertex projection macro. PVR 'Z' is actually 1/W.
-#define vert_base(dst, _x, _y, _z) /*VertexCount++;*/ \
-  float W = 1.0f / _z;                                \
-  curVTX[dst].x = VTX_TFX(_x) * W;                    \
-  curVTX[dst].y = VTX_TFY(_y) * W;                    \
-  if (W < vtx_min_Z)                                  \
-    vtx_min_Z = W;                                    \
-  else if (W > vtx_max_Z)                             \
-    vtx_max_Z = W;                                    \
+//
+// Guard against zero/negative/NaN Z values that can arrive when the game reads
+// back EFB (framebuffer) data that the emulator hasn't rendered yet (e.g.
+// Castlevania: Resurrection shadow/reflection pass).  A bad Z causes W=1/Z to
+// become infinity or NaN, which then corrupts vtx_min_Z / vtx_max_Z, blows up
+// the projection matrix in DoRender(), and ultimately desyncs the GX FIFO
+// producing "GFX Fifo Opcode unknown (0x64)".
+//
+// Clamping to 0.0001f keeps W finite and pushes the vertex safely to the far
+// plane where it is invisible but harmless.
+#define vert_base(dst, _x, _y, _z) /*VertexCount++;*/         \
+  float _safe_z = (_z < 0.0001f) ? 0.0001f : _z;             \
+  float W = 1.0f / _safe_z;                                   \
+  curVTX[dst].x = VTX_TFX(_x) * W;                           \
+  curVTX[dst].y = VTX_TFY(_y) * W;                           \
+  if (W > 0.0f && W < vtx_min_Z)                             \
+    vtx_min_Z = W;                                            \
+  if (W > 0.0f && W > vtx_max_Z)                             \
+    vtx_max_Z = W;                                            \
   curVTX[dst].z = W; /*Linearly scaled later*/
 
   // Poly Vertex handlers
