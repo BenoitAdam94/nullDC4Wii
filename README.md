@@ -145,7 +145,7 @@ https://wiibrew.org/wiki/NullDC4Wii/Compatibility
 
 If you experience Freeze in some heavy games like Shenmue, put FAST or BALANCED. BALANCED may be the default setting in future versions
 
-If you experience weird AI controled NPC put ACCURATE
+If you experience various bugs (example that may happens : weird AI controled NPC) put ACCURATE
 
 ---
 
@@ -264,6 +264,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
