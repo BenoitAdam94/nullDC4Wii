@@ -1,108 +1,105 @@
 /*
-	Hitachi user break controller:
-	This is broken
+    Hitachi SH4 User Break Controller (UBC) — emulation stub
 
-	Fun trivia: ubc is disabled on dreamcast and can't be used ... but kos-debug uses it !...
+    The UBC provides two hardware breakpoint channels (A and B) with address,
+    address-mask, bus-cycle, data, and data-mask registers. On retail Dreamcast
+    hardware the UBC is disabled and cannot trigger breaks, but the register
+    range is still mapped and software (notably kos-debug) reads/writes it, so
+    we emulate the register bank as a simple read/write pass-through.
+
+    All registers are "Held" on every reset type (power-on, manual, watchdog,
+    H-UDI). Only BBRA, BBRB and BRCR have defined reset values (0x0000); the
+    remaining registers are Undefined after reset and are left untouched here.
+
+    Register map base: 0xFF200000 (P4) / 0x1F200000 (area 7)
 */
+
 #include "types.h"
 #include "dc/mem/sh4_internal_reg.h"
 #include "ubc.h"
 
-//UBC BARA 0xFF200000 0x1F200000 32 Undefined Held Held Held Iclk
-u32 UBC_BARA;
-//UBC BAMRA 0xFF200004 0x1F200004 8 Undefined Held Held Held Iclk
-u8 UBC_BAMRA;
-//UBC BBRA 0xFF200008 0x1F200008 16 0x0000 Held Held Held Iclk
-u16 UBC_BBRA;
-//UBC BARB 0xFF20000C 0x1F20000C 32 Undefined Held Held Held Iclk
-u32 UBC_BARB;
-//UBC BAMRB 0xFF200010 0x1F200010 8 Undefined Held Held Held Iclk
-u8 UBC_BAMRB;
-//UBC BBRB 0xFF200014 0x1F200014 16 0x0000 Held Held Held Iclk
-u16 UBC_BBRB;
-//UBC BDRB 0xFF200018 0x1F200018 32 Undefined Held Held Held Iclk
-u32 UBC_BDRB;
-//UBC BDMRB 0xFF20001C 0x1F20001C 32 Undefined Held Held Held Iclk
-u32 UBC_BDMRB;
-//UBC BRCR 0xFF200020 0x1F200020 16 0x0000 Held Held Held Iclk
-u16 UBC_BRCR;
+// ---------------------------------------------------------------------------
+// Register mirror storage
+// ---------------------------------------------------------------------------
 
-//Init term res
+u32 UBC_BARA  = 0;          // Break Address Register A       (32-bit, undef)
+u8  UBC_BAMRA = 0;          // Break Address Mask Register A  (8-bit,  undef)
+u16 UBC_BBRA  = 0x0000;     // Break Bus Cycle Register A     (16-bit, 0x0000)
+u32 UBC_BARB  = 0;          // Break Address Register B       (32-bit, undef)
+u8  UBC_BAMRB = 0;          // Break Address Mask Register B  (8-bit,  undef)
+u16 UBC_BBRB  = 0x0000;     // Break Bus Cycle Register B     (16-bit, 0x0000)
+u32 UBC_BDRB  = 0;          // Break Data Register B          (32-bit, undef)
+u32 UBC_BDMRB = 0;          // Break Data Mask Register B     (32-bit, undef)
+u16 UBC_BRCR  = 0x0000;     // Break Control Register         (16-bit, 0x0000)
+
+// ---------------------------------------------------------------------------
+// Internal helper: wire one register entry into the UBC[] map
+// ---------------------------------------------------------------------------
+
+// Generic flags shared by every UBC register (no custom read/write handlers)
+#define UBC_FLAGS_32  (REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA)
+#define UBC_FLAGS_16  (REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA)
+#define UBC_FLAGS_8   (REG_8BIT_READWRITE  | REG_READ_DATA | REG_WRITE_DATA)
+
+static inline void ubc_reg32(u32 addr, u32 *storage)
+{
+    u32 idx = UBC_REG_IDX(addr);
+    UBC[idx].flags         = UBC_FLAGS_32;
+    UBC[idx].readFunction  = 0;
+    UBC[idx].writeFunction = 0;
+    UBC[idx].data32        = storage;
+}
+
+static inline void ubc_reg16(u32 addr, u16 *storage)
+{
+    u32 idx = UBC_REG_IDX(addr);
+    UBC[idx].flags         = UBC_FLAGS_16;
+    UBC[idx].readFunction  = 0;
+    UBC[idx].writeFunction = 0;
+    UBC[idx].data16        = storage;
+}
+
+static inline void ubc_reg8(u32 addr, u8 *storage)
+{
+    u32 idx = UBC_REG_IDX(addr);
+    UBC[idx].flags         = UBC_FLAGS_8;
+    UBC[idx].readFunction  = 0;
+    UBC[idx].writeFunction = 0;
+    UBC[idx].data8         = storage;
+}
+
+// ---------------------------------------------------------------------------
+// Lifecycle
+// ---------------------------------------------------------------------------
+
 void ubc_Init()
 {
-	//UBC BARA 0xFF200000 0x1F200000 32 Undefined Held Held Held Iclk
-	UBC[(UBC_BARA_addr&0xFF)>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BARA_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BARA_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BARA_addr&0xFF)>>2].data32=&UBC_BARA;
-
-	//UBC BAMRA 0xFF200004 0x1F200004 8 Undefined Held Held Held Iclk
-	UBC[(UBC_BAMRA_addr&0xFF)>>2].flags=REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BAMRA_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BAMRA_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BAMRA_addr&0xFF)>>2].data8=&UBC_BAMRA;
-
-	//UBC BBRA 0xFF200008 0x1F200008 16 0x0000 Held Held Held Iclk
-	UBC[(UBC_BBRA_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BBRA_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BBRA_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BBRA_addr&0xFF)>>2].data16=&UBC_BBRA;
-
-	//UBC BARB 0xFF20000C 0x1F20000C 32 Undefined Held Held Held Iclk
-	UBC[(UBC_BARB_addr&0xFF)>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BARB_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BARB_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BARB_addr&0xFF)>>2].data32=&UBC_BARB;
-
-	//UBC BAMRB 0xFF200010 0x1F200010 8 Undefined Held Held Held Iclk
-	UBC[(UBC_BAMRB_addr&0xFF)>>2].flags=REG_8BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BAMRB_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BAMRB_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BAMRB_addr&0xFF)>>2].data8=&UBC_BAMRB;
-
-	//UBC BBRB 0xFF200014 0x1F200014 16 0x0000 Held Held Held Iclk
-	UBC[(UBC_BBRB_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BBRB_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BBRB_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BBRB_addr&0xFF)>>2].data16=&UBC_BBRB;
-
-	//UBC BDRB 0xFF200018 0x1F200018 32 Undefined Held Held Held Iclk
-	UBC[(UBC_BDRB_addr&0xFF)>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BDRB_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BDRB_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BDRB_addr&0xFF)>>2].data32=&UBC_BDRB;
-
-	//UBC BDMRB 0xFF20001C 0x1F20001C 32 Undefined Held Held Held Iclk
-	UBC[(UBC_BDMRB_addr&0xFF)>>2].flags=REG_32BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BDMRB_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BDMRB_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BDMRB_addr&0xFF)>>2].data32=&UBC_BDMRB;
-
-	//UBC BRCR 0xFF200020 0x1F200020 16 0x0000 Held Held Held Iclk
-	UBC[(UBC_BRCR_addr&0xFF)>>2].flags=REG_16BIT_READWRITE | REG_READ_DATA | REG_WRITE_DATA;
-	UBC[(UBC_BRCR_addr&0xFF)>>2].readFunction=0;
-	UBC[(UBC_BRCR_addr&0xFF)>>2].writeFunction=0;
-	UBC[(UBC_BRCR_addr&0xFF)>>2].data16=&UBC_BRCR;
-
+    ubc_reg32(UBC_BARA_addr,  &UBC_BARA);
+    ubc_reg8 (UBC_BAMRA_addr, &UBC_BAMRA);
+    ubc_reg16(UBC_BBRA_addr,  &UBC_BBRA);
+    ubc_reg32(UBC_BARB_addr,  &UBC_BARB);
+    ubc_reg8 (UBC_BAMRB_addr, &UBC_BAMRB);
+    ubc_reg16(UBC_BBRB_addr,  &UBC_BBRB);
+    ubc_reg32(UBC_BDRB_addr,  &UBC_BDRB);
+    ubc_reg32(UBC_BDMRB_addr, &UBC_BDMRB);
+    ubc_reg16(UBC_BRCR_addr,  &UBC_BRCR);
 }
+
 void ubc_Reset(bool Manual)
 {
-	/*
-	BARA H'FF20 0000 H'1F20 0000 32 Undefined Held Held Held Iclk
-	UBC BAMRA H'FF20 0004 H'1F20 0004 8 Undefined Held Held Held Iclk
-	UBC BBRA H'FF20 0008 H'1F20 0008 16 H'0000 Held Held Held Iclk
-	UBC BARB H'FF20 000C H'1F20 000C 32 Undefined Held Held Held Iclk
-	UBC BAMRB H'FF20 0010 H'1F20 0010 8 Undefined Held Held Held Iclk
-	UBC BBRB H'FF20 0014 H'1F20 0014 16 H'0000 Held Held Held Iclk
-	UBC BDRB H'FF20 0018 H'1F20 0018 32 Undefined Held Held Held Iclk
-	UBC BDMRB H'FF20 001C H'1F20 001C 32 Undefined Held Held Held Iclk
-	UBC BRCR H'FF20 0020 H'1F20 0020 16 H'0000*2 Held Held Held Iclk
-	*/
-	UBC_BBRA = 0x0;
-	UBC_BBRB = 0x0;
-	UBC_BRCR = 0x0;
-}
-void ubc_Term()
-{
+    // The Manual parameter mirrors the reset-type distinction in the SH4
+    // manual, but all UBC registers behave identically across reset types
+    // ("Held" for everything). Only the three registers with defined reset
+    // values are touched; the rest remain Undefined as per the hardware spec.
+    (void)Manual;
+
+    UBC_BBRA = 0x0000;
+    UBC_BBRB = 0x0000;
+    UBC_BRCR = 0x0000;
 }
 
+void ubc_Term()
+{
+    // No dynamic resources to release — the UBC register bank is statically
+    // allocated and the UBC[] map entries will be cleaned up by the caller.
+}
