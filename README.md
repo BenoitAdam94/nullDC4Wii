@@ -20,18 +20,21 @@ a fork from https://github.com/skmp/nullDCe
 - Optimize Optimize Optimize
 - Translate French baguette comments to English
 
+### Developer (Normal)
+
+- Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
+- Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
+- 50/60 ips for PAL/NTSC ? (should be ok)
+- both 4/3 and fullscreen support
+- Frame Skipping
+
 ### Developer (Hard)
 
 - Improve gxRend.cpp = main file about specific rendering for Wii
 - Splitting gxRend.cpp in multiple files ? (beware this is more tricky than it look)
-- Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
-- Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation (AI seems to know about this)
-- 50/60 ips for PAL/NTSC ? (should be ok)
-- 4/3 and fullscreen support
-- Frame Skipping
 - Sound implementation
 
 ## Installation
@@ -264,6 +267,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
