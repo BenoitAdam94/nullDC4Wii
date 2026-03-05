@@ -124,12 +124,39 @@ game selector implemented
 Few games are runnable :
 - Castlevania (Demo)
 - Sega Tetris
+- Shenmue (BALANCED Preset)
+- Jojo
 
 Wii Dynarec has been improved & completed by AI. Compile but doesn't run (Black Screen). See /archive folder
 
 ## Compatibility
 
 https://wiibrew.org/wiki/NullDC4Wii/Compatibility
+
+## Presets
+
+### 🧮 Calculation Accuracy Preset
+
+| Mode | Description |
+|------|------------|
+| **FAST** | Maximum FPS (higher frame rate), less loading times |
+| **BALANCED** | Good balance between speed and accuracy |
+| **ACCURATE (default)** | Closest behavior to original hardware |
+
+If you experience Freeze in some heavy games like Shenmue, put FAST or BALANCED. BALANCED may be the default setting in future versions
+
+---
+
+### 🖼️ Graphics Preset
+
+| Mode | Settings | Best platform | 
+|------|----------| ------------------------- | 
+| **LOW (default)** | `GX_NEAR` · `lod_bias 0.0f` · `GX_DISABLE`  | Wii |
+| **NORMAL** | `GX_LINEAR` · `lod_bias 0.0f` · `GX_DISABLE`  | Wii |
+| **HIGH** | `GX_LINEAR` · `lod_bias -0.5f` · `GX_ENABLE` · Anisotropic x2 | Wii U |
+| **EXTRA** | `GX_LINEAR` · `lod_bias -1.0f` *(may need to adjust to -0.75)* · `GX_ENABLE` · Anisotropic x4 | Wii U |
+
+While the emulator is still in alpha, the visual difference is limited for now.
 
 ## For Developpers :
 
@@ -235,6 +262,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
