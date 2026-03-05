@@ -658,6 +658,13 @@ public:
 			StripStarted=false;
 			CurrentList=ListType_None;
 
+			// BUG FIX: Reset TaCmd to ta_main.
+			// Without this, TaCmd stays pointing at whatever mid-stream vertex
+			// handler was active when the soft-reset fired. The next polygon
+			// Is that really necessary ? This was about the castlevania Hall regession bug
+      // but it was fixed without this change
+			TaCmd=ta_main;
+
 			TA_decoder::SoftReset();
 		}
 		static void ListInit()
