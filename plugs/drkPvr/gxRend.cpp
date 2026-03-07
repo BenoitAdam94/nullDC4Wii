@@ -41,6 +41,11 @@ extern "C" int get_debug_loop();
 extern int g_current_frameskip; // 0 = no skip, 1 = skip 1 frame, 2 = skip 2 frame
 extern int g_frame_counter;
 
+// Aspect ratio selection:
+// true  = stretch to fill the full screen (16:9)
+// false = preserve the Dreamcast's native 4:3 aspect ratio with side bars
+bool choose_fullscreen = false;
+
 #include "config.h"
 #include "gxRend.h"
 #include <gccore.h>
@@ -1100,7 +1105,21 @@ void DoRender()
   float dc_height = 480;
 
   VIDEO_SetBlack(FALSE);
-  GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
+  // Set viewport to a centred 4:3 sub-region of the 16:9 framebuffer.
+  // NDC [-1..+1] maps to this viewport, so all DC geometry (which is
+  // already in 4:3 screen-space) displays with correct proportions.
+  // In fullscreen mode use the whole width (stretched 16:9).
+  if (choose_fullscreen)
+  {
+    GX_SetViewport(0, 0, rmode->fbWidth, rmode->efbHeight, 0, 1);
+  }
+  else
+  {
+    const float ratio  = (4.f / 3.f) / (16.f / 9.f); // 0.75
+    const float vp_w   = rmode->fbWidth * ratio;
+    const float vp_x   = (rmode->fbWidth - vp_w) * 0.5f;
+    GX_SetViewport(vp_x, 0, vp_w, rmode->efbHeight, 0, 1);
+  }
   GX_InvVtxCache();
   GX_InvalidateTexAll();
 
@@ -1159,6 +1178,7 @@ void DoRender()
   GX_SetBlendMode(GX_BM_NONE, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, GX_LO_CLEAR);
   GX_SetAlphaUpdate(GX_TRUE);
   GX_SetColorUpdate(GX_TRUE);
+
 
   /*
   x'=x*xx + y*xy + z* xz + xw
@@ -1224,10 +1244,14 @@ void DoRender()
   float p6 = -1 / (1 / vtx_max_Z - 1 / vtx_min_Z);
   float p5 = p6 / vtx_min_Z;
 
+  // The projection matrix maps DC screen-space coords to GX clip space.
+  // X aspect ratio is NOT corrected here — DC vertices are already in screen
+  // space (x=[0..640]) and z is 1/W (depth), so a perspective matrix would
+  // incorrectly couple x and z. X is remapped at vertex submission instead.
   Mtx44 mtx =
       {
-          {(2.f / dc_width), 0, +(640 / dc_width), 0},
-          {0, -(2.f / dc_height), -(480 / dc_height), 0},
+          {(2.f / dc_width), 0, +(640.f / dc_width), 0},
+          {0, -(2.f / dc_height), -(480.f / dc_height), 0},
           {0, 0, p5, p6},
           {0, 0, -1, 0}};
 
@@ -1390,11 +1414,28 @@ void StartRender()
     guMtxIdentity(mv);
     GX_LoadPosMtxImm(mv, GX_PNMTX0);
 
+    // In 4:3 mode, draw the 2D framebuffer into a centred 4:3 sub-rectangle
+    // so logo screens and 2D content have the same correct framing as 3D.
+    float x0_2d, x1_2d;
+    if (choose_fullscreen)
+    {
+      x0_2d = 0.f;
+      x1_2d = 640.f;
+    }
+    else
+    {
+      // 4:3 inside 16:9: side bars are (1 - 3/4) / 2 * 640 = 80 px each side
+      const float ratio = (4.f / 3.f) / (16.f / 9.f); // 0.75
+      float margin = (640.f * (1.f - ratio)) * 0.5f;   // 80 px
+      x0_2d = margin;
+      x1_2d = 640.f - margin;
+    }
+
     GX_Begin(GX_QUADS, GX_VTXFMT1, 4);
-      GX_Position2f32(  0,   0); GX_TexCoord2f32(0, 0);
-      GX_Position2f32(640,   0); GX_TexCoord2f32(1, 0);
-      GX_Position2f32(640, 480); GX_TexCoord2f32(1, 1);
-      GX_Position2f32(  0, 480); GX_TexCoord2f32(0, 1);
+      GX_Position2f32(x0_2d,   0); GX_TexCoord2f32(0, 0);
+      GX_Position2f32(x1_2d,   0); GX_TexCoord2f32(1, 0);
+      GX_Position2f32(x1_2d, 480); GX_TexCoord2f32(1, 1);
+      GX_Position2f32(x0_2d, 480); GX_TexCoord2f32(0, 1);
     GX_End();
 
     GX_DrawDone();
