@@ -53,9 +53,9 @@ static const u32 SH4_VSLOW_BALANCED      = 32;   // every 28 672 cycles
 
 static const s32 SH4_TIMESLICE_ACCURATE  = 448;
 static const s32 SH4_CPU_RATIO_ACCURATE  = 8;
-static const u32 SH4_MEDIUM_ACCURATE     = 8;    // every  3 584 cycles
-static const u32 SH4_SLOW_ACCURATE       = 16;   // every  7 168 cycles
-static const u32 SH4_VSLOW_ACCURATE      = 32;   // every 14 336 cycles
+static const u32 SH4_MEDIUM_ACCURATE     = 8;    // every  3 584 cycles // very accurate 1
+static const u32 SH4_SLOW_ACCURATE       = 16;   // every  7 168 cycles // very accurate 2
+static const u32 SH4_VSLOW_ACCURATE      = 32;   // every 14 336 cycles // very accurate 4
 
 // -------------------------------------------------------------------------
 // Opcode classification flags
