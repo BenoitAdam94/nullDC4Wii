@@ -35,3 +35,4 @@ void aica_sb_Term ();
 // Update macro — delegates to the plugin
 // ---------------------------------------------------------------------------
 #define UpdateAica(clc) libAICA_Update(clc)
+#define UpdateArm(clc)  libARM_Update(clc)

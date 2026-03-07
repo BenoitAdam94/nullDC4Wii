@@ -16,6 +16,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// ARM7 CPU plugin (vbaARM) — forward declarations only.
+// We do NOT include vbaARM.h here because it redefines ReadMemArrRet /
+// WriteMemArrRet macros already defined in sh4_mem.h.
+// arm_Init() is NOT called here — it is called inside libARM_Init() in
+// plugin_manager.cpp where arm_init_params and aica_ram are both in scope.
+// dc.cpp only needs Reset and Term, which take no struct parameters.
+extern void FASTCALL armTerm ();
+extern void FASTCALL armReset(bool Manual);
+
+static inline void arm_Term()             { armTerm(); }
+static inline void arm_Reset(bool manual) { armReset(manual); }
+
 // Global state flags
 static bool dc_inited = false;
 static bool dc_reseted = false;
@@ -99,7 +111,10 @@ static emu_thread_rv_t ExecuteEmulatorCommand(emu_thread_state_t cmd)
 			sh4_cpu.Init();
 			mem_Init();
 			pvr_Init();
-			aica_Init();
+			aica_Init();   // AICA RAM is ready after this call
+			// NOTE: ARM7 CPU is initialised by libARM_Init() inside
+			// plugins_Init() (plugin_manager.cpp), which runs before
+			// this EMU_INIT block. No arm_Init() call needed here.
 			mem_map_defualt();
 
 			emu_thread_rv = RV_OK;
@@ -108,7 +123,10 @@ static emu_thread_rv_t ExecuteEmulatorCommand(emu_thread_state_t cmd)
 		case EMU_TERM:
 			emu_thread_state = EMU_IDLE;
 
-			// Terminate in reverse order of initialization
+			// Terminate in reverse order of initialization.
+			// ARM must be torn down before AICA because it holds a pointer
+			// into aica_ram; freeing AICA RAM first would leave a dangling ref.
+			arm_Term();
 			aica_Term();
 			pvr_Term();
 			mem_Term();
@@ -189,6 +207,12 @@ static void ResetDC(bool manual)
 	mem_Reset(manual);
 	pvr_Reset(manual);
 	aica_Reset(manual);
+
+	// Reset ARM7 CPU — must come after aica_Reset() so that AICA RAM is
+	// in its post-reset state before the ARM7 re-reads it.
+	// On a non-manual (auto) reset aica_Reset clears aica_ram, so the ARM
+	// must be reset afterwards to avoid running stale code.
+	arm_Reset(manual);
 }
 
 /**

@@ -1,4 +1,4 @@
-#include "mem.h"
+#include "arm_mem.h"
 #include "arm7.h"
 
 u8 *arm_aica_ram;
@@ -155,7 +155,7 @@ template u8 ReadMemArm<1,u8>(u32 adr);
 template u16 ReadMemArm<2,u16>(u32 adr);
 template u32 ReadMemArm<4,u32>(u32 adr);
 
-template void WriteMemArm<1>(u32 adr,u8 data);
-template void WriteMemArm<2>(u32 adr,u16 data);
-template void WriteMemArm<4>(u32 adr,u32 data);
+template void WriteMemArm<1,u8>(u32 adr,u8 data);
+template void WriteMemArm<2,u16>(u32 adr,u16 data);
+template void WriteMemArm<4,u32>(u32 adr,u32 data);
 

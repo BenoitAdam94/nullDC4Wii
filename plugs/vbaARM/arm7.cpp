@@ -1,5 +1,5 @@
 #include "arm7.h"
-#include "mem.h"
+#include "arm_mem.h"
 
 #define C_CORE
 #define DEV_VERSION

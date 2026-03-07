@@ -1,31 +1,13 @@
-// -*- C++ -*-
-// VisualBoyAdvance - Nintendo Gameboy/GameboyAdvance (TM) emulator.
-// Copyright (C) 1999-2003 Forgotten
-// Copyright (C) 2004 Forgotten and the VBA development team
-
-// This program is free software; you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation; either version 2, or(at your option)
-// any later version.
+// ARM7TDMI interpreter - adapted from VisualBoyAdvance for Dreamcast AICA
+// Original: Copyright (C) 1999-2003 Forgotten / VBA development team (GPL v2+)
+// Dreamcast AICA port: nullDC4Wii project
 //
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software Foundation,
-// Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+// The ARM7TDMI core is shared between GBA and Dreamcast AICA (sound CPU).
+// Stripped: BKPT/GDB support, GP coprocessor stubs, x86/MSVC asm paths.
+// Active path: C_CORE + __GNUC__ + __POWERPC__ (devkitPPC / Wii).
 
-#ifdef BKPT_SUPPORT
-#define CONSOLE_OUTPUT(a,b) \
-    extern void (*dbgOutput)(char *, u32);\
-    if((opcode == 0xe0000000) && (reg[0].I == 0xC0DED00D)) {\
-      dbgOutput((a), (b));\
-    }
-#else
 #define CONSOLE_OUTPUT(a,b)
-#endif
+
 
 #define OP_AND \
       reg[dest].I = reg[(opcode>>16)&15].I & value;\
@@ -534,489 +516,9 @@
                 value = ((value >> 1) |\
                         (shift << 31));\
             }
-#else
-#define OP_SUB \
-     asm ("sub %1, %%ebx;"\
-                  : "=b" (reg[dest].I)\
-                  : "r" (value), "b" (reg[base].I));
-
-#define OP_SUBS \
-     asm ("sub %1, %%ebx;"\
-          "setsb N_FLAG;"\
-          "setzb Z_FLAG;"\
-          "setncb C_FLAG;"\
-          "setob V_FLAG;"\
-                  : "=b" (reg[dest].I)\
-                  : "r" (value), "b" (reg[base].I));
-
-#define OP_RSB \
-            asm  ("sub %1, %%ebx;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (reg[base].I), "b" (value));
-
-#define OP_RSBS \
-            asm  ("sub %1, %%ebx;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setncb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (reg[base].I), "b" (value));
-
-#define OP_ADD \
-            asm  ("add %1, %%ebx;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-
-#define OP_ADDS \
-            asm  ("add %1, %%ebx;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setcb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-
-#define OP_ADC \
-            asm  ("bt $0, C_FLAG;"\
-                  "adc %1, %%ebx;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-
-#define OP_ADCS \
-            asm  ("bt $0, C_FLAG;"\
-                  "adc %1, %%ebx;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setcb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-
-#define OP_SBC \
-            asm  ("bt $0, C_FLAG;"\
-                  "cmc;"\
-                  "sbb %1, %%ebx;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-
-#define OP_SBCS \
-            asm  ("bt $0, C_FLAG;"\
-                  "cmc;"\
-                  "sbb %1, %%ebx;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setncb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (value), "b" (reg[base].I));
-#define OP_RSC \
-            asm  ("bt $0, C_FLAG;"\
-                  "cmc;"\
-                  "sbb %1, %%ebx;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (reg[base].I), "b" (value));
-
-#define OP_RSCS \
-            asm  ("bt $0, C_FLAG;"\
-                  "cmc;"\
-                  "sbb %1, %%ebx;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setncb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : "=b" (reg[dest].I)\
-                 : "r" (reg[base].I), "b" (value));
-#define OP_CMP \
-            asm  ("sub %0, %1;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setncb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 :\
-                 : "r" (value), "r" (reg[base].I));
-
-#define OP_CMN \
-            asm  ("add %0, %1;"\
-                  "setsb N_FLAG;"\
-                  "setzb Z_FLAG;"\
-                  "setcb C_FLAG;"\
-                  "setob V_FLAG;"\
-                 : \
-                 : "r" (value), "r" (reg[base].I));
-#define LOGICAL_LSL_REG \
-       asm("shl %%cl, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define LOGICAL_LSR_REG \
-       asm("shr %%cl, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define LOGICAL_ASR_REG \
-       asm("sar %%cl, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define LOGICAL_ROR_REG \
-       asm("ror %%cl, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));       
-
-#define LOGICAL_RRX_REG \
-       asm("bt $0, C_FLAG;"\
-           "rcr $1, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (reg[opcode & 0x0f].I));       
-
-#define LOGICAL_ROR_IMM \
-       asm("ror %%cl, %%eax;"\
-           "setcb %%cl;"\
-           : "=a" (value), "=c" (C_OUT)\
-           : "a" (opcode & 0xff), "c" (shift));
-#define ARITHMETIC_LSL_REG \
-       asm("\
-             shl %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define ARITHMETIC_LSR_REG \
-       asm("\
-             shr %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define ARITHMETIC_ASR_REG \
-       asm("\
-             sar %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));
-
-#define ARITHMETIC_ROR_REG \
-       asm("\
-             ror %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (reg[opcode & 0x0f].I), "c" (shift));       
-
-#define ARITHMETIC_RRX_REG \
-       asm("\
-             bt $0, C_FLAG;\
-             rcr $1, %%eax;"\
-           : "=a" (value)\
-           : "a" (reg[opcode & 0x0f].I));       
-
-#define ARITHMETIC_ROR_IMM \
-       asm("\
-             ror %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (opcode & 0xff), "c" (shift));
-#define ROR_IMM_MSR \
-      asm ("ror %%cl, %%eax;"\
-           : "=a" (value)\
-           : "a" (opcode & 0xFF), "c" (shift));
-#define ROR_VALUE \
-      asm("ror %%cl, %0"\
-          : "=r" (value)\
-          : "r" (value), "c" (shift));
-#define RCR_VALUE \
-      asm("bt $0, C_FLAG;"\
-          "rcr $1, %0"\
-          : "=r" (value)\
-          : "r" (value));
 #endif
-#else
-#define OP_SUB \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm sub ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-      }
-
-#define OP_SUBS \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm sub ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setnc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-
-#define OP_RSB \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm mov eax, value\
-        __asm sub eax, ebx\
-        __asm mov ebx, dest\
-        __asm mov dword ptr [OFFSET reg+4*ebx], eax\
-      }
-
-#define OP_RSBS \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm mov eax, value\
-        __asm sub eax, ebx\
-        __asm mov ebx, dest\
-        __asm mov dword ptr [OFFSET reg+4*ebx], eax\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setnc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-
-#define OP_ADD \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm add ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-      }
-
-#define OP_ADDS \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm add ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-
-#define OP_ADC \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm bt word ptr C_FLAG, 0\
-        __asm adc ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-      }
-
-#define OP_ADCS \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg+4*ebx]\
-        __asm bt word ptr C_FLAG, 0\
-        __asm adc ebx, value\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg+4*eax], ebx\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-
-#define OP_SBC \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg + 4*ebx]\
-        __asm mov eax, value\
-        __asm bt word ptr C_FLAG, 0\
-        __asm cmc\
-        __asm sbb ebx, eax\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg + 4*eax], ebx\
-      }
-
-#define OP_SBCS \
-      {\
-        __asm mov ebx, base\
-        __asm mov ebx, dword ptr [OFFSET reg + 4*ebx]\
-        __asm mov eax, value\
-        __asm bt word ptr C_FLAG, 0\
-        __asm cmc\
-        __asm sbb ebx, eax\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg + 4*eax], ebx\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setnc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-#define OP_RSC \
-      {\
-        __asm mov ebx, value\
-        __asm mov eax, base\
-        __asm mov eax, dword ptr[OFFSET reg + 4*eax]\
-        __asm bt word ptr C_FLAG, 0\
-        __asm cmc\
-        __asm sbb ebx, eax\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg + 4*eax], ebx\
-      }
-
-#define OP_RSCS \
-      {\
-        __asm mov ebx, value\
-        __asm mov eax, base\
-        __asm mov eax, dword ptr[OFFSET reg + 4*eax]\
-        __asm bt word ptr C_FLAG, 0\
-        __asm cmc\
-        __asm sbb ebx, eax\
-        __asm mov eax, dest\
-        __asm mov dword ptr [OFFSET reg + 4*eax], ebx\
-        __asm sets byte ptr N_FLAG\
-        __asm setz byte ptr Z_FLAG\
-        __asm setnc byte ptr C_FLAG\
-        __asm seto byte ptr V_FLAG\
-      }
-#define OP_CMP \
-     {\
-       __asm mov eax, base\
-       __asm mov ebx, dword ptr [OFFSET reg+4*eax]\
-       __asm sub ebx, value\
-       __asm sets byte ptr N_FLAG\
-       __asm setz byte ptr Z_FLAG\
-       __asm setnc byte ptr C_FLAG\
-       __asm seto byte ptr V_FLAG\
-     }
-
-#define OP_CMN \
-     {\
-       __asm mov eax, base\
-       __asm mov ebx, dword ptr [OFFSET reg+4*eax]\
-       __asm add ebx, value\
-       __asm sets byte ptr N_FLAG\
-       __asm setz byte ptr Z_FLAG\
-       __asm setc byte ptr C_FLAG\
-       __asm seto byte ptr V_FLAG\
-     }
-#define LOGICAL_LSL_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm shl eax, cl\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-
-#define LOGICAL_LSR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm shr eax, cl\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-
-#define LOGICAL_ASR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm sar eax, cl\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-
-#define LOGICAL_ROR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0F\
-        __asm mov eax, dword ptr [OFFSET reg + 4*eax]\
-        __asm mov cl, byte ptr shift\
-        __asm ror eax, cl\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-
-#define LOGICAL_RRX_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0F\
-        __asm mov eax, dword ptr [OFFSET reg + 4*eax]\
-        __asm bt word ptr C_OUT, 0\
-        __asm rcr eax, 1\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-
-#define LOGICAL_ROR_IMM \
-        __asm mov eax, opcode\
-        __asm and eax, 0xff\
-        __asm mov cl, byte ptr shift\
-        __asm ror eax, cl\
-        __asm mov value, eax\
-        __asm setc byte ptr C_OUT
-#define ARITHMETIC_LSL_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm shl eax, cl\
-        __asm mov value, eax
-
-#define ARITHMETIC_LSR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm shr eax, cl\
-        __asm mov value, eax
-
-#define ARITHMETIC_ASR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0f\
-        __asm mov eax, dword ptr [OFFSET reg + 4 * eax]\
-        __asm mov cl, byte ptr shift\
-        __asm sar eax, cl\
-        __asm mov value, eax
-
-#define ARITHMETIC_ROR_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0F\
-        __asm mov eax, dword ptr [OFFSET reg + 4*eax]\
-        __asm mov cl, byte ptr shift\
-        __asm ror eax, cl\
-        __asm mov value, eax
-
-#define ARITHMETIC_RRX_REG \
-        __asm mov eax, opcode\
-        __asm and eax, 0x0F\
-        __asm mov eax, dword ptr [OFFSET reg + 4*eax]\
-        __asm bt word ptr C_FLAG, 0\
-        __asm rcr eax, 1\
-        __asm mov value, eax
-
-#define ARITHMETIC_ROR_IMM \
-        __asm mov eax, opcode\
-        __asm and eax, 0xff\
-        __asm mov cl, byte ptr shift\
-        __asm ror eax, cl\
-        __asm mov value, eax
-#define ROR_IMM_MSR \
-      {\
-        __asm mov eax, opcode\
-        __asm and eax, 0xff\
-        __asm mov cl, byte ptr shift\
-        __asm ror eax, CL\
-        __asm mov value, eax\
-      }
-#define ROR_VALUE \
-      {\
-        __asm mov cl, byte ptr shift\
-        __asm ror dword ptr value, cl\
-      }
-#define RCR_VALUE \
-      {\
-        __asm mov cl, byte ptr shift\
-        __asm bt word ptr C_FLAG, 0\
-        __asm rcr dword ptr value, 1\
-      }
-#endif
-#endif
+#endif  // __GNUC__
+#endif  // C_CORE
 
 #define OP_TST \
       u32 res = reg[base].I & value;\
@@ -3100,15 +2602,6 @@ if(cond_res) {
     LOGICAL_DATA_OPCODE             (OP_BICS, OP_BIC, 0x1d0);
     LOGICAL_DATA_OPCODE_WITHOUT_base(OP_MVN,  OP_MVN, 0x1e0);
     LOGICAL_DATA_OPCODE_WITHOUT_base(OP_MVNS, OP_MVN, 0x1f0);
-#ifdef BKPT_SUPPORT
-  case 0x127:
-  case 0x7ff: // for GDB support
-    extern void (*dbgSignal)(int,int);
-    reg[15].I -= 4;
-    armNextPC -= 4;
-    dbgSignal(5, (opcode & 0x0f)|((opcode>>4) & 0xfff0));
-    return;
-#endif
   case 0x320:
   case 0x321:
   case 0x322:
@@ -3188,7 +2681,7 @@ if(cond_res) {
     }
   break;
   CASE_16(0x400)
-  // T versions shouldn't be different on GBA      
+  // T versions: sz behavior same for AICA ARM7      
   CASE_16(0x420)
     {
       // STR Rd, [Rn], -#
@@ -3202,7 +2695,7 @@ if(cond_res) {
     }
     break;
   CASE_16(0x480)
-    // T versions shouldn't be different on GBA
+    // T versions: sz behavior same for AICA ARM7
   CASE_16(0x4a0)
     {
       // STR Rd, [Rn], #
@@ -3398,7 +2891,7 @@ if(cond_res) {
     }
     break;
   CASE_16(0x440)
-    // T versions shouldn't be different on GBA      
+    // T versions: sz behavior same for AICA ARM7      
   CASE_16(0x460)
     {
       // STRB Rd, [Rn], -#
@@ -3412,7 +2905,7 @@ if(cond_res) {
     }
     break;
   CASE_16(0x4c0)
-    // T versions shouldn't be different on GBA
+    // T versions: sz behavior same for AICA ARM7
   CASE_16(0x4e0)
     // STRB Rd, [Rn], #
     {
@@ -6971,28 +6464,6 @@ if(cond_res) {
     clockTicks += 3;
     CPUSoftwareInterrupt(opcode & 0x00FFFFFF);      
     break;
-#ifdef GP_SUPPORT
-  case 0xe11:
-  case 0xe13:
-  case 0xe15:
-  case 0xe17:
-  case 0xe19:
-  case 0xe1b:
-  case 0xe1d:
-  case 0xe1f:
-    // MRC
-    break;
-  case 0xe01:
-  case 0xe03:
-  case 0xe05:
-  case 0xe07:
-  case 0xe09:
-  case 0xe0b:
-  case 0xe0d:
-  case 0xe0f:
-    // MRC
-    break;    
-#endif
   default:
 #ifdef DEV_VERSION
 //    if(systemVerbose & VERBOSE_UNDEFINED)

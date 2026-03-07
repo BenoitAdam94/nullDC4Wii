@@ -19,6 +19,7 @@
 #include "sh4_if.h"
 #include "dc/pvr/pvr_if.h"
 #include "dc/aica/aica_if.h"
+#include "plugs/vbaARM/arm_aica.h"  // ARM7 CPU tick (vbaARM)
 #include "dmac.h"
 #include "dc/gdrom/gdrom_if.h"
 #include "dc/maple/maple_if.h"
@@ -322,6 +323,7 @@ void FASTCALL SlowUpdate()
 void FASTCALL MediumUpdate()
 {
 	UpdateAica(s_timeslice * s_medium_period);
+	UpdateArm(s_timeslice * s_medium_period);  // ARM7 tick — same cycle count, arm_aica.cpp divides by arm_sh4_bias (8)
 	UpdateDMA();
 
 	if (!(update_cnt & (s_slow_period - 1)))

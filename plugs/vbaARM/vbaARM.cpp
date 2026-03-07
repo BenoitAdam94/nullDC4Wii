@@ -4,7 +4,7 @@
 #include "vbaARM.h"
 #include "arm_aica.h"
 #include "arm7.h"
-#include "mem.h"
+#include "arm_mem.h"
 
 arm_init_params arm_params;
 emu_info arm_eminf;

@@ -16,12 +16,93 @@
 #include <string.h>
 #include "dc/mem/sb.h"
 
+// vbaARM plugin — direct linkage (no DLL on Wii).
+// Include arm_aica.h BEFORE vbaARM.h so arm_sh4_bias is visible.
+// We must NOT include vbaARM.h here because it re-defines ReadMemArrRet /
+// WriteMemArrRet which are already defined in sh4_mem.h (pulled in via sb.h).
+// Instead we forward-declare only what we need from vbaARM.cpp.
+#include "plugs/vbaARM/arm_aica.h"   // armUpdateARM, arm_sh4_bias
+
+// Forward declarations for the vbaARM plugin entry points defined in vbaARM.cpp
+extern "C" void armGetInterface(plugin_interface* info);
+
 //to avoid including windows.h
 #define EXCEPTION_EXECUTE_HANDLER       1
 #define EXCEPTION_CONTINUE_SEARCH       0
 #define EXCEPTION_CONTINUE_EXECUTION    -1
 
+
+
 sh4_if						sh4_cpu;
+
+// ---------------------------------------------------------------------------
+// ARM plugin vtable — populated by armGetInterface() at load time.
+// All libARM_* calls below go through this struct.
+// ---------------------------------------------------------------------------
+static plugin_interface arm_plugin;
+static bool             arm_plugin_loaded = false;
+
+// Minimal emu_info for the ARM plugin's Load() callback on Wii.
+// AddMenuItem is a no-op; ConfigLoad/SaveInt delegate to cfgLoad/SaveInt.
+static void   arm_nop_AddMenuItem(void*, int, const char*, MenuCallback, u32) {}
+static int    arm_cfg_load(const char* sec, const char* key, int def)
+              { return cfgLoadInt(sec, key, def); }
+static void   arm_cfg_save(const char* sec, const char* key, int val)
+              { cfgSaveInt(sec, key, val); }
+
+static emu_info arm_emu_info = {
+	nullptr,          // RootMenu  (no GUI on Wii)
+	arm_nop_AddMenuItem,
+	arm_cfg_load,
+	arm_cfg_save,
+};
+
+void libARM_Load()
+{
+	memset(&arm_plugin, 0, sizeof(arm_plugin));
+	armGetInterface(&arm_plugin);
+	arm_plugin_loaded = true;
+
+	if (arm_plugin.common.Load)
+		arm_plugin.common.Load(&arm_emu_info);
+
+	printf("libARM_Load: '%s'\n", arm_plugin.common.Name);
+}
+
+void libARM_Unload()
+{
+	if (!arm_plugin_loaded) return;
+
+	if (arm_plugin.common.Unload)
+		arm_plugin.common.Unload();
+
+	arm_plugin_loaded = false;
+}
+
+s32 libARM_Init(arm_init_params* p)
+{
+	if (!arm_plugin_loaded || !arm_plugin.arm.Init)
+		return rv_error;
+	return arm_plugin.arm.Init(p);
+}
+
+void libARM_Term()
+{
+	if (arm_plugin_loaded && arm_plugin.arm.Term)
+		arm_plugin.arm.Term();
+}
+
+void libARM_Reset(bool manual)
+{
+	if (arm_plugin_loaded && arm_plugin.arm.Reset)
+		arm_plugin.arm.Reset(manual);
+}
+
+void libARM_Update(u32 cycles)
+{
+	if (arm_plugin_loaded && arm_plugin.arm.Update)
+		arm_plugin.arm.Update(cycles);
+}
 
 struct MapleState
 {
@@ -49,6 +130,7 @@ s32 plugins_Load_()
 	libPvr_Load();
 	libGDR_Load();
 	libAICA_Load();
+	libARM_Load();
 	libExtDevice_Load();
 	mcfg_CreateDevices();
 	
@@ -154,6 +236,7 @@ void plugins_Unload()
 
 	//libMaple_Unload
 	libExtDevice_Unload();
+	libARM_Unload();
 	libAICA_Unload();
 	libGDR_Unload();
 	libPvr_Unload();
@@ -193,6 +276,15 @@ s32 plugins_Init_()
 	aica_info.aica_ram=aica_ram.data;
 
 	if (s32 rv = libAICA_Init(&aica_info))
+		return rv;
+
+	// ARM7 CPU plugin init — must come after libAICA_Init() so aica_ram is ready.
+	// arm_init_params (plugin_types.h) takes: aica_ram pointer + two register callbacks.
+	arm_init_params arm_info;
+	arm_info.aica_ram          = aica_ram.data;
+	arm_info.ReadMem_aica_reg  = libAICA_ReadMem_aica_reg;
+	arm_info.WriteMem_aica_reg = libAICA_WriteMem_aica_reg;
+	if (s32 rv = libARM_Init(&arm_info))
 		return rv;
 
 	ext_device_init_params ext_device_info;
@@ -293,6 +385,7 @@ void plugins_Term()
 
 	//term all plugins
 	libExtDevice_Term();
+	libARM_Term();
 	libAICA_Term();
 	libGDR_Term();
 	libPvr_Term();
@@ -303,6 +396,7 @@ void plugins_Reset(bool Manual)
 	libPvr_Reset(Manual);
 	libGDR_Reset(Manual);
 	libAICA_Reset(Manual);
+	libARM_Reset(Manual);
 	libExtDevice_Reset(Manual);
 }
 

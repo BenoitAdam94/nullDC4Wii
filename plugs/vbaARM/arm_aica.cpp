@@ -1,6 +1,6 @@
 #include "arm_aica.h"
 #include "arm7.h"
-#include "mem.h"
+#include "arm_mem.h"
 #include <math.h>
 
 

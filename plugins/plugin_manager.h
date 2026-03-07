@@ -1,6 +1,8 @@
 #pragma once
 #include "types.h"
 #include "dc/sh4/sh4_if.h"
+#include "plugins/plugin_header.h"  // must come before plugin_types.h
+#include "plugins/plugin_types.h"   // arm_init_params, aica_init_params, etc.
 
 extern sh4_if				  sh4_cpu;
 
@@ -48,6 +50,14 @@ void plugins_Term();
 	u32  libAICA_ReadMem_aica_ram(u32 addr,u32 size);
 	void libAICA_WriteMem_aica_ram(u32 addr,u32 data,u32 size);
 	void FASTCALL libAICA_Update(u32 cycles);				//called every ~1800 cycles, set to 0 if not used
+
+//ARM CPU plugin (vbaARM)
+	void        libARM_Load   ();
+	void        libARM_Unload ();
+	s32  FASTCALL libARM_Init   (arm_init_params* initp);
+	void FASTCALL libARM_Term   ();
+	void FASTCALL libARM_Reset  (bool Manual);
+	void FASTCALL libARM_Update (u32 cycles);
 
 
 //GDR
