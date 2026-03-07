@@ -13,6 +13,7 @@
 
 #include <asndlib.h>
 #include <string.h>
+#include <ogc/cache.h>   // for DCFlushRange
 #include <ogc/lwp_watchdog.h>  // for LWP_MutexInit etc.
 #include <ogc/mutex.h>
 

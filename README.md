@@ -25,7 +25,7 @@ a fork from https://github.com/skmp/nullDCe
 - Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
 - Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
 - 50/60 ips for PAL/NTSC ? (should be ok)
-- both 4/3 and fullscreen support
+- both 4/3 and fullscreen support (in next version)
 - Frame Skipping
 
 ### Developer (Hard)
@@ -267,6 +267,7 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
 
 
 
