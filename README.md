@@ -20,18 +20,21 @@ a fork from https://github.com/skmp/nullDCe
 - Optimize Optimize Optimize
 - Translate French baguette comments to English
 
+### Developer (Normal)
+
+- Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
+- Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
+- 50/60 ips for PAL/NTSC ? (should be ok)
+- both 4/3 and fullscreen support
+- Frame Skipping
+
 ### Developer (Hard)
 
 - Improve gxRend.cpp = main file about specific rendering for Wii
 - Splitting gxRend.cpp in multiple files ? (beware this is more tricky than it look)
-- Coding routine adjustement for accuracy (FAST/BALANCED/ACCURATE)
-- Coding routine adjustement for performance (LOW/NORMAL/HIGH/EXTRA)
 - Table convertion between SH4 Opcodes of SH4 and the WiiPPC ?
 - Use LLVM to port code for PowerPC ?
 - Full Dynarec implementation (AI seems to know about this)
-- 50/60 ips for PAL/NTSC ? (should be ok)
-- 4/3 and fullscreen support
-- Frame Skipping
 - Sound implementation
 
 ## Installation
@@ -124,12 +127,41 @@ game selector implemented
 Few games are runnable :
 - Castlevania (Demo)
 - Sega Tetris
+- Shenmue (BALANCED Preset)
+- Jojo
 
 Wii Dynarec has been improved & completed by AI. Compile but doesn't run (Black Screen). See /archive folder
 
 ## Compatibility
 
 https://wiibrew.org/wiki/NullDC4Wii/Compatibility
+
+## Presets
+
+### 🧮 Calculation Accuracy Preset
+
+| Mode | Description |
+|------|------------|
+| **FAST** | Maximum FPS (higher frame rate), less loading times |
+| **BALANCED** | Good balance between speed and accuracy |
+| **ACCURATE (default)** | Closest behavior to original hardware |
+
+If you experience Freeze in some heavy games like Shenmue, put FAST or BALANCED. BALANCED may be the default setting in future versions
+
+If you experience various bugs (example that may happens : weird AI controled NPC) put ACCURATE
+
+---
+
+### 🖼️ Graphics Preset
+
+| Mode | Settings | Best platform | 
+|------|----------| ------------------------- | 
+| **LOW (default)** | `GX_NEAR` · `lod_bias 0.0f` · `GX_DISABLE`  | Wii |
+| **NORMAL** | `GX_LINEAR` · `lod_bias 0.0f` · `GX_DISABLE`  | Wii |
+| **HIGH** | `GX_LINEAR` · `lod_bias -0.5f` · `GX_ENABLE` · Anisotropic x2 | Wii U |
+| **EXTRA** | `GX_LINEAR` · `lod_bias -1.0f` *(may need to adjust to -0.75)* · `GX_ENABLE` · Anisotropic x4 | Wii U |
+
+While the emulator is still in alpha, the visual difference is limited for now.
 
 ## For Developpers :
 
@@ -235,6 +267,10 @@ All testers and all futur testers
 ### Special no thanks
 
 To all people not believing in this project
+
+
+
+
 
 
 
