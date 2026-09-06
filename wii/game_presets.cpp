@@ -545,7 +545,18 @@
                                 A/B/X/Y -> DC A/X/B/Y; Classic Controller
                                 keeps its normal by-position mapping (already
                                 the same layout). off (default) restores the
-                                normal per-button mapping.
+                                normal per-button mapping. Shares the same
+                                underlying preset slot as layout_ddr_select --
+                                only set one of the two per game.
+        layout_ddr_select=on<- on/off, DDR Club Mix/2nd Mix special layout
+                                (see main.cpp g_special_layout_preset,
+                                drkMapleDevices.cpp UpdateInputState()).
+                                Holding the GameCube Z button forces the
+                                analog stick to read fully down, which these
+                                games treat as a "Select" input (change
+                                dancer/arrow skin/sequence type, and enter
+                                the Left/Right/Shuffle arrow option codes).
+                                off (default) leaves the analog stick alone.
         audio_buffers=1     <- 0..3 or default/auto/saved, forces
                                 settings.emulator.AudioBuffers (see
                                 nullDC.cpp LoadSettings() and
@@ -1148,6 +1159,7 @@ static void apply_kv(GamePreset* p, const char* key, const char* val)
     else if (key_eq(key, "render_to_texture")) p->render_to_texture = parse_rtt(val);
     else if (key_eq(key, "split_screen"))   p->split_screen   = parse_split_screen(val);
     else if (key_eq(key, "layout_chuchu"))  { int b = parse_bool(val); if (b >= 0) p->layout = b ? 1 /* SPECIAL_LAYOUT_CHUCHU */ : 0 /* SPECIAL_LAYOUT_OFF */; }
+    else if (key_eq(key, "layout_ddr_select")) { int b = parse_bool(val); if (b >= 0) p->layout = b ? 2 /* SPECIAL_LAYOUT_DDR_SELECT */ : 0 /* SPECIAL_LAYOUT_OFF */; }
     else if (key_eq(key, "mipmap"))         p->mipmap         = parse_mipmap(val);
     else if (key_eq(key, "seam_fix"))       p->seam_fix       = parse_bool(val);
     else if (key_eq(key, "fog"))            p->fog            = parse_bool(val);
@@ -1319,7 +1331,7 @@ static void preset_apply_fields(const GamePreset* p)
     if (p->autosort       >= 0) { g_autosort_preset      = p->autosort;        printf("  autosort       -> %d\n", p->autosort);       }
     if (p->render_to_texture >= 0) { g_render_to_texture_preset = p->render_to_texture; printf("  render_to_texture -> %d\n", p->render_to_texture); }
     if (p->split_screen   >= 0) { g_split_screen_preset  = p->split_screen;    printf("  split_screen   -> %d\n", p->split_screen);   }
-    if (p->layout         >= 0) { g_special_layout_preset = p->layout;         printf("  layout_chuchu  -> %d\n", p->layout);         }
+    if (p->layout         >= 0) { g_special_layout_preset = p->layout;         printf("  layout         -> %d\n", p->layout);         }
     if (p->mipmap         >= 0) { g_mipmap_preset        = p->mipmap;          printf("  mipmap         -> %d\n", p->mipmap);         }
     if (p->seam_fix       >= 0) { g_seam_fix_preset      = p->seam_fix;        printf("  seam_fix       -> %d\n", p->seam_fix);       }
     if (p->fog            >= 0) { g_fog_preset           = p->fog;             printf("  fog            -> %d\n", p->fog);            }

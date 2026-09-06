@@ -393,10 +393,12 @@ extern "C" {
 // Special controller layouts remap the Dreamcast pad away from its normal
 // per-device buttons for games that play better with a fixed physical
 // layout (e.g. ChuChu Rocket, steered entirely by the D-Pad/D-Pad-like
-// input). Consumed by drkMapleDevices.cpp MapButtons(). 0=off (legacy
-// per-button mapping), 1=CHUCHU (see kSpecialLayoutNames below).
-enum { SPECIAL_LAYOUT_OFF = 0, SPECIAL_LAYOUT_CHUCHU = 1, SPECIAL_LAYOUT_COUNT };
-static const char *kSpecialLayoutNames[SPECIAL_LAYOUT_COUNT] = { "OFF", "CHUCHU ROCKET" };
+// input; DDR Club Mix/2nd Mix, which read the analog stick pushed down as
+// a "Select" input). Consumed by drkMapleDevices.cpp MapButtons() /
+// UpdateInputState(). 0=off (legacy per-button mapping), 1=CHUCHU,
+// 2=DDR SELECT (see kSpecialLayoutNames below).
+enum { SPECIAL_LAYOUT_OFF = 0, SPECIAL_LAYOUT_CHUCHU = 1, SPECIAL_LAYOUT_DDR_SELECT = 2, SPECIAL_LAYOUT_COUNT };
+static const char *kSpecialLayoutNames[SPECIAL_LAYOUT_COUNT] = { "OFF", "CHUCHU ROCKET", "DDR SELECT" };
 int g_special_layout_preset = SPECIAL_LAYOUT_OFF;
 
 extern "C" {

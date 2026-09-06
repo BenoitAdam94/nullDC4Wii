@@ -34,8 +34,9 @@
 // (see main.cpp g_special_layout_preset). Values must stay in sync with the
 // SPECIAL_LAYOUT_* enum in main.cpp.
 extern "C" int get_special_layout_preset(void);
-#define SPECIAL_LAYOUT_OFF    0
-#define SPECIAL_LAYOUT_CHUCHU 1
+#define SPECIAL_LAYOUT_OFF        0
+#define SPECIAL_LAYOUT_CHUCHU     1
+#define SPECIAL_LAYOUT_DDR_SELECT 2
 
 // Dreamcast controller button definitions
 #define key_CONT_C          (1 << 0)
@@ -551,6 +552,19 @@ void UpdateInputState(u32 port)
     MapButtons(port, wiiButtons, gcButtons, nunchuckButtons, classicButtons);
     MapAnalogStick(port, stickX, stickY, expStickX, expStickY);
     MapTriggers(port, wiiButtons, gcButtons, nunchuckButtons, classicButtons);
+
+    // DDR Club Mix / 2nd Mix special layout: these games read the analog
+    // stick pushed fully down as a "Select" input (used to change dancer/
+    // arrow skin/sequence type and to enter the Left, Right and Shuffle
+    // arrow option codes). That's awkward to hit reliably on a GameCube
+    // stick, so holding the GameCube Z button (PAD_TRIGGER_Z -- libogc's
+    // only macro for it, despite the name; otherwise unused by this
+    // emulator's normal mapping) forces the same "down" reading.
+    if (get_special_layout_preset() == SPECIAL_LAYOUT_DDR_SELECT && (gcButtons & PAD_TRIGGER_Z))
+    {
+        joyx[port] = 0;
+        joyy[port] = 127; // DC positive Y = down, see MapAnalogStick()
+    }
 }
 
 /**
