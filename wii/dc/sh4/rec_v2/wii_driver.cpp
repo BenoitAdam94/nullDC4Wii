@@ -105,6 +105,7 @@ const ppc_ireg ppc_rinvalid = static_cast<ppc_ireg>(-1);  // sentinel: out-of-ra
 // This is defined in main.cpp
 extern "C" int get_debug_loop();
 extern "C" int get_bcache_preset();	// main.cpp: 0=off (default), 1=flat dispatch cache
+extern "C" int get_dyn_ic_preset();	// main.cpp: 0=off (default), 1=call+jump, 2=+rts
 extern "C" int get_fpu_pin_preset();	// main.cpp: 0=off (default), 1=pin fr[0..15] to f14..f29
 extern "C" int get_jit_align_preset();	// main.cpp: 0=off (default), 1=32-byte-align block entries
 
@@ -193,6 +194,7 @@ void* loop_no_update;
 void* ngen_LinkBlock_Static_stub;
 void* ngen_LinkBlock_Dynamic_1st_stub;
 void* ngen_LinkBlock_Dynamic_2nd_stub;
+void* ngen_LinkBlock_Dynamic_IC_stub;	// DYN_IC preset: inline-cache fill
 void* ngen_BlockCheckFail_stub;
 void* loop_do_update_write;
 void (*loop_code)() ;
@@ -1014,6 +1016,56 @@ void ngen_End(DecodedBlock* block)
 		//printf("Dynamic !\n");
 		//mov reg,djump
 		ppc_ori(ppc_rarg0,ppc_djump,0);  // mr rarg0, djump
+
+		// ---- DYN_IC preset: per-site monomorphic inline cache ----------------
+		// Both dispatch paths below end in `bctr` through a table entry: ~9
+		// instructions and two dependent loads, with an indirect branch the
+		// 750CL cannot predict. But most dynamic exits are monomorphic — the
+		// SH4 `JSR @Rn` to a fixed callee, and especially the JSR->RTS;NOP
+		// trampoline idiom that dominates 3D inner loops. For those, the target
+		// never changes, so the table lookup re-derives a constant every time.
+		//
+		// So we put a 4-instruction guard in front of it, self-patched with the
+		// target this site actually took the first time it ran:
+		//
+		//     xoris  rarg1, djump, hi(pc)   ; rarg1 = djump ^ (hi<<16)
+		//     cmplwi cr0, rarg1, lo(pc)     ; ==0 iff djump == pc  (32-bit cmp,
+		//     bne    generic                ;  two insns, no immediate load)
+		//     b      target                 ; direct, statically predicted
+		//   generic:
+		//     <bcache / cache[] path, unchanged>
+		//
+		// Until it is patched, all four slots branch to `generic`, so a site is
+		// always correct, just slow. Slot 0 is `bl` to the fill stub, which
+		// compiles the target, rewrites the four words, and jumps into it.
+		//
+		// Staleness: the baked `b target` is exactly as safe as the direct `b`
+		// DoStatic() patches in, and for the same reason — every invalidation
+		// path is a FULL cache clear (see rdv_BlockCheckFail in driver.cpp),
+		// which destroys these sites along with the code they point at.
+		//
+		// Monomorphic only: a site is patched once and never re-patched, so a
+		// polymorphic site (typically BET_DynamicRet — one callee returning to
+		// many callers) settles into paying 3 extra ALU/branch ops in front of
+		// the normal lookup. That is why mode 1 leaves RTS alone; mode 2 opts
+		// it in for A/B.
+		{
+			const int ic = get_dyn_ic_preset();
+			const bool ic_here = ngen_LinkBlock_Dynamic_IC_stub &&
+			                     ((ic >= 2) ||
+			                      (ic == 1 && block->BlockType != BET_DynamicRet));
+			if (ic_here)
+			{
+				// 4 words. `generic` is site+16, so each unpatched slot is a
+				// plain forward branch onto it (LI is in instructions).
+				ppc_call(ngen_LinkBlock_Dynamic_IC_stub);	// +0  -> xoris
+				ppc_bx(3,0,0);					// +4  -> cmplwi
+				ppc_bx(2,0,0);					// +8  -> bne generic
+				ppc_bx(1,0,0);					// +12 -> b target
+			}
+		}
+		// generic path starts here (the IC's fall-through target)
+
 		if (get_bcache_preset())
 		{
 			// ---- BCACHE preset: flat single-cache-line dispatch ----
@@ -2979,6 +3031,67 @@ void* FASTCALL ngen_LinkBlock_Static(u32 pc,u32* patch)
 	return (void*)rv;
 }
 
+// The `bl` word ngen_End() emitted into slot 0 of an IC site, recomputed for a
+// given site address. Used to prove the site still exists before patching it.
+static inline u32 ic_site_bl_word(const u32* site)
+{
+	snat offs = ((u8*)ngen_LinkBlock_Dynamic_IC_stub - (u8*)site) >> 2;
+	return 0x48000000u | ((0xffffffu & (u32)offs) << 2) | 1u;
+}
+
+// DYN_IC preset: fill a dynamic exit's inline cache.
+//
+// Reached by the `bl` in slot 0 of the site emitted in ngen_End(). `pc` is the
+// target the site actually branched to (rarg0 = djump, set just before the
+// site); `site` is the address of slot 0, recovered from LR by the stub.
+//
+// We compile/find the target, overwrite the four slots with the guard shown in
+// ngen_End(), and return the target so the stub's `bctr` jumps into it — this
+// call's dispatch is not wasted.
+//
+// Called at most once per site: after the rewrite slot 0 is no longer a `bl`,
+// so a target change just falls through to the generic path forever after.
+void* FASTCALL ngen_LinkBlock_Dynamic_IC(u32 pc,u32* site)
+{
+	next_pc=pc;
+
+	DynarecCodeEntry* rv=rdv_FindOrCompile();
+
+	// rdv_FindOrCompile may have cleared and refilled the code cache (a full
+	// clear resets LastAddr and recompiles from scratch). That destroys every
+	// patched site, this one included — `site` would now point into code that
+	// has been overwritten by an unrelated block. Detect it and patch nothing;
+	// the site is gone anyway and the caller is returning into fresh code.
+	if (*site != ic_site_bl_word(site))
+		return (void*)rv;
+
+	emit_ptr=site;
+	{
+		ppc_xoris(ppc_rarg1,ppc_djump,pc>>16);		// rarg1 = djump ^ (hi<<16)
+		ppc_cmpli(ppc_cr0,ppc_rarg1,(u16)pc,0);		// cmplwi rarg1, lo
+		ppc_bcx(BO_FALSE,BI_CR0_EQ,2,0,0);		// bne +8 -> generic (site+16)
+		ppc_jump(rv);					// b target
+	}
+	emit_ptr=0;
+
+	make_address_range_executable(site, 4*sizeof(u32));
+
+	// [DYN_IC] engagement counter — served its purpose (Wii-measured
+	// 2026-09-07, see dyn-ic-preset memory) and is quieted now that this
+	// preset ships default-on. Re-enable if the fill path is ever suspect
+	// again: costs one increment per SITE (not per traversal), never on
+	// the hot path.
+#if 0
+	{
+		static u32 ic_patched=0;
+		if ((++ic_patched % 1000)==0)
+			printf("[DYN_IC] %u sites patched\n", ic_patched);
+	}
+#endif
+
+	return (void*)rv;
+}
+
 // =========
 // MAIN LOOP
 // =========
@@ -3143,6 +3256,17 @@ void ngen_mainloop()
 		ngen_LinkBlock_Dynamic_2nd_stub=emit_GetCCPtr();
 		{
 			//not used for now
+		}
+
+		// DYN_IC preset: inline-cache fill stub. Entered by the `bl` in slot 0
+		// of an unpatched site, so LR = site+4 and rarg0 = the target PC (the
+		// `mr rarg0,djump` that precedes every site). Hand both to the patcher
+		// and jump into whatever it returns.
+		ngen_LinkBlock_Dynamic_IC_stub=emit_GetCCPtr();
+		{
+			ppc_mfspr(ppc_rarg1,ppc_spr_lr);
+			ppc_addi(ppc_rarg1,ppc_rarg1,(u32)-4);
+			ppc_call_and_jump(&ngen_LinkBlock_Dynamic_IC);
 		}
 
 		ngen_BlockCheckFail_stub=emit_GetCCPtr();

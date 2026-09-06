@@ -588,6 +588,26 @@ extern "C" {
   int get_bcache_preset() { return g_bcache_preset; }
 }
 
+// DYN_IC — per-site monomorphic inline cache on SH4 dynamic branch exits
+// (the BET_Dynamic* emission in wii/dc/sh4/rec_v2/wii_driver.cpp).
+// BCACHE above still ends every dynamic exit in an unpredictable `bctr`
+// through a table entry. Most of those exits never change target — `JSR @Rn`
+// to a fixed callee, and the JSR->RTS;NOP trampoline idiom that dominates SH4
+// 3D inner loops — so the lookup re-derives a constant on every traversal.
+// This puts a 4-instruction guard in front of it (xoris/cmplwi/bne/b), self-
+// patched on first execution with the target that site actually took: a hit is
+// two ALU ops and a statically-predicted direct branch, no loads, no bctr.
+// Stacks with BCACHE, which stays as the miss path.
+// Wii-measured 2026-09-07: mode 1 (JSR/JMP only) was a wash (+0.3%); the win
+// is almost entirely RTS sites (JSR->RTS;NOP trampolines) — mode 2 measured
+// +0.98% steady-state SPEED% on a CPU-bound scene. See dyn-ic-preset memory.
+// 0=off, 1=JSR/JMP sites only, 2=also RTS (default — the mode that measured).
+int g_dyn_ic_preset = 2;
+
+extern "C" {
+  int get_dyn_ic_preset() { return g_dyn_ic_preset; }
+}
+
 // FPU_PIN — pins the SH4 fr[0..15] register file to PPC f14..f29 for the
 // whole session (dc/sh4/rec_v2/wii_driver.cpp ppc_sh_load_f32/store_f32/
 // fvec_load/fvec_store + the memory-bounce fix in ppc_sh_load/ppc_sh_store),
@@ -1594,6 +1614,7 @@ void checkBiosFiles()
 #define OPT_DEBUG_SKIP_TEX 79 // shown on Page 6 (EXPERIMENTAL), debug block at the end
 #define OPT_PUYO_HACK    80   // shown on Page 6 (EXPERIMENTAL), with the other per-game hacks
 #define OPT_DINO_CRISIS_INVENTORY_HACK 72 // shown on Page 5 (EXPERIMENTAL), see OPT_PAGE5_ROWS
+#define OPT_DYN_IC      81   // shown on Page 4 (CORE), under JIT BCACHE
 #define OPT_ROW_COUNT   66
 
 // Options are split across six themed pages so no single page scrolls off
@@ -1694,6 +1715,7 @@ static const int OPT_PAGE4_ROWS[] = {
   OPT_JIT_SBP,
   OPT_FASTMEM,
   OPT_BCACHE,
+  OPT_DYN_IC,
   OPT_FPU_PIN,
   OPT_JIT_ALIGN
 };
@@ -2416,6 +2438,16 @@ bool displayOptionsMenu()
     printf(" 1-cacheline dynamic jump dispatch");
     printf("\n");
 
+    // --- Row: DYN_IC - per-site inline cache on dynamic exits ---
+    printf("%s JIT DYN IC     : ", (selectedRow == OPT_DYN_IC) ? ">" : " ");
+    switch (g_dyn_ic_preset) {
+      case 0: printf("[< OFF               >]"); break;
+      case 1: printf("[< ON (JSR/JMP)      >]"); break;
+      case 2: printf("[< ON (+RTS)         >]"); break;
+    }
+    printf(" bake last target at branch site");
+    printf("\n");
+
     // --- Row: FPU_PIN - pin fr[0..15] to PPC f14..f29 ---
     printf("%s FPU PIN        : ", (selectedRow == OPT_FPU_PIN) ? ">" : " ");
     switch (g_fpu_pin_preset) {
@@ -2673,6 +2705,7 @@ bool displayOptionsMenu()
         case OPT_DMA_FIX:        g_dma_fix_preset         = (g_dma_fix_preset         + 1) % 2; break;
         case OPT_FASTMEM:        g_fastmem_preset         = (g_fastmem_preset         + 1) % 2; break;
         case OPT_BCACHE:         g_bcache_preset          = (g_bcache_preset          + 1) % 2; break;
+        case OPT_DYN_IC:         g_dyn_ic_preset          = (g_dyn_ic_preset          + 2) % 3; break;
         case OPT_FPU_PIN:        g_fpu_pin_preset         = (g_fpu_pin_preset         + 1) % 2; break;
         case OPT_JIT_ALIGN:      g_jit_align_preset       = (g_jit_align_preset       + 1) % 2; break;
         case OPT_CDDA:           g_cdda_preset            = (g_cdda_preset            + 1) % 2; break;
@@ -2764,6 +2797,7 @@ bool displayOptionsMenu()
         case OPT_DMA_FIX:        g_dma_fix_preset         = (g_dma_fix_preset         + 1) % 2; break;
         case OPT_FASTMEM:        g_fastmem_preset         = (g_fastmem_preset         + 1) % 2; break;
         case OPT_BCACHE:         g_bcache_preset          = (g_bcache_preset          + 1) % 2; break;
+        case OPT_DYN_IC:         g_dyn_ic_preset          = (g_dyn_ic_preset          + 1) % 3; break;
         case OPT_FPU_PIN:        g_fpu_pin_preset         = (g_fpu_pin_preset         + 1) % 2; break;
         case OPT_JIT_ALIGN:      g_jit_align_preset       = (g_jit_align_preset       + 1) % 2; break;
         case OPT_CDDA:           g_cdda_preset            = (g_cdda_preset            + 1) % 2; break;
@@ -3539,6 +3573,8 @@ int main(int argc, wchar *argv[])
     printf("DMA Fix        : %s\n", g_dma_fix_preset ? "ON (DEFAULT)" : "OFF (LEGACY)");
     printf("Fastmem        : %s\n", g_fastmem_preset ? "ON (MMU)" : "OFF (LEGACY)");
     printf("JIT BCache     : %s\n", g_bcache_preset ? "ON (FLAT)" : "OFF (LEGACY)");
+    printf("JIT Dyn IC     : %s\n", g_dyn_ic_preset == 2 ? "ON (+RTS)" :
+                                     g_dyn_ic_preset == 1 ? "ON (JSR/JMP)" : "OFF");
     printf("FPU Pin        : %s\n", g_fpu_pin_preset ? "ON (EXPERIMENTAL)" : "OFF (LEGACY)");
     printf("JIT Align      : %s\n", g_jit_align_preset ? "ON (32B LINES)" : "OFF (LEGACY)");
     printf("Sched (order)  : %s\n", g_sched_preset ? "ON (DEADLINE)" : "OFF (CASCADE)");

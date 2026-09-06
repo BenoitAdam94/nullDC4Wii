@@ -174,6 +174,22 @@
                                 instead of chasing cache[] -> DynarecBlock
                                 across two lines + a counter write. Default
                                 off (legacy). Perf preset — A/B per game.
+        dyn_ic=2            <- 0/1/2, per-site inline cache on the SH4
+                                dynarec's dynamic branch exits. bcache still
+                                ends every dynamic exit in a `bctr` the 750CL
+                                cannot predict; most of those exits never
+                                change target (JSR @Rn to a fixed callee, and
+                                the JSR->RTS;NOP trampoline idiom common in 3D
+                                inner loops). Bakes the first-seen target into
+                                the site as xoris/cmplwi/bne/b: two ALU ops and
+                                a predicted direct branch, no loads, no bctr.
+                                Stacks with bcache (which becomes the miss
+                                path). Wii-measured 2026-09-07: mode 1
+                                (JSR/JMP only) was a wash (+0.3%) — the win is
+                                almost entirely RTS sites; mode 2 measured
+                                +0.98% steady-state SPEED% on a CPU-bound
+                                scene. 0=off, 1=JSR/JMP sites only, 2=also RTS
+                                (default — the mode that measured).
         fpu_pin=on          <- on/off, pins SH4 fr0-15 to real PPC FPU
                                 registers f14-f29 for the whole session (see
                                 wii_driver.cpp FPU_PIN), the same scheme int
@@ -643,6 +659,7 @@ extern int g_jit_sbp_preset;
 extern int g_dma_fix_preset;
 extern int g_fastmem_preset;
 extern int g_bcache_preset;
+extern int g_dyn_ic_preset;
 extern int g_fpu_pin_preset;
 extern int g_jit_align_preset;
 extern int g_sched_preset;
@@ -745,6 +762,7 @@ struct GamePreset
     int dma_fix;
     int fastmem;
     int bcache;
+    int dyn_ic;
     int fpu_pin;
     int jit_align;
     int sched;
@@ -1159,6 +1177,7 @@ static void apply_kv(GamePreset* p, const char* key, const char* val)
     else if (key_eq(key, "dma_fix"))        p->dma_fix        = parse_bool(val);
     else if (key_eq(key, "fastmem"))        p->fastmem        = parse_bool(val);
     else if (key_eq(key, "bcache"))         p->bcache         = parse_bool(val);
+    else if (key_eq(key, "dyn_ic"))         p->dyn_ic         = atoi(val);
     else if (key_eq(key, "fpu_pin"))        p->fpu_pin        = parse_bool(val);
     else if (key_eq(key, "jit_align"))      p->jit_align      = parse_bool(val);
     else if (key_eq(key, "sched"))          p->sched          = parse_bool(val);
@@ -1237,6 +1256,7 @@ static void preset_clear(GamePreset* cur)
     cur->dma_fix = -1;
     cur->fastmem = -1;
     cur->bcache = -1;
+    cur->dyn_ic = -1;
     cur->fpu_pin = -1;
     cur->jit_align = -1;
     cur->sched = -1;
@@ -1329,6 +1349,7 @@ static void preset_apply_fields(const GamePreset* p)
     if (p->dma_fix        >= 0) { g_dma_fix_preset        = p->dma_fix;        printf("  dma_fix        -> %d\n", p->dma_fix);        }
     if (p->fastmem        >= 0) { g_fastmem_preset        = p->fastmem;        printf("  fastmem        -> %d\n", p->fastmem);        }
     if (p->bcache         >= 0) { g_bcache_preset         = p->bcache;         printf("  bcache         -> %d\n", p->bcache);         }
+    if (p->dyn_ic         >= 0) { g_dyn_ic_preset         = p->dyn_ic;         printf("  dyn_ic         -> %d\n", p->dyn_ic);         }
     if (p->fpu_pin        >= 0) { g_fpu_pin_preset        = p->fpu_pin;        printf("  fpu_pin        -> %d\n", p->fpu_pin);        }
     if (p->jit_align      >= 0) { g_jit_align_preset      = p->jit_align;      printf("  jit_align      -> %d\n", p->jit_align);      }
     if (p->sched          >= 0) { g_sched_preset          = p->sched;          printf("  sched          -> %d\n", p->sched);          }
