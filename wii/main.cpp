@@ -750,6 +750,15 @@ extern "C" {
   int get_puyo_hack_preset() { return g_puyo_hack_preset; }
 }
 
+// wince=yes in game_presets.cfg (see game_presets.cpp): the game needs the
+// Windows CE syscall layer, which NullDC4Wii does not emulate. No menu row —
+// this is cfg-only and, unlike every other preset field, NOT sticky across
+// game selections (see preset_apply_fields in game_presets.cpp): it is
+// re-derived fresh on every launch so a WinCE game can never leave the flag
+// set for the next (non-WinCE) game picked from the file list. Consumed once,
+// right after the options menu, by displayWinCEWarning() below.
+int g_wince_preset = 0;
+
 // FRAMEBUFFER_2D candidate detector (gxRend.cpp, StartRender's bit-24 branch).
 // The [PATH] 2D-blit / 2D-after-3D lines only ever printed from INSIDE the
 // FRAMEBUFFER_2D() branch, i.e. only once the preset was already on — so the
@@ -2887,6 +2896,71 @@ bool displayOptionsMenu()
 }
 
 // ============================================================================
+// WINCE WARNING
+// ============================================================================
+// Shown right after the options menu, only when the matched game_presets.cfg
+// section set wince=yes (g_wince_preset — see game_presets.cpp). NullDC4Wii
+// does not emulate the Windows CE syscall layer these games run on top of, so
+// they are not expected to work. A launches anyway, B returns to the file
+// list (not just the options menu — there is nothing to retweak here, the
+// user needs a different game).
+bool displayWinCEWarning()
+{
+  // Debounce: don't let the A press that confirmed the options menu bleed
+  // through as an instant "launch anyway" here.
+  while ((WPAD_ButtonsHeld(0) & (WPAD_BUTTON_A | WPAD_CLASSIC_BUTTON_A))
+         || (PAD_ButtonsHeld(0) & PAD_BUTTON_A)
+         || (DRC_ButtonsHeldWPAD() & WPAD_BUTTON_A)
+         || (SS_ButtonsHeldWPAD() & WPAD_BUTTON_A))
+  {
+    WPAD_ScanPads();
+    PAD_ScanPads();
+    if (WiiDRC_Inited())
+      WiiDRC_ScanPads();
+    SS_PollConnections();
+    VIDEO_WaitVSync();
+  }
+
+  while (true)
+  {
+    printf("\033[2J\033[H");
+
+    printf("    -- WINDOWS CE WARNING --\n\n");
+    {
+      const char *gameName = strrchr(selectedFilePath, '/');
+      gameName = (gameName != NULL) ? gameName + 1 : selectedFilePath;
+      printf("    %.60s\n\n", gameName);
+    }
+    printf("This is a WinCE game, it's not supported yet by NullDC4Wii\n");
+    printf("(and probably never will).\n\n");
+    printf("Press A to launch Anyway, B to return to file selection.\n");
+
+    WPAD_ScanPads();
+    PAD_ScanPads();
+    u32 wmPressed = WPAD_ButtonsDown(0);
+    u32 pressed = wmPressed | CLASSIC_ToWPAD(wmPressed) | DRC_ButtonsDownWPAD() | SS_ButtonsDownWPAD();
+
+    // GameCube controller (Player 1) — same mapping convention as the other
+    // menus (see displayOptionsMenu).
+    u16 gcPressed = PAD_ButtonsDown(0);
+    if (gcPressed & PAD_BUTTON_A) pressed |= WPAD_BUTTON_A;
+    if (gcPressed & PAD_BUTTON_B) pressed |= WPAD_BUTTON_B;
+
+    if (pressed & WPAD_BUTTON_A)
+      return true;
+    else if (pressed & WPAD_BUTTON_B)
+      return false;
+
+    VIDEO_SetNextFramebuffer(xfb[fb]);
+    VIDEO_Flush();
+    VIDEO_WaitVSync();
+    fb ^= 1;
+    console_init(xfb[fb], 20, 20, rmode->fbWidth, rmode->xfbHeight,
+                 rmode->fbWidth * VI_DISPLAY_PIX_SZ);
+  }
+}
+
+// ============================================================================
 // CONTROLS MENU
 // ============================================================================
 // Shown after the options menu, right before launch. Holds the
@@ -3472,6 +3546,9 @@ int main(int argc, wchar *argv[])
         game_presets_apply(selectedFilePath);
 
         if (!displayOptionsMenu())
+          continue; // B pressed — back to file list
+
+        if (g_wince_preset && !displayWinCEWarning())
           continue; // B pressed — back to file list
 
         launchGame = displayControlsMenu();

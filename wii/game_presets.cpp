@@ -572,6 +572,19 @@
                                 setting carried over this boot) — leaving
                                 the key out entirely does the same thing
                                 UNLESS an earlier section already forced it.
+        wince=yes           <- yes/no (also on/off/1/0/true/false), flags a
+                                game as needing Windows CE rather than the
+                                plain Katana SDK. NullDC4Wii does not emulate
+                                the WinCE syscall layer these games depend on,
+                                so they are not expected to boot or run
+                                correctly. No menu row: purely a cfg flag,
+                                consumed once right after the options menu
+                                (main.cpp displayWinCEWarning()) — the player
+                                sees a warning and can press A to launch
+                                anyway or B to go back to the file list.
+                                Unlike every field above, NOT sticky across
+                                game selections (see the comment in
+                                preset_apply_fields): default no.
 
     [default] is a special section, not matched against the filename: its
     fields are applied first, on every launch, before the per-game match
@@ -659,6 +672,7 @@ extern int g_bg_poly_preset;
 extern int g_layer_sort_preset;
 extern int g_hokuto_hack_preset;
 extern int g_puyo_hack_preset;
+extern int g_wince_preset;
 extern int g_isp_depth_func_preset;
 extern int g_isp_cull_preset;
 extern int g_subpass_zclear_preset;
@@ -762,6 +776,7 @@ struct GamePreset
     int layer_sort;
     int hokuto_hack;
     int puyo_hack;
+    int wince;
     int isp_depth_func;
     int isp_cull;
     int subpass_zclear;
@@ -856,13 +871,13 @@ static void strip_inline_comment(char* s)
 // Value parsers — return -1 on unknown token
 // ---------------------------------------------------------------------------
 
-// Binary fields: "on"/"off" is the documented format; "1"/"0" and
-// "true"/"false" are also accepted so hand-edited or older config lines
-// keep working.
+// Binary fields: "on"/"off" is the documented format; "1"/"0", "true"/"false"
+// and "yes"/"no" are also accepted so hand-edited or older config lines keep
+// working.
 static int parse_bool(const char* v)
 {
-    if (key_eq(v, "on")  || key_eq(v, "true")  || strcmp(v, "1") == 0) return 1;
-    if (key_eq(v, "off") || key_eq(v, "false") || strcmp(v, "0") == 0) return 0;
+    if (key_eq(v, "on")  || key_eq(v, "true")  || key_eq(v, "yes") || strcmp(v, "1") == 0) return 1;
+    if (key_eq(v, "off") || key_eq(v, "false") || key_eq(v, "no")  || strcmp(v, "0") == 0) return 0;
     printf("[game_presets] Unknown on/off value: '%s'\n", v);
     return -1;
 }
@@ -1178,6 +1193,7 @@ static void apply_kv(GamePreset* p, const char* key, const char* val)
     else if (key_eq(key, "layer_sort"))     p->layer_sort     = parse_bool(val);
     else if (key_eq(key, "hokuto_hack"))    p->hokuto_hack    = parse_bool(val);
     else if (key_eq(key, "puyo_hack"))      p->puyo_hack      = parse_bool(val);
+    else if (key_eq(key, "wince"))          p->wince          = parse_bool(val);
     else if (key_eq(key, "isp_depth_func")) p->isp_depth_func = atoi(val);
     else if (key_eq(key, "isp_cull"))       p->isp_cull       = atoi(val);
     else if (key_eq(key, "subpass_zclear")) p->subpass_zclear = parse_bool(val);
@@ -1257,6 +1273,7 @@ static void preset_clear(GamePreset* cur)
     cur->layer_sort = -1;
     cur->hokuto_hack = -1;
     cur->puyo_hack = -1;
+    cur->wince = -1;
     cur->isp_depth_func = -1;
     cur->isp_cull = -1;
     cur->subpass_zclear = -1;
@@ -1350,6 +1367,15 @@ static void preset_apply_fields(const GamePreset* p)
     if (p->layer_sort     >= 0) { g_layer_sort_preset    = p->layer_sort;      printf("  layer_sort     -> %d\n", p->layer_sort);     }
     if (p->hokuto_hack    >= 0) { g_hokuto_hack_preset   = p->hokuto_hack;     printf("  hokuto_hack    -> %d\n", p->hokuto_hack);    }
     if (p->puyo_hack      >= 0) { g_puyo_hack_preset     = p->puyo_hack;       printf("  puyo_hack      -> %d\n", p->puyo_hack);      }
+    // wince is deliberately NOT sticky, unlike every field above: it has no
+    // menu row for the user to notice and flip back off, so an unconditional
+    // assign here (instead of the usual "only touch it if this pass set it")
+    // stops a WinCE game's flag from leaking onto the next game selected that
+    // doesn't mention wince at all. Both the [default] pass and the matched
+    // section's pass run this, so the flag always ends up reflecting only the
+    // just-selected game.
+    g_wince_preset = (p->wince > 0) ? 1 : 0;
+    if (p->wince >= 0) printf("  wince          -> %d\n", p->wince);
     if (p->isp_depth_func >= 0) { g_isp_depth_func_preset = p->isp_depth_func; printf("  isp_depth_func -> %d\n", p->isp_depth_func); }
     if (p->isp_cull       >= 0) { g_isp_cull_preset      = p->isp_cull;        printf("  isp_cull       -> %d\n", p->isp_cull);       }
     if (p->subpass_zclear >= 0) { g_subpass_zclear_preset = p->subpass_zclear; printf("  subpass_zclear -> %d\n", p->subpass_zclear); }
