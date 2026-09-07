@@ -25,9 +25,9 @@ a fork from https://github.com/skmp/nullDCe
 - fix Volgarr regresion
 - DualShock 3 issue: left stick has the Y axis inverted, up is down, and down is up.
 - Custom layout : Chuchu rocket/Quake3 (bith Gamecube & wii)
-- Custom layout : a toggle to make the right analog stick with supported controllers act as buttons X (Left) - Y (Up) - A (Down) - B (Right). This is useful for twin stick shooters that use the diamond button layout for gameplay (like Xeno Crisis).
-- Add a winCE preset to prevent that game isn't supported
-- check fps_boost preset matching from cfg, seems not working
+- Custom layout : a toggle to make the right analog stick with supported controllers act as buttons X (Left) - Y (Up) - A (Down) - B (Right). This is useful for twin stick shooters that use the diamond button layout for gameplay (like Xeno Crisis). (like chuchu probably ? so it's done I think)
+- Add a winCE preset to put an additional menu message (after option screen) to prevent that game is WinCE and isn't supported (wince=yes in game_presets.cfg). Message be like : "This is a WinCE game, it's not supported yet by NullDC4Wii (and probably never will). Press A to launch Anyway, B to return to file selection."
+- Add zlib-compressed CHDs Support (cdzl). Make a message that CHD with cdlz is not supported
 
 ### Developer (Normal)
 
