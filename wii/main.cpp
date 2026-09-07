@@ -34,6 +34,7 @@ int SS_ConnectedCount(void);
 
 // *** GAME PRESETS ***
 #include "wii/game_presets.h"
+#include "wii/user_controls.h"
 
 // *** ARM7DI CORE SELF-TEST ***
 #include "plugs/vbaARM/arm7.h"
@@ -394,11 +395,13 @@ extern "C" {
 // per-device buttons for games that play better with a fixed physical
 // layout (e.g. ChuChu Rocket, steered entirely by the D-Pad/D-Pad-like
 // input; DDR Club Mix/2nd Mix, which read the analog stick pushed down as
-// a "Select" input). Consumed by drkMapleDevices.cpp MapButtons() /
-// UpdateInputState(). 0=off (legacy per-button mapping), 1=CHUCHU,
-// 2=DDR SELECT (see kSpecialLayoutNames below).
-enum { SPECIAL_LAYOUT_OFF = 0, SPECIAL_LAYOUT_CHUCHU = 1, SPECIAL_LAYOUT_DDR_SELECT = 2, SPECIAL_LAYOUT_COUNT };
-static const char *kSpecialLayoutNames[SPECIAL_LAYOUT_COUNT] = { "OFF", "CHUCHU ROCKET", "DDR SELECT" };
+// a "Select" input), or hand the whole mapping to a user-edited file
+// (USER CFG, see user_controls.cfg / wii/user_controls.cpp). Consumed by
+// drkMapleDevices.cpp MapButtons() / UpdateInputState(). 0=off (legacy
+// per-button mapping), 1=CHUCHU, 2=DDR SELECT, 3=USER CFG (see
+// kSpecialLayoutNames below).
+enum { SPECIAL_LAYOUT_OFF = 0, SPECIAL_LAYOUT_CHUCHU = 1, SPECIAL_LAYOUT_DDR_SELECT = 2, SPECIAL_LAYOUT_USER_CFG = 3, SPECIAL_LAYOUT_COUNT };
+static const char *kSpecialLayoutNames[SPECIAL_LAYOUT_COUNT] = { "OFF", "CHUCHU ROCKET", "DDR SELECT", "USER CFG" };
 int g_special_layout_preset = SPECIAL_LAYOUT_OFF;
 
 extern "C" {
@@ -1118,6 +1121,37 @@ static void loadGamePresets()
   }
 
   printf("Game presets: none found\n");
+}
+
+// user_controls.cfg: same lookup order as game_presets.cfg above (next to
+// the DOL first, then each device's games folder), so an existing SD
+// install picks it up without extra setup.
+static void loadUserControls()
+{
+  const char* dirs[4];
+  int n = 0;
+
+  if (g_app_dir[0])
+    dirs[n++] = g_app_dir;
+  dirs[n++] = (g_storage_source == STORAGE_USB) ? g_usb_games_root : g_sd_games_root;
+  dirs[n++] = g_sd_games_root;
+  dirs[n++] = g_usb_games_root;
+
+  char path[640];
+  for (int i = 0; i < n; i++)
+  {
+    snprintf(path, sizeof(path), "%suser_controls.cfg", dirs[i]);
+
+    FILE* f = fopen(path, "r");
+    if (!f)
+      continue;
+    fclose(f);
+
+    user_controls_load(path);
+    return;
+  }
+
+  printf("[user_controls] No file found in any known folder\n");
 }
 
 // ============================================================================
@@ -3397,6 +3431,7 @@ int main(int argc, wchar *argv[])
   // Load game presets  (optional — missing file is silently ignored)
   // ---------------------------------------------------------------------------
   loadGamePresets();
+  loadUserControls();
 
   // ---------------------------------------------------------------------------
   // Check for required BIOS files before showing the file browser.

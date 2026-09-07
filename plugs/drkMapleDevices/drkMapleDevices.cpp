@@ -37,24 +37,10 @@ extern "C" int get_special_layout_preset(void);
 #define SPECIAL_LAYOUT_OFF        0
 #define SPECIAL_LAYOUT_CHUCHU     1
 #define SPECIAL_LAYOUT_DDR_SELECT 2
+#define SPECIAL_LAYOUT_USER_CFG   3
 
-// Dreamcast controller button definitions
-#define key_CONT_C          (1 << 0)
-#define key_CONT_B          (1 << 1)
-#define key_CONT_A          (1 << 2)
-#define key_CONT_START      (1 << 3)
-#define key_CONT_DPAD_UP    (1 << 4)
-#define key_CONT_DPAD_DOWN  (1 << 5)
-#define key_CONT_DPAD_LEFT  (1 << 6)
-#define key_CONT_DPAD_RIGHT (1 << 7)
-#define key_CONT_Z          (1 << 8)
-#define key_CONT_Y          (1 << 9)
-#define key_CONT_X          (1 << 10)
-#define key_CONT_D          (1 << 11)
-#define key_CONT_DPAD2_UP    (1 << 12)
-#define key_CONT_DPAD2_DOWN  (1 << 13)
-#define key_CONT_DPAD2_LEFT  (1 << 14)
-#define key_CONT_DPAD2_RIGHT (1 << 15)
+#include "plugs/drkMapleDevices/dc_pad_bits.h" // Dreamcast controller button definitions
+#include "wii/user_controls.h" // USER CFG special layout (fully user-remappable)
 
 // Configuration constants
 #define MAX_CONTROLLERS 4
@@ -541,12 +527,33 @@ void UpdateInputState(u32 port)
         }
     }
 
-    // Read GameCube analog stick position
+    // Read GameCube analog stick position (main stick + C-stick, the latter
+    // only consumed by the USER CFG layout below as extra digital sources)
     s32 stickX = PAD_StickX(port);
     s32 stickY = PAD_StickY(port);
+    s32 subStickX = PAD_SubStickX(port);
+    s32 subStickY = PAD_SubStickY(port);
 
-    // Check for exit combination
+    // Check for exit combination (always live, regardless of layout, so a
+    // typo in user_controls.cfg can never lock a player out of the menu)
     CheckExitCombination(wiiButtons, gcButtons, classicButtons);
+
+    int specialLayout = get_special_layout_preset();
+
+    // USER CFG special layout: the whole button/stick/trigger mapping comes
+    // from user_controls.cfg instead of the hardcoded logic below (see
+    // wii/user_controls.cpp). Falls through to the legacy mapping if the
+    // file was never found/loaded, so picking this layout is never a dead end.
+    if (specialLayout == SPECIAL_LAYOUT_USER_CFG && user_controls_loaded())
+    {
+        if (UserControls_CheckExitCombo(wiiButtons, gcButtons, nunchuckButtons, classicButtons))
+            exit(0);
+
+        UserControls_Update(wiiButtons, gcButtons, nunchuckButtons, classicButtons,
+                             stickX, stickY, subStickX, subStickY, expStickX, expStickY,
+                             &kcode[port], &joyx[port], &joyy[port], &lt[port], &rt[port]);
+        return;
+    }
 
     // Map all inputs to Dreamcast controller format
     MapButtons(port, wiiButtons, gcButtons, nunchuckButtons, classicButtons);
@@ -560,7 +567,7 @@ void UpdateInputState(u32 port)
     // stick, so holding the GameCube Z button (PAD_TRIGGER_Z -- libogc's
     // only macro for it, despite the name; otherwise unused by this
     // emulator's normal mapping) forces the same "down" reading.
-    if (get_special_layout_preset() == SPECIAL_LAYOUT_DDR_SELECT && (gcButtons & PAD_TRIGGER_Z))
+    if (specialLayout == SPECIAL_LAYOUT_DDR_SELECT && (gcButtons & PAD_TRIGGER_Z))
     {
         joyx[port] = 0;
         joyy[port] = 127; // DC positive Y = down, see MapAnalogStick()
